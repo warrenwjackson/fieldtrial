@@ -1,0 +1,9 @@
+{
+  "artifact": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/artifacts/completed_test_results.json",
+  "inputs": {
+    "completed": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/configs/completed_test.yaml",
+    "panel": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/data/synthetic_panel_completed.parquet"
+  },
+  "kind": "analysis",
+  "version": "fieldtrial.manifest.v1"
+}

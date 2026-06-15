@@ -1,0 +1,64 @@
+roadmap_name: "Portfolio Decisioning Example"
+markets:
+  universe: "synthetic_us_dma"
+defaults:
+  overlap_policy: "shared_controls"
+  min_control_markets: 8
+  max_shared_control_usage: 3
+  treatment_cooldown_days: 30
+  min_treatment_share: 0.05
+  max_treatment_share: 0.15
+  candidate_count: 25
+  inference:
+    methods: ["estimator_default", "market_bootstrap"]
+    multiplicity: "holm"
+    family_id: "roadmap_q2"
+  objective:
+    mode: "priority_adjusted_mde"
+    learning_value_weight: 0.04
+    covariance_risk_penalty: 8.0
+    shared_control_risk_penalty: 3.0
+    calendar_overlap_risk_penalty: 1.5
+    covariance_correlation_threshold: 0.25
+portfolio_decision:
+  multiplicity_family: "roadmap_q2"
+  success_metrics: ["orders"]
+  guardrail_metrics: ["conversion_rate"]
+  cost_metrics: ["spend"]
+  metric_roles:
+    orders: "success"
+    conversion_rate: "guardrail"
+    spend: "cost"
+  minimum_business_impact:
+    orders: 0.025
+tests:
+  - name: "pricing_q2"
+    domain: "pricing"
+    priority: 10
+    earliest_start: "2027-04-01"
+    latest_end: "2027-06-15"
+    candidate_durations: [21, 28]
+    primary_metrics: ["orders", "conversion_rate"]
+    metrics:
+      orders:
+        type: "count"
+        column: "orders"
+      conversion_rate:
+        type: "ratio"
+        numerator: "orders"
+        denominator: "sessions"
+      spend:
+        type: "continuous"
+        column: "spend"
+        role: "secondary"
+  - name: "lifecycle_q2"
+    domain: "lifecycle"
+    priority: 8
+    earliest_start: "2027-04-15"
+    latest_end: "2027-06-30"
+    candidate_durations: [21, 28]
+    primary_metrics: ["orders"]
+    metrics:
+      orders:
+        type: "count"
+        column: "orders"

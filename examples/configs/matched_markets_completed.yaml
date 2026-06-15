@@ -1,0 +1,33 @@
+experiment_id: "matched_markets_pricing"
+name: "Matched Markets Pricing Readout"
+domain: "pricing"
+start_date: "2027-05-01"
+end_date: "2027-05-28"
+pre_period_start: "2027-02-01"
+pre_period_end: "2027-04-30"
+treatment_geos: ["dma_001", "dma_002", "dma_003", "dma_004"]
+control_geos: ["dma_021", "dma_022", "dma_023", "dma_024"]
+primary_metrics: ["orders", "revenue"]
+metrics:
+  orders:
+    type: "count"
+    column: "orders"
+  revenue:
+    type: "continuous"
+    column: "revenue"
+assignment_policy:
+  kind: "matched_pairs"
+  treatment_count: 4
+estimator_suite:
+  estimators: ["did", "ratio_delta", "tbr", "block_bootstrap"]
+inference:
+  methods: ["estimator_default", "randomization_inference", "market_bootstrap"]
+  confidence: 0.95
+calibration:
+  placebo_windows: 20
+  injected_lifts: [0.0, 0.03, 0.06]
+portfolio_decision:
+  metric_roles:
+    orders: "success"
+    revenue: "secondary"
+

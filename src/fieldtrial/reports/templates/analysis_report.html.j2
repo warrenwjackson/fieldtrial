@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ report.title }}</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #667085;
+      --line: #d8dee8;
+      --soft: #f6f8fb;
+      --blue: #2563eb;
+      --green: #087f5b;
+      --red: #be123c;
+      --amber: #b45309;
+      --purple: #7c3aed;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: #fff; font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    header { padding: 34px 34px 20px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, #f8fbff 0%, #fff 100%); }
+    .header-inner, main { max-width: 1220px; margin: 0 auto; }
+    main { padding: 26px 28px 44px; }
+    h1 { margin: 0 0 8px; font-size: 32px; line-height: 1.15; }
+    h2 { margin: 32px 0 10px; font-size: 21px; }
+    h3 { margin: 20px 0 8px; font-size: 16px; }
+    .muted { color: var(--muted); }
+    .deck { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); margin: 22px 0 8px; }
+    .stat { border: 1px solid var(--line); border-radius: 8px; padding: 14px 15px; background: #fff; box-shadow: 0 1px 2px rgba(16, 24, 40, .04); }
+    .stat span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .stat strong { display: block; margin-top: 4px; font-size: 24px; line-height: 1.15; }
+    .two-col { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .panel { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: #fff; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 20px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px 9px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; background: #fbfcfe; }
+    code { background: var(--soft); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+    .executive-evidence { margin-top: 14px; }
+    .executive-note { max-width: 900px; }
+    .metric-evidence { --metric-color: var(--green); border-top: 1px solid var(--line); padding: 14px 0 16px; }
+    .metric-evidence:first-of-type { border-top: 0; padding-top: 4px; }
+    .metric-evidence::before { content: ""; display: block; width: 42px; height: 4px; border-radius: 999px; background: var(--metric-color); margin-bottom: 10px; }
+    .evidence-row { display: grid; grid-template-columns: minmax(190px, 280px) minmax(220px, 1fr) 110px; gap: 14px; align-items: center; margin: 10px 0; }
+    .evidence-row.headline { margin-bottom: 14px; }
+    .evidence-row.method { color: var(--muted); }
+    .evidence-label { min-width: 0; }
+    .evidence-title { font-weight: 800; color: var(--ink); }
+    .evidence-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .evidence-value { font-weight: 800; text-align: right; color: var(--ink); }
+    .evidence-row.headline .evidence-value { font-size: 19px; }
+    .evidence-subrows { margin-left: 0; padding-left: 0; }
+    .evidence-row.method .evidence-label { margin-left: 20px; padding-left: 14px; border-left: 2px solid color-mix(in srgb, var(--metric-color) 35%, #d8dee8); }
+    .evidence-badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+    .evidence-badges span { border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fbfcfe; }
+    .interval-track { position: relative; height: 30px; background: #eef2f7; border-radius: 999px; overflow: hidden; }
+    .interval-track.compact { height: 24px; }
+    .interval-zero { position: absolute; top: 0; bottom: 0; width: 1px; background: #98a2b3; }
+    .interval-band { position: absolute; top: 13px; height: 4px; border-radius: 999px; background: #475467; }
+    .interval-track.compact .interval-band { top: 10px; }
+    .interval-cap { position: absolute; top: 8px; width: 2px; height: 14px; margin-left: -1px; background: #475467; border-radius: 999px; }
+    .interval-track.compact .interval-cap { top: 6px; height: 12px; }
+    .interval-clip { position: absolute; top: 10px; width: 0; height: 0; z-index: 2; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+    .interval-track.compact .interval-clip { top: 7px; }
+    .interval-clip.left { left: 4px; border-right: 8px solid #475467; }
+    .interval-clip.right { right: 4px; border-left: 8px solid #475467; }
+    .interval-dot { position: absolute; top: 8px; width: 14px; height: 14px; margin-left: -7px; border-radius: 999px; background: var(--metric-color, var(--green)); border: 2px solid #fff; box-shadow: 0 0 0 1px color-mix(in srgb, var(--metric-color, var(--green)) 35%, transparent); }
+    .interval-track.compact .interval-dot { top: 5px; }
+    .interval-scale { display: flex; justify-content: space-between; gap: 8px; margin-top: 5px; color: var(--muted); font-size: 11px; }
+    .interval-axis { position: relative; height: 24px; margin: 4px 0 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .interval-axis span { position: absolute; top: 0; white-space: nowrap; }
+    .interval-axis .axis-min { left: 0; }
+    .interval-axis .axis-zero { transform: translateX(-50%); }
+    .interval-axis .axis-max { right: 0; }
+    .warning { border-left: 4px solid var(--amber); padding: 10px 12px; background: #fff7ed; color: #7c2d12; margin: 8px 0; }
+    .decision { border-left: 4px solid var(--green); padding: 12px 14px; background: #ecfdf3; margin: 10px 0 18px; }
+    .status-pill { display: inline-block; border-radius: 999px; padding: 2px 8px; font-weight: 700; font-size: 12px; border: 1px solid var(--line); background: #fbfcfe; }
+    .status-pill.pass { color: var(--green); background: #ecfdf3; border-color: #b7e4c7; }
+    .status-pill.fail { color: var(--red); background: #fff1f2; border-color: #fecdd3; }
+    .status-pill.warn { color: var(--amber); background: #fff7ed; border-color: #fed7aa; }
+    .status-pill.excluded { color: var(--muted); background: #f8fafc; }
+    tr.calibration-fail td { background: #fff8f8; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0 12px; color: var(--muted); font-size: 12px; }
+    .legend span::before { content: ""; display: inline-block; width: 18px; height: 3px; margin-right: 6px; vertical-align: middle; border-radius: 999px; background: currentColor; }
+    .legend .treatment { color: var(--green); }
+    .legend .control { color: var(--blue); }
+    .legend .margin { color: var(--amber); }
+    .chart-card { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: #fff; margin: 12px 0 18px; }
+    .chart-card svg { width: 100%; height: auto; display: block; overflow: visible; }
+    .chart-pair { display: grid; gap: 12px; }
+    .delta-chart { border-top: 1px solid var(--line); padding-top: 12px; }
+    .delta-title { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 4px; }
+    .delta-title strong { font-size: 13px; }
+    .axis-label { fill: var(--muted); font-size: 11px; }
+    .chart-title-row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .dot { fill: var(--ink); stroke: #fff; stroke-width: 2; }
+    .ci-line { stroke: var(--muted); stroke-width: 3; stroke-linecap: round; }
+    .posterior-band { border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; padding: 10px 12px; margin: 8px 0; }
+    .bayes-card { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: #fff; margin: 12px 0 18px; }
+    .bayes-stats { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 12px 0; }
+    .bayes-stat { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fbfcfe; }
+    .bayes-stat span { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .bayes-stat strong { display: block; margin-top: 3px; font-size: 18px; }
+    .bayes-chart-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 14px; }
+    .bayes-plot-title { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin: 12px 0 4px; }
+    .bayes-plot-title strong { font-size: 13px; }
+    .predictive-density .density-bar { fill: #7c3aed; opacity: .58; }
+    .predictive-density .predictive-interval { stroke: #475467; stroke-width: 4; stroke-linecap: round; }
+    .predictive-density .predictive-median { fill: #7c3aed; stroke: #fff; stroke-width: 2; }
+    .bayes-band { fill: #dbeafe; opacity: .78; }
+    .bayes-counterfactual { stroke: #2563eb; stroke-width: 2.3; stroke-dasharray: 4 4; fill: none; }
+    .bayes-observed { stroke: #087f5b; stroke-width: 2.5; fill: none; }
+    .bayes-effect { stroke: #7c3aed; stroke-width: 2.5; fill: none; }
+    .threshold-line { stroke: #b45309; stroke-width: 1.2; stroke-dasharray: 4 4; }
+    details { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; margin: 10px 0; }
+    summary { cursor: pointer; font-weight: 700; }
+    pre { overflow: auto; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); }
+    @media (max-width: 720px) {
+      header { padding: 24px 18px 14px; }
+      main { padding: 20px 16px 32px; }
+      .evidence-row { grid-template-columns: 1fr; }
+      .evidence-value { text-align: left; }
+      .evidence-subrows { margin-left: 0; }
+      .evidence-row.method .evidence-label { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>{{ report.title }}</h1>
+      <p class="muted">Completed geo experiment readout. Consensus is based on relative lift by independent evidence family; raw estimates are shown separately because estimators can report different units.</p>
+      <div class="deck">
+        <div class="stat"><span>Metrics</span><strong>{{ report.metric_groups|length }}</strong></div>
+        <div class="stat"><span>Estimator results</span><strong>{{ report.results|length }}</strong></div>
+        <div class="stat"><span>Treatment markets</span><strong>{{ report.design.treatment_geos|length if report.design.treatment_geos else "" }}</strong></div>
+        <div class="stat"><span>Control markets</span><strong>{{ report.design.control_geos|length if report.design.control_geos else "" }}</strong></div>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>Executive Readout</h2>
+      {% if report.metric_lift_chart %}
+      <div class="chart-card executive-evidence">
+        <div class="chart-title-row">
+          <h3>Metric Lift Comparison</h3>
+          <span class="muted">Shared percent-lift basis</span>
+        </div>
+        <p class="muted executive-note">Headline rows use the median of independent evidence-family representative lifts. Their line spans cross-method representative spread, not a confidence interval. Method rows underneath show each estimator's relative-lift point and interval on the same robust percent-lift axis. The vertical marker is zero lift.{% if report.combined_lift_interval_chart and report.combined_lift_interval_chart.clipped_interval_count %} Wide intervals are clipped at the track edge and marked with chevrons.{% endif %}</p>
+        <div class="interval-axis">
+          <span class="axis-min">{{ "%.1f%%"|format(report.metric_lift_chart.domain_min * 100) }}</span>
+          <span class="axis-zero" style="left: {{ '%.2f'|format(report.metric_lift_chart.zero_percent) }}%">0%</span>
+          <span class="axis-max">{{ "%.1f%%"|format(report.metric_lift_chart.domain_max * 100) }}</span>
+        </div>
+        {% for row in report.metric_lift_chart.rows %}
+        {% set metric_color = loop.cycle("#087f5b", "#2563eb", "#7c3aed", "#b45309", "#be123c") %}
+        <div class="metric-evidence" style="--metric-color: {{ metric_color }}">
+          <div class="evidence-row headline">
+            <div class="evidence-label">
+              <div class="evidence-title">{{ row.metric }}</div>
+              <div class="evidence-meta">headline median of independent evidence-family representatives</div>
+              <div class="evidence-badges">
+                <span>{{ row.independent_family_count }} evidence famil{% if row.independent_family_count == 1 %}y{% else %}ies{% endif %}</span>
+                <span>{{ row.estimator_count }} method result{% if row.estimator_count != 1 %}s{% endif %}</span>
+                {% if row.direction_agreement is not none %}
+                <span>{{ "%.0f%%"|format(row.direction_agreement * 100) }} direction agreement</span>
+                {% endif %}
+              </div>
+            </div>
+            <div>
+              <div class="interval-track">
+                <div class="interval-zero" style="left: {{ '%.2f'|format(row.zero_percent) }}%"></div>
+                <div class="interval-band" style="left: {{ '%.2f'|format(row.band_left_percent) }}%; width: {{ '%.2f'|format(row.band_width_percent) }}%"></div>
+                <div class="interval-cap" style="left: {{ '%.2f'|format(row.x_low_percent) }}%"></div>
+                <div class="interval-cap" style="left: {{ '%.2f'|format(row.x_high_percent) }}%"></div>
+                {% if row.low_clipped %}<div class="interval-clip left"></div>{% endif %}
+                {% if row.high_clipped %}<div class="interval-clip right"></div>{% endif %}
+                <div class="interval-dot" style="left: {{ '%.2f'|format(row.x_mid_percent) }}%"></div>
+              </div>
+            </div>
+            <div class="evidence-value">{{ "%.2f%%"|format(row.mid * 100) }}</div>
+          </div>
+          <div class="evidence-subrows">
+            {% if report.combined_lift_interval_chart %}
+              {% for method in report.combined_lift_interval_chart.rows if method.metric == row.metric %}
+              <div class="evidence-row method">
+                <div class="evidence-label">
+                  <div class="evidence-title"><code>{{ method.estimator_name }}</code></div>
+                  <div class="evidence-meta">{{ method.display_name }}{% if method.method_type %} · {{ method.method_type }}{% endif %}{% if method.independent_family %} · {{ method.independent_family }} family{% endif %}{% if method.uncertainty_label %} · {{ method.uncertainty_label }}{% endif %}</div>
+                </div>
+                <div class="interval-track compact">
+                  <div class="interval-zero" style="left: {{ '%.2f'|format(method.zero_percent) }}%"></div>
+                  {% if method.has_interval %}
+                  <div class="interval-band" style="left: {{ '%.2f'|format(method.band_left_percent) }}%; width: {{ '%.2f'|format(method.band_width_percent) }}%"></div>
+                  <div class="interval-cap" style="left: {{ '%.2f'|format(method.x_low_percent) }}%"></div>
+                  <div class="interval-cap" style="left: {{ '%.2f'|format(method.x_high_percent) }}%"></div>
+                  {% if method.low_clipped %}<div class="interval-clip left"></div>{% endif %}
+                  {% if method.high_clipped %}<div class="interval-clip right"></div>{% endif %}
+                  {% endif %}
+                  <div class="interval-dot" style="left: {{ '%.2f'|format(method.x_mid_percent) }}%"></div>
+                </div>
+                <div class="evidence-value">{{ "%.2f%%"|format(method.mid * 100) }}</div>
+              </div>
+              {% endfor %}
+            {% else %}
+              {% for group in report.metric_groups if group.metric == row.metric %}
+                {% for method in group.method_lift_rows %}
+                <div class="evidence-row method">
+                  <div class="evidence-label">
+                    <div class="evidence-title"><code>{{ method.estimator_name }}</code></div>
+                    <div class="evidence-meta">{{ method.display_name }}{% if method.method_type %} · {{ method.method_type }}{% endif %}{% if method.independent_family %} · {{ method.independent_family }} family{% endif %}{% if method.uncertainty_label %} · {{ method.uncertainty_label }}{% endif %}</div>
+                  </div>
+                  <div class="interval-track compact">
+                    <div class="interval-zero" style="left: {{ '%.2f'|format(method.zero_percent) }}%"></div>
+                    {% if method.has_interval %}
+                    <div class="interval-band" style="left: {{ '%.2f'|format(method.band_left_percent) }}%; width: {{ '%.2f'|format(method.band_width_percent) }}%"></div>
+                    <div class="interval-cap" style="left: {{ '%.2f'|format(method.x_low_percent) }}%"></div>
+                    <div class="interval-cap" style="left: {{ '%.2f'|format(method.x_high_percent) }}%"></div>
+                    {% if method.low_clipped %}<div class="interval-clip left"></div>{% endif %}
+                    {% if method.high_clipped %}<div class="interval-clip right"></div>{% endif %}
+                    {% endif %}
+                    <div class="interval-dot" style="left: {{ '%.2f'|format(method.x_mid_percent) }}%"></div>
+                  </div>
+                  <div class="evidence-value">{{ "%.2f%%"|format(method.mid * 100) }}</div>
+                </div>
+                {% endfor %}
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    {% if report.time_series_charts %}
+    <section>
+      <h2>Metric Time Series</h2>
+      <p class="muted">Treatment and control are indexed to each group's pre-period baseline of 100. This makes level differences easier to separate from movement during the test.</p>
+      <div class="legend"><span class="treatment">Treatment</span><span class="control">Control</span><span class="margin">Test start</span></div>
+      {% for chart in report.time_series_charts %}
+      <div class="chart-card">
+        <div class="chart-title-row">
+          <h3>{{ chart.metric }}</h3>
+          <span class="muted">{{ chart.frequency }} points · {{ chart.first_date }} to {{ chart.last_date }} · {{ chart.unit }}</span>
+        </div>
+        <div class="chart-pair">
+          <svg viewBox="0 0 760 220" role="img" aria-label="{{ chart.metric }} indexed time series">
+            <line x1="48" y1="{{ '%.2f'|format(chart.baseline_y) }}" x2="742" y2="{{ '%.2f'|format(chart.baseline_y) }}" stroke="#cbd5e1" stroke-dasharray="4 5"/>
+            {% if chart.post_x is not none %}
+            <line x1="{{ '%.2f'|format(chart.post_x) }}" y1="18" x2="{{ '%.2f'|format(chart.post_x) }}" y2="190" stroke="#b45309" stroke-dasharray="5 5"/>
+            {% endif %}
+            <path d="{{ chart.control_path }}" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+            <path d="{{ chart.treatment_path }}" fill="none" stroke="#087f5b" stroke-width="2.5"/>
+            <text x="8" y="24" class="axis-label">{{ "%.1f"|format(chart.y_max) }}</text>
+            <text x="8" y="{{ '%.2f'|format(chart.baseline_y + 4) }}" class="axis-label">100</text>
+            <text x="8" y="192" class="axis-label">{{ "%.1f"|format(chart.y_min) }}</text>
+            <text x="48" y="214" class="axis-label">{{ chart.first_date }}</text>
+            <text x="650" y="214" class="axis-label">{{ chart.last_date }}</text>
+          </svg>
+          {% if chart.delta_chart %}
+          <div class="delta-chart">
+            <div class="delta-title">
+              <strong>Daily Treatment-Control Delta</strong>
+              <span class="muted">indexed points · treatment minus control</span>
+            </div>
+            <svg viewBox="0 0 760 150" role="img" aria-label="{{ chart.metric }} daily treatment-control index delta">
+              <line x1="48" y1="{{ '%.2f'|format(chart.delta_chart.zero_y) }}" x2="742" y2="{{ '%.2f'|format(chart.delta_chart.zero_y) }}" stroke="#98a2b3" stroke-width="1"/>
+              {% if chart.delta_chart.post_x is not none %}
+              <line x1="{{ '%.2f'|format(chart.delta_chart.post_x) }}" y1="14" x2="{{ '%.2f'|format(chart.delta_chart.post_x) }}" y2="122" stroke="#b45309" stroke-dasharray="5 5"/>
+              {% endif %}
+              {% for bar in chart.delta_chart.bars %}
+              <rect x="{{ '%.2f'|format(bar.x) }}" y="{{ '%.2f'|format(bar.y) }}" width="{{ '%.2f'|format(bar.width) }}" height="{{ '%.2f'|format(bar.height) }}" fill="{% if bar.direction == 'positive' %}#087f5b{% else %}#be123c{% endif %}" opacity="{% if bar.class == 'post' %}0.82{% else %}0.34{% endif %}"/>
+              {% endfor %}
+              <text x="8" y="20" class="axis-label">{{ "%.1f"|format(chart.delta_chart.y_max) }}</text>
+              <text x="8" y="{{ '%.2f'|format(chart.delta_chart.zero_y + 4) }}" class="axis-label">0</text>
+              <text x="8" y="124" class="axis-label">{{ "%.1f"|format(chart.delta_chart.y_min) }}</text>
+              <text x="48" y="144" class="axis-label">{{ chart.delta_chart.first_date }}</text>
+              <text x="650" y="144" class="axis-label">{{ chart.delta_chart.last_date }}</text>
+            </svg>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if report.methodology_status %}
+    <section>
+      <h2>Methodology Configuration</h2>
+      {% if report.methodology_warnings %}
+      <ul class="warnings">
+        {% for warning in report.methodology_warnings %}
+        <li>{{ warning }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      <table>
+        <thead><tr><th>Area</th><th>Status</th><th>Configured</th><th>Run methods</th><th>Not run</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Inference</td>
+            <td>{{ report.methodology_status.inference.status }}</td>
+            <td>{{ report.methodology_status.inference.configured.methods|join(", ") }}</td>
+            <td>{{ report.methodology_status.inference.run_methods|join(", ") }}</td>
+            <td>{{ report.methodology_status.inference.not_run_methods|join(", ") }}</td>
+          </tr>
+          <tr>
+            <td>Calibration</td>
+            <td>{{ report.methodology_status.calibration.status }}</td>
+            <td>placebos {{ report.methodology_status.calibration.configured.placebo_windows }}, injections {{ report.methodology_status.calibration.configured.injected_lifts|length }}</td>
+            <td>{{ report.methodology_status.calibration.run_methods|join(", ") }}</td>
+            <td>{{ report.methodology_status.calibration.not_run_methods|join(", ") }}</td>
+          </tr>
+          <tr>
+            <td>Monitoring</td>
+            <td>{{ report.methodology_status.monitoring.status }}</td>
+            <td>{{ report.methodology_status.monitoring.configured.mode }}</td>
+            <td>{{ report.methodology_status.monitoring.run_methods|join(", ") }}</td>
+            <td>{{ report.methodology_status.monitoring.not_run_methods|join(", ") }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
+    {% if report.calibration_rows %}
+    <section>
+      <h2>Calibration Evidence</h2>
+      {% if report.calibration_failures %}
+      <div class="warning">{{ report.calibration_failures|length }} placebo validation result{% if report.calibration_failures|length != 1 %}s{% endif %} failed. Treat affected estimator outputs as calibration risks until the reason is resolved.</div>
+      {% endif %}
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Estimator</th>
+            <th>Check</th>
+            <th>Status</th>
+            <th>False positive</th>
+            <th>Coverage</th>
+            <th>Bias</th>
+            <th>RMSE</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for row in report.calibration_rows %}
+          <tr class="{% if row.status == 'fail' %}calibration-fail{% endif %}">
+            <td>{{ row.metric }}</td>
+            <td><code>{{ row.estimator_name }}</code></td>
+            <td>{{ row.method }}</td>
+            <td><span class="status-pill {{ row.status_class }}">{{ row.status_label }}</span></td>
+            <td>{% if row.placebo_false_positive_rate is not none %}{{ "%.1f%%"|format(row.placebo_false_positive_rate * 100) }}{% endif %}</td>
+            <td>{% if row.coverage is not none %}{{ "%.1f%%"|format(row.coverage * 100) }}{% endif %}</td>
+            <td>{% if row.bias is not none %}{{ "%.4g"|format(row.bias) }}{% endif %}</td>
+            <td>{% if row.rmse is not none %}{{ "%.4g"|format(row.rmse) }}{% endif %}</td>
+            <td>{{ row.status_reason or "" }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
+    {% if report.decision_summary %}
+    <section>
+      <h2>Decision Summary</h2>
+      <div class="decision">
+        {% if report.decision_summary is string %}
+          {{ report.decision_summary }}
+        {% else %}
+	          <p><strong>Framework</strong>: {{ report.decision_summary.framework }} on {{ report.decision_summary.effect_scale }}{% if report.decision_summary.alpha is not none %} · alpha {{ "%.3f"|format(report.decision_summary.alpha) }}{% endif %}</p>
+	          {% if report.decision_summary.metric_results %}
+	          <table>
+	            <thead><tr><th>Metric</th><th>Decision value</th><th>Margin</th><th>Decision p-value</th><th>Uncertainty</th><th>Status</th></tr></thead>
+	            <tbody>
+	            {% for metric, item in report.decision_summary.metric_results.items() %}
+	              <tr>
+                <td>{{ metric }}</td>
+                <td>
+                  {% if report.decision_summary.effect_scale == "relative_lift" and item.effect_value is not none %}
+                    {{ "%.2f%%"|format(item.effect_value * 100) }}
+                  {% elif item.effect_value is not none %}
+                    {{ "%.4g"|format(item.effect_value) }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if report.decision_summary.effect_scale == "relative_lift" %}
+                    {{ "%.2f%%"|format(item.margin * 100) }}
+                  {% else %}
+	                    {{ "%.4g"|format(item.margin) }}
+	                  {% endif %}
+	                </td>
+	                <td>{% if item.decision_p_value is not none %}{{ "%.4f"|format(item.decision_p_value) }}{% endif %}</td>
+	                <td>{{ item.uncertainty_status }}{% if item.interval_status %}<br><span class="muted">{{ item.interval_status }}</span>{% endif %}</td>
+	                <td>{{ item.status }}</td>
+	              </tr>
+	            {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+          <p class="muted">{{ report.decision_summary.bayesian_note }}</p>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if report.bayesian_summaries %}
+    <section>
+      <h2>Bayesian Evidence</h2>
+      <p class="muted">Predictive readouts show the distribution of relative lift, decision probabilities, and the state-space counterfactual forecast with simulation bands. FieldTrial's native Bayesian time-series estimator uses state-space counterfactual forecasting with joint predictive simulation; external CausalPy/PyMC adapters remain explicitly labeled optional backends.</p>
+      {% for item in report.bayesian_summaries %}
+      <div class="bayes-card">
+        <div class="chart-title-row">
+          <h3>{{ item.metric }}</h3>
+          <span class="muted">{{ item.display_name }}</span>
+        </div>
+        <div class="bayes-stats">
+          <div class="bayes-stat"><span>Predictive median lift</span><strong>{{ "%.2f%%"|format(item.summary.q50 * 100) }}</strong></div>
+          <div class="bayes-stat"><span>90% predictive interval</span><strong>{{ "%.2f%%"|format(item.summary.q05 * 100) }} to {{ "%.2f%%"|format(item.summary.q95 * 100) }}</strong></div>
+          {% if item.probability_above_zero is not none %}
+          <div class="bayes-stat"><span>P(lift &gt; 0)</span><strong>{{ "%.0f%%"|format(item.probability_above_zero * 100) }}</strong></div>
+          {% endif %}
+          {% if item.probability_above_margin is not none and item.decision_margin is not none %}
+          <div class="bayes-stat"><span>P(lift &gt; margin)</span><strong>{{ "%.0f%%"|format(item.probability_above_margin * 100) }}</strong></div>
+          {% endif %}
+          {% if item.probability_direction is not none %}
+          <div class="bayes-stat"><span>Probability of direction</span><strong>{{ "%.0f%%"|format(item.probability_direction * 100) }}</strong></div>
+          {% endif %}
+        </div>
+        {% if item.density_chart %}
+        <div class="bayes-plot-title">
+          <strong>Predictive Relative Lift</strong>
+          <span class="muted">{{ item.summary.draw_count }} predictive draws · margin {{ "%.2f%%"|format(item.decision_margin * 100) }}</span>
+        </div>
+        <svg class="predictive-density" viewBox="0 0 760 {{ '%.0f'|format(item.density_chart.height) }}" role="img" aria-label="{{ item.metric }} predictive relative lift distribution">
+          {% for bar in item.density_chart.bars %}
+          <rect class="density-bar" x="{{ '%.2f'|format(bar.x) }}" y="{{ '%.2f'|format(bar.y) }}" width="{{ '%.2f'|format(bar.width) }}" height="{{ '%.2f'|format(bar.height) }}"/>
+          {% endfor %}
+          <line x1="{{ '%.2f'|format(item.density_chart.zero_x) }}" y1="18" x2="{{ '%.2f'|format(item.density_chart.zero_x) }}" y2="140" stroke="#98a2b3" stroke-width="1"/>
+          {% if item.density_chart.margin_x is not none %}
+          <line x1="{{ '%.2f'|format(item.density_chart.margin_x) }}" y1="18" x2="{{ '%.2f'|format(item.density_chart.margin_x) }}" y2="140" class="threshold-line"/>
+          {% endif %}
+          {% if item.density_chart.q05_x is not none and item.density_chart.q95_x is not none %}
+          <line x1="{{ '%.2f'|format(item.density_chart.q05_x) }}" y1="138" x2="{{ '%.2f'|format(item.density_chart.q95_x) }}" y2="138" class="predictive-interval"/>
+          {% endif %}
+          {% if item.density_chart.q50_x is not none %}
+          <circle cx="{{ '%.2f'|format(item.density_chart.q50_x) }}" cy="138" r="6" class="predictive-median"/>
+          {% endif %}
+          <text x="48" y="162" class="axis-label">{{ item.density_chart.x_min_label }}</text>
+          <text x="690" y="162" class="axis-label">{{ item.density_chart.x_max_label }}</text>
+          <text x="{{ '%.2f'|format(item.density_chart.zero_x) }}" y="16" class="axis-label">0</text>
+          {% if item.density_chart.margin_x is not none %}
+          <text x="{{ '%.2f'|format(item.density_chart.margin_x) }}" y="32" class="axis-label">margin</text>
+          {% endif %}
+        </svg>
+        {% endif %}
+        {% if item.forecast_chart or item.cumulative_effect_chart %}
+        <div class="bayes-chart-grid">
+          {% if item.forecast_chart %}
+          <div>
+            <div class="bayes-plot-title">
+              <strong>Predictive Counterfactual</strong>
+              <span class="muted">{{ item.forecast_chart.first_date }} to {{ item.forecast_chart.last_date }}</span>
+            </div>
+            <svg viewBox="0 0 760 {{ '%.0f'|format(item.forecast_chart.height) }}" role="img" aria-label="{{ item.metric }} Bayesian counterfactual with predictive band">
+              {% if item.forecast_chart.band_path %}<path d="{{ item.forecast_chart.band_path }}" class="bayes-band"/>{% endif %}
+              <path d="{{ item.forecast_chart.mean_path }}" class="bayes-counterfactual"/>
+              <path d="{{ item.forecast_chart.observed_path }}" class="bayes-observed"/>
+              <text x="8" y="24" class="axis-label">{{ "%.1f"|format(item.forecast_chart.y_max) }}</text>
+              <text x="8" y="{{ '%.2f'|format(item.forecast_chart.height - 32) }}" class="axis-label">{{ "%.1f"|format(item.forecast_chart.y_min) }}</text>
+              <text x="48" y="{{ '%.2f'|format(item.forecast_chart.height - 8) }}" class="axis-label">{{ item.forecast_chart.first_date }}</text>
+              <text x="650" y="{{ '%.2f'|format(item.forecast_chart.height - 8) }}" class="axis-label">{{ item.forecast_chart.last_date }}</text>
+            </svg>
+          </div>
+          {% endif %}
+          {% if item.cumulative_effect_chart %}
+          <div>
+            <div class="bayes-plot-title">
+              <strong>Cumulative Predictive Effect</strong>
+              <span class="muted">mean and 90% predictive band</span>
+            </div>
+            <svg viewBox="0 0 760 {{ '%.0f'|format(item.cumulative_effect_chart.height) }}" role="img" aria-label="{{ item.metric }} Bayesian cumulative effect with predictive band">
+              {% if item.cumulative_effect_chart.band_path %}<path d="{{ item.cumulative_effect_chart.band_path }}" class="bayes-band"/>{% endif %}
+              <line x1="48" y1="{{ '%.2f'|format(item.cumulative_effect_chart.zero_y) }}" x2="742" y2="{{ '%.2f'|format(item.cumulative_effect_chart.zero_y) }}" stroke="#98a2b3" stroke-width="1"/>
+              <path d="{{ item.cumulative_effect_chart.mean_path }}" class="bayes-effect"/>
+              <text x="8" y="24" class="axis-label">{{ "%.1f"|format(item.cumulative_effect_chart.y_max) }}</text>
+              <text x="8" y="{{ '%.2f'|format(item.cumulative_effect_chart.zero_y + 4) }}" class="axis-label">0</text>
+              <text x="8" y="{{ '%.2f'|format(item.cumulative_effect_chart.height - 32) }}" class="axis-label">{{ "%.1f"|format(item.cumulative_effect_chart.y_min) }}</text>
+              <text x="48" y="{{ '%.2f'|format(item.cumulative_effect_chart.height - 8) }}" class="axis-label">{{ item.cumulative_effect_chart.first_date }}</text>
+              <text x="650" y="{{ '%.2f'|format(item.cumulative_effect_chart.height - 8) }}" class="axis-label">{{ item.cumulative_effect_chart.last_date }}</text>
+            </svg>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <section>
+      <h2>Experiment Setup</h2>
+      {% if report.has_design_context %}
+      <table>
+        <tbody>
+          <tr><th>Experiment</th><td><code>{{ report.design.experiment_id or report.design.name or "" }}</code></td></tr>
+          <tr><th>Test window</th><td>{{ report.design.start_date or "" }}{% if report.design.end_date %} to {{ report.design.end_date }}{% endif %}</td></tr>
+          <tr><th>Pre-period</th><td>{{ report.design.pre_period_start or report.design.pre_start or "" }}{% if report.design.pre_period_end or report.design.pre_end %} to {{ report.design.pre_period_end or report.design.pre_end }}{% endif %}</td></tr>
+          <tr><th>Treatment geos</th><td>{{ report.design.treatment_geos|join(", ") if report.design.treatment_geos else "" }}</td></tr>
+          <tr><th>Control geos</th><td>{{ report.design.control_geos|join(", ") if report.design.control_geos else "" }}</td></tr>
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted">No experiment design metadata was included with these estimator results.</p>
+      {% endif %}
+    </section>
+
+	    <section>
+	      <h2>Estimator Detail</h2>
+	      <table>
+	        <thead>
+	          <tr>
+	            <th>Metric</th>
+	            <th>Estimator</th>
+	            <th>Family</th>
+	            <th>Status</th>
+	            <th>Estimand</th>
+	            <th>Estimate</th>
+	            <th>Relative lift</th>
+	            <th>Interval</th>
+	            <th>P-value</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for result in report.results %}
+          <tr>
+	            <td>{{ result.metric }}</td>
+	            <td><code>{{ result.estimator_name }}</code></td>
+	            <td>{{ result.independent_family or result.method_family or "" }}</td>
+	            <td>{{ result.implementation_status or "" }}</td>
+	            <td>{{ result.estimand }}</td>
+            <td>{{ "%.4f"|format(result.estimate) }}</td>
+            <td>{% if result.relative_lift is not none %}{{ "%.2f%%"|format(result.relative_lift * 100) }}{% endif %}</td>
+            <td>{% if result.interval %}[{{ "%.4f"|format(result.interval[0]) }}, {{ "%.4f"|format(result.interval[1]) }}]{% endif %}</td>
+            <td>{% if result.p_value is not none %}{{ "%.4f"|format(result.p_value) }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+	      </table>
+	    </section>
+
+	    <section>
+	      <h2>Evidence Families</h2>
+	      {% for group in report.metric_groups %}
+	      <h3>{{ group.metric }}</h3>
+	      <table>
+	        <thead><tr><th>Family</th><th>Representative lift</th><th>Estimator count</th><th>Estimators</th><th>Key assumptions</th><th>Failure modes</th></tr></thead>
+	        <tbody>
+	        {% for family in group.families %}
+	          <tr>
+	            <td>{{ family.family }}</td>
+	            <td>{% if family.representative_relative_lift is not none %}{{ "%.2f%%"|format(family.representative_relative_lift * 100) }}{% endif %}</td>
+	            <td>{{ family.estimator_count }}</td>
+	            <td>{{ family.estimators|join(", ") }}</td>
+	            <td>{{ family.assumptions[:2]|join("; ") }}</td>
+	            <td>{{ family.failure_modes[:2]|join("; ") }}</td>
+	          </tr>
+	        {% endfor %}
+	        </tbody>
+	      </table>
+	      {% endfor %}
+	    </section>
+
+	    <section>
+	      <h2>Inference Details</h2>
+	      <table>
+        <thead><tr><th>Metric</th><th>Estimator</th><th>Method</th><th>Interval type</th><th>Interval</th><th>P-value</th><th>Adjusted p-value</th><th>Effect probability</th></tr></thead>
+	        <tbody>
+	        {% for result in report.results %}
+	          {% for inference in result.inference_results or [] %}
+	          <tr>
+	            <td>{{ result.metric }}</td>
+	            <td><code>{{ result.estimator_name }}</code></td>
+	            <td>{{ inference.method }}</td>
+	            <td>{{ inference.interval_type or inference.method_family }}</td>
+	            <td>{% if inference.interval %}[{{ "%.4f"|format(inference.interval[0]) }}, {{ "%.4f"|format(inference.interval[1]) }}]{% endif %}</td>
+	            <td>{% if inference.p_value is not none %}{{ "%.4f"|format(inference.p_value) }}{% endif %}</td>
+	            <td>{% if inference.adjusted_p_value is not none %}{{ "%.4f"|format(inference.adjusted_p_value) }}{% endif %}</td>
+	            <td>{% if inference.posterior_probability is not none %}{{ "%.1f%%"|format(inference.posterior_probability * 100) }}{% endif %}</td>
+	          </tr>
+	          {% endfor %}
+	        {% endfor %}
+	        </tbody>
+	      </table>
+	    </section>
+
+    {% if report.warnings %}
+    <section>
+      <h2>Warnings</h2>
+      {% for warning in report.warnings %}
+      <div class="warning">{{ warning }}</div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if report.errors %}
+    <section>
+      <h2>Skipped or Failed Estimators</h2>
+      <table>
+        <thead><tr><th>Metric</th><th>Estimator</th><th>Error</th><th>Message</th></tr></thead>
+        <tbody>
+        {% for error in report.errors %}
+          <tr><td>{{ error.metric or "" }}</td><td><code>{{ error.estimator_name }}</code></td><td>{{ error.error_type }}</td><td>{{ error.message }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
+    <section>
+      <h2>Diagnostics</h2>
+      {% for result in report.results %}
+      <details>
+        <summary>{{ result.metric }} · {{ result.estimator_name }}</summary>
+        <pre>{{ result.diagnostics | tojson(indent=2) }}</pre>
+      </details>
+      {% endfor %}
+    </section>
+
+    <section>
+      <h2>Machine-Readable Consensus</h2>
+      <pre>{{ report.consensus | tojson(indent=2) }}</pre>
+    </section>
+  </main>
+  <script type="application/json" id="fieldtrial-report-data">{{ embedded_report | tojson }}</script>
+</body>
+</html>

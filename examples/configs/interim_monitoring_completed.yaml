@@ -1,0 +1,31 @@
+experiment_id: "interim_growth_read"
+name: "Interim Growth Read"
+domain: "lifecycle"
+start_date: "2027-08-01"
+end_date: "2027-08-28"
+pre_period_start: "2027-05-01"
+pre_period_end: "2027-07-31"
+treatment_geos: ["dma_001", "dma_002", "dma_003"]
+control_geos: ["dma_020", "dma_021", "dma_022", "dma_023", "dma_024"]
+primary_metrics: ["orders"]
+metrics:
+  orders:
+    type: "count"
+    column: "orders"
+test_framework:
+  kind: "superiority"
+  effect_scale: "relative_lift"
+  default_margin: 0.02
+  alpha: 0.05
+estimator_suite:
+  estimators: ["did", "ratio_delta", "block_bootstrap"]
+inference:
+  methods: ["estimator_default", "confidence_sequence"]
+  confidence: 0.95
+monitoring:
+  mode: "planned_looks"
+  look_dates: ["2027-08-07", "2027-08-14", "2027-08-21", "2027-08-28"]
+  information_fractions: [0.25, 0.5, 0.75, 1.0]
+  alpha_spending: "obrien_fleming"
+  warn_on_unplanned_peeking: true
+

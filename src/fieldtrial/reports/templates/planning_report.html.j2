@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ report.title }}</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #667085;
+      --line: #d8dee8;
+      --soft: #f6f8fb;
+      --soft-2: #edf4ff;
+      --blue: #2463eb;
+      --green: #087f5b;
+      --amber: #b45309;
+      --rose: #be123c;
+      --slate: #344054;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #ffffff;
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      padding: 34px 34px 20px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    }
+    main { max-width: 1220px; margin: 0 auto; padding: 26px 28px 44px; }
+    .header-inner { max-width: 1220px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: 32px; line-height: 1.15; letter-spacing: 0; }
+    h2 { margin: 32px 0 10px; font-size: 21px; line-height: 1.2; }
+    h3 { margin: 20px 0 8px; font-size: 16px; }
+    p { margin: 6px 0 12px; }
+    .muted { color: var(--muted); }
+    .deck { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); margin: 22px 0 8px; }
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 15px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    }
+    .stat span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .stat strong { display: block; margin-top: 4px; font-size: 24px; line-height: 1.15; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 20px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px 9px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; background: #fbfcfe; }
+    tr.recommended { background: #f3fbf8; }
+    code { background: var(--soft); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+    .pill { display: inline-block; margin: 0 5px 5px 0; border-radius: 999px; padding: 3px 8px; background: var(--soft); border: 1px solid var(--line); white-space: nowrap; }
+    .pill.good { background: #ecfdf3; color: var(--green); border-color: #abefc6; }
+    .pill.blue { background: var(--soft-2); color: var(--blue); border-color: #bfd7ff; }
+    .pill.warn { background: #fff7ed; color: var(--amber); border-color: #fed7aa; }
+    .section-note { color: var(--muted); max-width: 820px; }
+    .two-col { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .panel { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: #fff; }
+    .bar-row { display: grid; grid-template-columns: minmax(110px, 180px) 1fr 44px; gap: 8px; align-items: center; margin: 7px 0; }
+    .bar-track { height: 10px; background: #edf0f5; border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--blue); border-radius: 999px; }
+    .mde-chip { display: inline-block; min-width: 88px; margin: 2px 4px 2px 0; padding: 4px 7px; border-radius: 6px; background: #f8fafc; border: 1px solid var(--line); }
+    .market-list { columns: 2; column-gap: 24px; margin: 8px 0 0; padding: 0; list-style: none; }
+    .market-list li { break-inside: avoid; margin: 0 0 6px; }
+    .warning { border-left: 4px solid var(--amber); padding: 10px 12px; background: #fff7ed; color: #7c2d12; margin: 8px 0; }
+    .calendar-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 8px 0 12px; }
+    .calendar-legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+    .calendar-swatch { width: 13px; height: 13px; border: 1px solid rgba(23, 32, 42, 0.16); border-radius: 3px; }
+    .calendar-shell { border: 1px solid var(--line); border-radius: 8px; background: #fff; overflow: hidden; }
+    .calendar-scroll { overflow-x: auto; }
+    .calendar-week-row,
+    .calendar-market-row {
+      display: grid;
+      grid-template-columns: 168px repeat(var(--week-count), minmax(18px, 1fr));
+      min-width: var(--calendar-width);
+    }
+    .calendar-week-row { background: #fbfcfe; border-bottom: 1px solid var(--line); }
+    .calendar-corner,
+    .calendar-week {
+      min-height: 34px;
+      border-right: 1px solid var(--line);
+      padding: 6px 7px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+    }
+    .calendar-corner { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .calendar-market-label {
+      height: var(--row-height);
+      min-height: var(--row-height);
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      overflow: hidden;
+      background: #fff;
+      font-size: 12px;
+      line-height: 1.15;
+    }
+    .calendar-market-label.hidden-text code,
+    .calendar-market-label.hidden-text span { opacity: 0; }
+    .calendar-market-label code { flex: 0 0 auto; }
+    .calendar-market-label span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .calendar-cell {
+      height: var(--row-height);
+      min-height: var(--row-height);
+      border-right: 1px solid rgba(255, 255, 255, 0.72);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.72);
+      position: relative;
+    }
+    .calendar-cell:hover { outline: 2px solid var(--ink); outline-offset: -2px; z-index: 2; }
+    .state-unused { background: #eef2f6; }
+    .state-pre-period { background: #fde68a; }
+    .state-treatment { background: #0f766e; }
+    .state-post-period { background: #c7d2fe; }
+    .state-control { background: #2563eb; }
+    details { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; margin: 10px 0; }
+    summary { cursor: pointer; font-weight: 700; }
+    pre { overflow: auto; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); }
+    @media (max-width: 720px) {
+      header { padding: 24px 18px 14px; }
+      main { padding: 20px 16px 32px; }
+      .market-list { columns: 1; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>{{ report.title }}</h1>
+      <p class="muted">Portfolio planning report. Shared controls are allowed only within policy; treatment overlap and treatment/control conflicts are blocked.</p>
+      <div class="deck">
+        <div class="stat"><span>Recommended tests</span><strong>{{ report.selected_tests|length }}</strong></div>
+        <div class="stat"><span>Alternatives retained</span><strong>{{ report.candidate_rows|length - report.selected_tests|length }}</strong></div>
+        <div class="stat"><span>Assignment rows shown</span><strong>{{ report.assignments|length }}</strong></div>
+        <div class="stat"><span>Warnings</span><strong>{{ report.warnings|length }}</strong></div>
+      </div>
+    </div>
+  </header>
+  <main>
+    {% if report.warnings %}
+    <section>
+      <h2>Things To Check</h2>
+      {% for warning in report.warnings %}
+      <div class="warning">{{ warning }}</div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if report.portfolio_calendar and report.portfolio_calendar.rows %}
+    <section>
+      <h2>Portfolio Test Calendar</h2>
+      <div class="calendar-legend">
+        {% for item in report.portfolio_calendar.legend %}
+        <span title="{{ item.description }}"><span class="calendar-swatch {{ item.class }}"></span>{{ item.label }}</span>
+        {% endfor %}
+      </div>
+      {% set week_count = report.portfolio_calendar.weeks|length %}
+      {% set calendar_min_width = 168 + (week_count * 22) %}
+      <div class="calendar-shell" style="--week-count: {{ week_count }}; --calendar-width: {{ calendar_min_width }}px;">
+        <div class="calendar-scroll">
+          <div class="calendar-week-row">
+            <div class="calendar-corner">Market</div>
+            {% for week in report.portfolio_calendar.weeks %}
+            <div class="calendar-week" title="{{ week.start_date }} to {{ week.end_date }}">{% if week.show_label %}{{ week.label }}{% endif %}</div>
+            {% endfor %}
+          </div>
+          {% for row in report.portfolio_calendar.rows %}
+          <div class="calendar-market-row" style="--row-height: {{ '%.2f'|format(row.height_px) }}px;">
+            <div class="calendar-market-label{% if not row.label_visible %} hidden-text{% endif %}" title="{{ row.label }} | {{ row.market }} | volume {{ row.volume_label }}">
+              <code>{{ row.market }}</code><span>{{ row.label }}</span>
+            </div>
+            {% for cell in row.cells %}
+            <div class="calendar-cell {{ cell.state_class }}" title="{{ cell.tooltip }}" aria-label="{{ cell.tooltip }}"></div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <section>
+      <h2>Recommended Configuration</h2>
+      <p class="section-note">This is the optimizer's selected design. MDEs are relative effect sizes by metric; lower is better. The score is priority adjusted by the configured MDE and control-pool penalties.</p>
+      {% if report.selected_candidate_rows %}
+      {% for candidate in report.selected_candidate_rows %}
+      <div class="panel">
+        <h3>{{ candidate.test_name }} <span class="pill good">recommended</span></h3>
+	        <div class="deck">
+	          <div class="stat"><span>Window</span><strong>{{ candidate.start_date }} to {{ candidate.end_date }}</strong></div>
+	          <div class="stat"><span>Treatment markets</span><strong>{{ candidate.treatment_count }}</strong></div>
+	          <div class="stat"><span>Control markets</span><strong>{{ candidate.control_count }}</strong></div>
+	          <div class="stat"><span>Worst MDE</span><strong>{% if candidate.worst_mde is not none %}{{ "%.1f%%"|format(candidate.worst_mde * 100) }}{% endif %}</strong></div>
+	          <div class="stat"><span>Framework</span><strong>{{ (candidate.test_framework.kind or "superiority")|replace("_", " ") }}</strong></div>
+	          <div class="stat"><span>Assignment</span><strong>{{ (candidate.assignment_policy.kind or "fixed_treatment_count")|replace("_", " ") }}</strong></div>
+	        </div>
+	        {% if candidate.test_framework %}
+	        <p class="muted">Decision scale: {{ candidate.test_framework.effect_scale or "relative_lift" }}. Default margin {{ "%.1f%%"|format((candidate.test_framework.default_margin or 0) * 100) }}.</p>
+	        {% endif %}
+	        {% if candidate.balance_diagnostics %}
+	        <h3>Balance Diagnostics</h3>
+	        {% set selected_smd = candidate.balance_diagnostics.standardized_mean_difference|default(none) %}
+	        {% set selected_vr = candidate.balance_diagnostics.variance_ratio|default(none) %}
+	        {% set selected_trend = candidate.balance_diagnostics.pre_period_trend_difference|default(none) %}
+	        <table>
+	          <thead><tr><th>Metric</th><th>SMD</th><th>Variance ratio</th><th>Trend difference</th><th>Warnings</th></tr></thead>
+	          <tbody>
+	            <tr>
+	              <td>{{ candidate.balance_diagnostics.metric or "" }}</td>
+	              <td>{% if selected_smd is not none %}{{ "%.3f"|format(selected_smd) }}{% endif %}</td>
+	              <td>{% if selected_vr is not none %}{{ "%.3f"|format(selected_vr) }}{% endif %}</td>
+	              <td>{% if selected_trend is not none %}{{ "%.3f"|format(selected_trend) }}{% endif %}</td>
+	              <td>{{ (candidate.balance_diagnostics.warnings or [])|join(", ") }}</td>
+	            </tr>
+	          </tbody>
+	        </table>
+	        {% endif %}
+	        <h3>Metric MDEs</h3>
+        {% for metric, value in candidate.metric_mde.items() %}
+        <span class="mde-chip">{{ metric }}: <strong>{{ "%.1f%%"|format(value * 100) }}</strong></span>
+        {% endfor %}
+        <h3>Score Components</h3>
+        <table>
+          <thead><tr><th>Component</th><th>Value</th></tr></thead>
+          <tbody>
+          {% for key, value in candidate.score_components.items() %}
+            <tr><td>{{ key }}</td><td>{{ "%.3f"|format(value) }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="muted">No selected candidate was available.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Recommended Versus Alternatives</h2>
+      <p class="section-note">Use this table to compare the chosen design with near alternatives. A rejected alternative can still be useful if it has better balance or lower MDE on a metric your team cares about.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Candidate</th>
+            <th>Window</th>
+	            <th>Markets</th>
+	            <th>Balance</th>
+	            <th>MDEs</th>
+	            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for candidate in report.candidate_rows %}
+          <tr class="{{ 'recommended' if candidate.selected else '' }}">
+            <td>{{ candidate.status }}</td>
+            <td><code>{{ candidate.candidate_id }}</code><br>{{ candidate.test_name }}</td>
+	            <td>{{ candidate.start_date }} to {{ candidate.end_date }}<br><span class="muted">{{ candidate.duration_days }} days</span></td>
+	            <td><span class="pill blue">T {{ candidate.treatment_count }}</span><span class="pill">C {{ candidate.control_count }}</span></td>
+	            <td>
+	              {% set smd = candidate.balance_diagnostics.standardized_mean_difference|default(none) %}
+	              {% set vr = candidate.balance_diagnostics.variance_ratio|default(none) %}
+	              {% if smd is not none %}
+	              SMD {{ "%.2f"|format(smd) }}
+	              {% endif %}
+	              {% if vr is not none %}
+	              <br><span class="muted">VR {{ "%.2f"|format(vr) }}</span>
+	              {% endif %}
+	            </td>
+	            <td>
+              {% for metric, value in candidate.metric_mde.items() %}
+              <span class="mde-chip">{{ metric }} {{ "%.1f%%"|format(value * 100) }}</span>
+              {% endfor %}
+            </td>
+            <td>{{ "%.2f"|format(candidate.objective_score) }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    {% if report.mde_rows %}
+    <section>
+      <h2>MDE Detail</h2>
+      <table>
+        <thead><tr><th>Candidate</th><th>Metric</th><th>Role</th><th>MDE</th></tr></thead>
+        <tbody>
+        {% for row in report.mde_rows %}
+          <tr>
+            <td><code>{{ row.candidate_id }}</code></td>
+            <td>{{ row.metric }}</td>
+            <td>{{ row.role }}</td>
+            <td>{{ "%.2f%%"|format(row.mde * 100) }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
+    <section>
+      <h2>Market Characteristics</h2>
+      <p class="section-note">These profiles summarize the selected treatment and control markets using metadata found in the panel, such as region and market-size columns.</p>
+      {% for candidate in report.selected_candidate_rows %}
+      <div class="two-col">
+        <div class="panel">
+          <h3>Treatment Regions</h3>
+          {% set total_t = candidate.treatment_count if candidate.treatment_count else 1 %}
+          {% for region, count in candidate.treatment_region_counts.items() %}
+          <div class="bar-row">
+            <span>{{ region }}</span>
+            <div class="bar-track"><div class="bar-fill" style="width: {{ (count / total_t * 100) }}%"></div></div>
+            <strong>{{ count }}</strong>
+          </div>
+          {% endfor %}
+          {% if candidate.treatment_size %}
+          <p class="muted">Size basis: {{ candidate.treatment_size.name }}. Median {{ "%.2f"|format(candidate.treatment_size.median) }}, range {{ "%.2f"|format(candidate.treatment_size.min) }}–{{ "%.2f"|format(candidate.treatment_size.max) }}.</p>
+          {% endif %}
+        </div>
+        <div class="panel">
+          <h3>Control Regions</h3>
+          {% set total_c = candidate.control_count if candidate.control_count else 1 %}
+          {% for region, count in candidate.control_region_counts.items() %}
+          <div class="bar-row">
+            <span>{{ region }}</span>
+            <div class="bar-track"><div class="bar-fill" style="width: {{ (count / total_c * 100) }}%"></div></div>
+            <strong>{{ count }}</strong>
+          </div>
+          {% endfor %}
+          {% if candidate.control_size %}
+          <p class="muted">Size basis: {{ candidate.control_size.name }}. Median {{ "%.2f"|format(candidate.control_size.median) }}, range {{ "%.2f"|format(candidate.control_size.min) }}–{{ "%.2f"|format(candidate.control_size.max) }}.</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <h3>Treatment Markets</h3>
+          <ul class="market-list">
+          {% for market in candidate.treatment_top_markets %}
+            <li><code>{{ market.geo_id }}</code>{% if market.cbsa_title %} {{ market.cbsa_title }}{% elif market.market_name %} {{ market.market_name }}{% endif %}{% if market.region %} <span class="muted">({{ market.region }})</span>{% endif %}</li>
+          {% endfor %}
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Control Markets</h3>
+          <ul class="market-list">
+          {% for market in candidate.control_top_markets %}
+            <li><code>{{ market.geo_id }}</code>{% if market.cbsa_title %} {{ market.cbsa_title }}{% elif market.market_name %} {{ market.market_name }}{% endif %}{% if market.region %} <span class="muted">({{ market.region }})</span>{% endif %}</li>
+          {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+
+    {% if report.shared_control_usage %}
+    <section>
+      <h2>Shared-Control Usage</h2>
+      <table>
+        <thead><tr><th>Market</th><th>Max Concurrent Control Tests</th><th>Date/Window</th></tr></thead>
+        <tbody>
+        {% for row in report.shared_control_usage[:200] %}
+          <tr>
+            <td><code>{{ row.geo_id or row.market or "" }}</code></td>
+            <td>{{ row.max_control_tests or row.usage or row.count or row.shared_control_count or row.control_tests or "" }}</td>
+            <td>{{ row.date or row.start_date or "" }}{% if row.end_date %} to {{ row.end_date }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
+    <section>
+      <h2>Constraint Audit</h2>
+      <div class="two-col">
+        <div class="panel">
+          <h3>Solver Diagnostics</h3>
+          <pre>{{ report.diagnostics | tojson(indent=2) }}</pre>
+        </div>
+        <div class="panel">
+          <h3>Score Decomposition</h3>
+          <pre>{{ report.score_decomposition | tojson(indent=2) }}</pre>
+        </div>
+      </div>
+    </section>
+
+    {% if report.assignments %}
+    <details>
+      <summary>Assignment rows sample</summary>
+      <table>
+        <thead><tr><th>Test</th><th>Market</th><th>Role</th><th>Date/Window</th></tr></thead>
+        <tbody>
+        {% for row in report.assignments[:200] %}
+          <tr>
+            <td>{{ row.test or row.test_name or row.experiment_id or "" }}</td>
+            <td><code>{{ row.geo_id or row.market or row.market_id or "" }}</code></td>
+            <td>{{ row.role or "" }}</td>
+            <td>{{ row.date or row.start_date or "" }}{% if row.end_date %} to {{ row.end_date }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </details>
+    {% endif %}
+  </main>
+  <script type="application/json" id="fieldtrial-report-data">{{ embedded_report | tojson }}</script>
+</body>
+</html>

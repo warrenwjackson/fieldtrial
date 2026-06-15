@@ -1,0 +1,4 @@
+experiment_id,name,status,start_date,end_date,domain,role,geo_id,cooldown_until,primary_metrics
+active_marketing_q1,Active Marketing Holdout,active,2027-03-15,2027-04-20,marketing,treatment,dma_001,2027-05-20,orders
+active_marketing_q1,Active Marketing Holdout,active,2027-03-15,2027-04-20,marketing,control,dma_010,,orders
+active_marketing_q1,Active Marketing Holdout,active,2027-03-15,2027-04-20,marketing,control,dma_011,,orders

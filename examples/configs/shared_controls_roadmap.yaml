@@ -1,0 +1,49 @@
+roadmap_name: "Synthetic Shared-Control Roadmap"
+markets:
+  universe: "synthetic_us_dma"
+defaults:
+  overlap_policy: "shared_controls"
+  min_control_markets: 8
+  max_shared_control_usage: 3
+  treatment_cooldown_days: 30
+  min_treatment_share: 0.05
+  max_treatment_share: 0.15
+  candidate_count: 30
+tests:
+  - name: "pricing_q2"
+    domain: "pricing"
+    priority: 10
+    earliest_start: "2027-04-01"
+    latest_end: "2027-06-15"
+    candidate_durations: [21, 28]
+    primary_metrics: ["orders", "conversion_rate"]
+    metrics:
+      orders:
+        type: "count"
+        column: "orders"
+      conversion_rate:
+        type: "ratio"
+        numerator: "orders"
+        denominator: "sessions"
+  - name: "lifecycle_q2"
+    domain: "lifecycle"
+    priority: 8
+    earliest_start: "2027-04-15"
+    latest_end: "2027-06-30"
+    candidate_durations: [21, 28]
+    primary_metrics: ["orders"]
+    metrics:
+      orders:
+        type: "count"
+        column: "orders"
+  - name: "operations_q3_prep"
+    domain: "operations"
+    priority: 6
+    earliest_start: "2027-05-15"
+    latest_end: "2027-07-15"
+    candidate_durations: [21]
+    primary_metrics: ["revenue"]
+    metrics:
+      revenue:
+        type: "continuous"
+        column: "revenue"

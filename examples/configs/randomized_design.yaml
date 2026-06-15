@@ -1,0 +1,52 @@
+roadmap_name: "Balanced Randomized Roadmap"
+markets:
+  universe: "synthetic_us_dma"
+defaults:
+  overlap_policy: "shared_controls"
+  min_control_markets: 8
+  max_shared_control_usage: 2
+  treatment_cooldown_days: 30
+  min_treatment_share: 0.08
+  max_treatment_share: 0.16
+  candidate_count: 40
+  assignment_policy:
+    kind: "stratified"
+    treatment_count: 8
+    strata: ["region", "market_weight_decile"]
+    max_enumerated_assignments: 5000
+    monte_carlo_samples: 8000
+    seed: 17
+  inference:
+    methods: ["estimator_default", "randomization_inference", "market_bootstrap"]
+    confidence: 0.95
+    randomization_samples: 8000
+  calibration:
+    placebo_windows: 24
+    injected_lifts: [0.0, 0.02, 0.05, 0.08]
+portfolio_decision:
+  multiplicity_family: "q3_growth"
+  success_metrics: ["orders"]
+  guardrail_metrics: ["conversion_rate"]
+tests:
+  - name: "balanced_growth_q3"
+    domain: "marketing"
+    priority: 10
+    earliest_start: "2027-07-01"
+    latest_end: "2027-09-15"
+    candidate_durations: [21, 28]
+    primary_metrics: ["orders", "conversion_rate"]
+    metrics:
+      orders:
+        type: "count"
+        column: "orders"
+      conversion_rate:
+        type: "ratio"
+        numerator: "orders"
+        denominator: "sessions"
+    portfolio_decision:
+      metric_roles:
+        orders: "success"
+        conversion_rate: "guardrail"
+      minimum_business_impact:
+        orders: 0.03
+

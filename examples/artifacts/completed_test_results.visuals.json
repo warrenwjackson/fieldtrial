@@ -1,0 +1,3314 @@
+{
+  "artifact_type": "fieldtrial.analysis_visuals.v1",
+  "artifact_version": "fieldtrial.analysis_visuals.v1",
+  "source_path": "completed_test_results.json",
+  "visuals": {
+    "time_series": [
+      {
+        "baseline": {
+          "control": 5.83567415730337,
+          "treatment": 9.44943820224719
+        },
+        "delta_frequency": "daily",
+        "delta_points": [
+          {
+            "date": "2027-02-01",
+            "index_gap": 37.20606521089012,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-02",
+            "index_gap": 20.171963066145267,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-03",
+            "index_gap": 35.06406761762899,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-04",
+            "index_gap": -10.019760442198901,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-05",
+            "index_gap": -18.56228116490739,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-06",
+            "index_gap": -7.674005646249441,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-07",
+            "index_gap": 28.51072658616539,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-08",
+            "index_gap": 32.794721772687666,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-09",
+            "index_gap": 43.47924008865728,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-10",
+            "index_gap": -16.216526368957943,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-11",
+            "index_gap": 7.294507856242419,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-12",
+            "index_gap": -37.483684399553,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-13",
+            "index_gap": 9.309157197823339,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-14",
+            "index_gap": -45.72056931822898,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-15",
+            "index_gap": -11.75424363008338,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-16",
+            "index_gap": -0.9678467127695995,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-17",
+            "index_gap": 9.589323351519809,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-18",
+            "index_gap": 30.983829633795082,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-19",
+            "index_gap": 13.771439936697902,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-20",
+            "index_gap": 2.8322251173678694,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-21",
+            "index_gap": 9.640262652191893,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-22",
+            "index_gap": -11.983470483107766,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-23",
+            "index_gap": -1.0442556637777187,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-24",
+            "index_gap": -3.339071159055095,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-25",
+            "index_gap": 26.47060759424845,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-26",
+            "index_gap": -11.907061532099618,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-27",
+            "index_gap": -12.059879434115913,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-28",
+            "index_gap": 15.786089278278808,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-01",
+            "index_gap": -28.864754725836377,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-02",
+            "index_gap": 9.640262652191893,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-03",
+            "index_gap": -20.067537499767468,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-04",
+            "index_gap": 13.745970286361882,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-05",
+            "index_gap": 28.612605187509587,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-06",
+            "index_gap": 28.587135537173523,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-07",
+            "index_gap": -11.830652581091499,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-08",
+            "index_gap": -26.620878531231085,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-09",
+            "index_gap": 13.822379237369972,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-10",
+            "index_gap": -20.118476800439566,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-11",
+            "index_gap": -5.532008052988303,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-12",
+            "index_gap": -16.063708466941677,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-13",
+            "index_gap": -11.805182930755464,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-14",
+            "index_gap": -9.790533589174544,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-15",
+            "index_gap": -20.296764352791854,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-16",
+            "index_gap": 3.265209173080592,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-17",
+            "index_gap": -7.190082289864655,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-18",
+            "index_gap": -11.856122231427548,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-19",
+            "index_gap": -28.737406474156188,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-20",
+            "index_gap": -26.92651433526359,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-21",
+            "index_gap": -18.129297109194695,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-22",
+            "index_gap": 5.432676416677751,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-23",
+            "index_gap": -20.04206784943144,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-24",
+            "index_gap": -20.322234003127903,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-25",
+            "index_gap": 39.09336630079085,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-26",
+            "index_gap": -14.252816328049093,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-27",
+            "index_gap": -18.180236409866765,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-28",
+            "index_gap": -35.23980820494769,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-29",
+            "index_gap": -33.04687131101447,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-30",
+            "index_gap": 77.72573193049934,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-31",
+            "index_gap": 9.48744475017564,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-01",
+            "index_gap": 15.63327137626257,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-02",
+            "index_gap": 9.360096498495409,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-03",
+            "index_gap": 7.14168995422618,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-04",
+            "index_gap": -14.431103880401395,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-05",
+            "index_gap": 45.4429501295661,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-06",
+            "index_gap": -14.023589475024735,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-07",
+            "index_gap": 5.025162011301077,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-08",
+            "index_gap": 22.237551708398257,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-09",
+            "index_gap": -16.241996019293964,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-10",
+            "index_gap": 26.419668293576365,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-11",
+            "index_gap": 45.59576803158238,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-12",
+            "index_gap": -26.59540888089505,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-13",
+            "index_gap": 24.40501895199543,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-14",
+            "index_gap": 11.705851294444898,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-15",
+            "index_gap": -11.881591881763597,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-16",
+            "index_gap": -9.637715687158291,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-17",
+            "index_gap": 41.1844245933799,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-18",
+            "index_gap": -20.322234003127903,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-19",
+            "index_gap": -18.205706060202814,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-20",
+            "index_gap": -15.910890564925424,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-21",
+            "index_gap": 26.623425496264687,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-22",
+            "index_gap": -1.2480128664660413,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-23",
+            "index_gap": -41.74220993573921,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-24",
+            "index_gap": 15.811558928614858,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-25",
+            "index_gap": -9.76506393883848,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-26",
+            "index_gap": -18.078357808522597,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-27",
+            "index_gap": -24.529820238642046,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-28",
+            "index_gap": 11.629442343436779,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-29",
+            "index_gap": -5.68482595500457,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-30",
+            "index_gap": -18.587750815243453,
+            "period": "pre"
+          },
+          {
+            "date": "2027-05-01",
+            "index_gap": -7.801353897929644,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-02",
+            "index_gap": -13.896241223344504,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-03",
+            "index_gap": 32.99847897537599,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-04",
+            "index_gap": -9.663185337494326,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-05",
+            "index_gap": 7.5237347092668045,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-06",
+            "index_gap": 20.019145164129,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-07",
+            "index_gap": 0.6392882234346331,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-08",
+            "index_gap": -54.568725844969975,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-09",
+            "index_gap": 66.60822955881699,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-10",
+            "index_gap": 22.28849100907034,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-11",
+            "index_gap": 30.703663480098626,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-12",
+            "index_gap": -15.910890564925424,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-13",
+            "index_gap": 56.33122564822406,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-14",
+            "index_gap": -14.049059125360742,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-15",
+            "index_gap": -9.892412190518712,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-16",
+            "index_gap": 35.01312831695692,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-17",
+            "index_gap": -24.6316988399862,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-18",
+            "index_gap": 19.91726656278483,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-19",
+            "index_gap": -18.052888158186562,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-20",
+            "index_gap": -1.2989521671381397,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-21",
+            "index_gap": 11.272867238732204,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-22",
+            "index_gap": 7.47279540859472,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-23",
+            "index_gap": 20.248372017153372,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-24",
+            "index_gap": -20.271294702455833,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-25",
+            "index_gap": 13.94972748905019,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-26",
+            "index_gap": 1.2250901811636226,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-27",
+            "index_gap": -1.197073565793957,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-28",
+            "index_gap": 21.982855205037865,
+            "period": "post"
+          }
+        ],
+        "index_base": 100,
+        "metric": "orders",
+        "points": [
+          {
+            "control": 4.375,
+            "control_index": 74.9699157641396,
+            "date": "2027-02-01",
+            "index_gap": 37.20606521089012,
+            "period": "pre",
+            "treatment": 10.6,
+            "treatment_index": 112.17598097502972
+          },
+          {
+            "control": 4.875,
+            "control_index": 83.53790613718412,
+            "date": "2027-02-02",
+            "index_gap": 20.171963066145267,
+            "period": "pre",
+            "treatment": 9.8,
+            "treatment_index": 103.70986920332939
+          },
+          {
+            "control": 4.5,
+            "control_index": 77.11191335740072,
+            "date": "2027-02-03",
+            "index_gap": 35.06406761762899,
+            "period": "pre",
+            "treatment": 10.6,
+            "treatment_index": 112.17598097502972
+          },
+          {
+            "control": 7.625,
+            "control_index": 130.661853188929,
+            "date": "2027-02-04",
+            "index_gap": -10.019760442198901,
+            "period": "pre",
+            "treatment": 11.4,
+            "treatment_index": 120.6420927467301
+          },
+          {
+            "control": 8.0,
+            "control_index": 137.0878459687124,
+            "date": "2027-02-05",
+            "index_gap": -18.56228116490739,
+            "period": "pre",
+            "treatment": 11.2,
+            "treatment_index": 118.52556480380501
+          },
+          {
+            "control": 6.5,
+            "control_index": 111.38387484957883,
+            "date": "2027-02-06",
+            "index_gap": -7.674005646249441,
+            "period": "pre",
+            "treatment": 9.8,
+            "treatment_index": 103.70986920332939
+          },
+          {
+            "control": 5.5,
+            "control_index": 94.24789410348978,
+            "date": "2027-02-07",
+            "index_gap": 28.51072658616539,
+            "period": "pre",
+            "treatment": 11.6,
+            "treatment_index": 122.75862068965517
+          },
+          {
+            "control": 5.25,
+            "control_index": 89.96389891696751,
+            "date": "2027-02-08",
+            "index_gap": 32.794721772687666,
+            "period": "pre",
+            "treatment": 11.6,
+            "treatment_index": 122.75862068965517
+          },
+          {
+            "control": 4.75,
+            "control_index": 81.39590854392299,
+            "date": "2027-02-09",
+            "index_gap": 43.47924008865728,
+            "period": "pre",
+            "treatment": 11.8,
+            "treatment_index": 124.87514863258026
+          },
+          {
+            "control": 6.875,
+            "control_index": 117.80986762936223,
+            "date": "2027-02-10",
+            "index_gap": -16.216526368957943,
+            "period": "pre",
+            "treatment": 9.6,
+            "treatment_index": 101.59334126040429
+          },
+          {
+            "control": 5.75,
+            "control_index": 98.53188929001205,
+            "date": "2027-02-11",
+            "index_gap": 7.294507856242419,
+            "period": "pre",
+            "treatment": 10.0,
+            "treatment_index": 105.82639714625446
+          },
+          {
+            "control": 7.375,
+            "control_index": 126.37785800240675,
+            "date": "2027-02-12",
+            "index_gap": -37.483684399553,
+            "period": "pre",
+            "treatment": 8.4,
+            "treatment_index": 88.89417360285375
+          },
+          {
+            "control": 6.25,
+            "control_index": 107.09987966305657,
+            "date": "2027-02-13",
+            "index_gap": 9.309157197823339,
+            "period": "pre",
+            "treatment": 11.0,
+            "treatment_index": 116.40903686087991
+          },
+          {
+            "control": 6.25,
+            "control_index": 107.09987966305657,
+            "date": "2027-02-14",
+            "index_gap": -45.72056931822898,
+            "period": "pre",
+            "treatment": 5.8,
+            "treatment_index": 61.37931034482759
+          },
+          {
+            "control": 5.75,
+            "control_index": 98.53188929001205,
+            "date": "2027-02-15",
+            "index_gap": -11.75424363008338,
+            "period": "pre",
+            "treatment": 8.2,
+            "treatment_index": 86.77764565992867
+          },
+          {
+            "control": 4.75,
+            "control_index": 81.39590854392299,
+            "date": "2027-02-16",
+            "index_gap": -0.9678467127695995,
+            "period": "pre",
+            "treatment": 7.6,
+            "treatment_index": 80.42806183115339
+          },
+          {
+            "control": 4.875,
+            "control_index": 83.53790613718412,
+            "date": "2027-02-17",
+            "index_gap": 9.589323351519809,
+            "period": "pre",
+            "treatment": 8.8,
+            "treatment_index": 93.12722948870393
+          },
+          {
+            "control": 3.75,
+            "control_index": 64.25992779783394,
+            "date": "2027-02-18",
+            "index_gap": 30.983829633795082,
+            "period": "pre",
+            "treatment": 9.0,
+            "treatment_index": 95.24375743162902
+          },
+          {
+            "control": 5.125,
+            "control_index": 87.82190132370638,
+            "date": "2027-02-19",
+            "index_gap": 13.771439936697902,
+            "period": "pre",
+            "treatment": 9.6,
+            "treatment_index": 101.59334126040429
+          },
+          {
+            "control": 6.875,
+            "control_index": 117.80986762936223,
+            "date": "2027-02-20",
+            "index_gap": 2.8322251173678694,
+            "period": "pre",
+            "treatment": 11.4,
+            "treatment_index": 120.6420927467301
+          },
+          {
+            "control": 4.625,
+            "control_index": 79.25391095066186,
+            "date": "2027-02-21",
+            "index_gap": 9.640262652191893,
+            "period": "pre",
+            "treatment": 8.4,
+            "treatment_index": 88.89417360285375
+          },
+          {
+            "control": 6.875,
+            "control_index": 117.80986762936223,
+            "date": "2027-02-22",
+            "index_gap": -11.983470483107766,
+            "period": "pre",
+            "treatment": 10.0,
+            "treatment_index": 105.82639714625446
+          },
+          {
+            "control": 5.125,
+            "control_index": 87.82190132370638,
+            "date": "2027-02-23",
+            "index_gap": -1.0442556637777187,
+            "period": "pre",
+            "treatment": 8.2,
+            "treatment_index": 86.77764565992867
+          },
+          {
+            "control": 6.0,
+            "control_index": 102.81588447653431,
+            "date": "2027-02-24",
+            "index_gap": -3.339071159055095,
+            "period": "pre",
+            "treatment": 9.4,
+            "treatment_index": 99.47681331747921
+          },
+          {
+            "control": 5.125,
+            "control_index": 87.82190132370638,
+            "date": "2027-02-25",
+            "index_gap": 26.47060759424845,
+            "period": "pre",
+            "treatment": 10.8,
+            "treatment_index": 114.29250891795483
+          },
+          {
+            "control": 6.5,
+            "control_index": 111.38387484957883,
+            "date": "2027-02-26",
+            "index_gap": -11.907061532099618,
+            "period": "pre",
+            "treatment": 9.4,
+            "treatment_index": 99.47681331747921
+          },
+          {
+            "control": 7.25,
+            "control_index": 124.23586040914563,
+            "date": "2027-02-27",
+            "index_gap": -12.059879434115913,
+            "period": "pre",
+            "treatment": 10.6,
+            "treatment_index": 112.17598097502972
+          },
+          {
+            "control": 5.625,
+            "control_index": 96.38989169675091,
+            "date": "2027-02-28",
+            "index_gap": 15.786089278278808,
+            "period": "pre",
+            "treatment": 10.6,
+            "treatment_index": 112.17598097502972
+          },
+          {
+            "control": 6.625,
+            "control_index": 113.52587244283995,
+            "date": "2027-03-01",
+            "index_gap": -28.864754725836377,
+            "period": "pre",
+            "treatment": 8.0,
+            "treatment_index": 84.66111771700358
+          },
+          {
+            "control": 4.625,
+            "control_index": 79.25391095066186,
+            "date": "2027-03-02",
+            "index_gap": 9.640262652191893,
+            "period": "pre",
+            "treatment": 8.4,
+            "treatment_index": 88.89417360285375
+          },
+          {
+            "control": 5.0,
+            "control_index": 85.67990373044525,
+            "date": "2027-03-03",
+            "index_gap": -20.067537499767468,
+            "period": "pre",
+            "treatment": 6.2,
+            "treatment_index": 65.61236623067778
+          },
+          {
+            "control": 5.25,
+            "control_index": 89.96389891696751,
+            "date": "2027-03-04",
+            "index_gap": 13.745970286361882,
+            "period": "pre",
+            "treatment": 9.8,
+            "treatment_index": 103.70986920332939
+          },
+          {
+            "control": 5.0,
+            "control_index": 85.67990373044525,
+            "date": "2027-03-05",
+            "index_gap": 28.612605187509587,
+            "period": "pre",
+            "treatment": 10.8,
+            "treatment_index": 114.29250891795483
+          },
+          {
+            "control": 5.125,
+            "control_index": 87.82190132370638,
+            "date": "2027-03-06",
+            "index_gap": 28.587135537173523,
+            "period": "pre",
+            "treatment": 11.0,
+            "treatment_index": 116.40903686087991
+          },
+          {
+            "control": 6.125,
+            "control_index": 104.95788206979543,
+            "date": "2027-03-07",
+            "index_gap": -11.830652581091499,
+            "period": "pre",
+            "treatment": 8.8,
+            "treatment_index": 93.12722948870393
+          },
+          {
+            "control": 6.0,
+            "control_index": 102.81588447653431,
+            "date": "2027-03-08",
+            "index_gap": -26.620878531231085,
+            "period": "pre",
+            "treatment": 7.2,
+            "treatment_index": 76.19500594530322
+          },
+          {
+            "control": 4.875,
+            "control_index": 83.53790613718412,
+            "date": "2027-03-09",
+            "index_gap": 13.822379237369972,
+            "period": "pre",
+            "treatment": 9.2,
+            "treatment_index": 97.3602853745541
+          },
+          {
+            "control": 5.25,
+            "control_index": 89.96389891696751,
+            "date": "2027-03-10",
+            "index_gap": -20.118476800439566,
+            "period": "pre",
+            "treatment": 6.6,
+            "treatment_index": 69.84542211652794
+          },
+          {
+            "control": 6.375,
+            "control_index": 109.2418772563177,
+            "date": "2027-03-11",
+            "index_gap": -5.532008052988303,
+            "period": "pre",
+            "treatment": 9.8,
+            "treatment_index": 103.70986920332939
+          },
+          {
+            "control": 6.125,
+            "control_index": 104.95788206979543,
+            "date": "2027-03-12",
+            "index_gap": -16.063708466941677,
+            "period": "pre",
+            "treatment": 8.4,
+            "treatment_index": 88.89417360285375
+          },
+          {
+            "control": 6.0,
+            "control_index": 102.81588447653431,
+            "date": "2027-03-13",
+            "index_gap": -11.805182930755464,
+            "period": "pre",
+            "treatment": 8.6,
+            "treatment_index": 91.01070154577884
+          },
+          {
+            "control": 6.5,
+            "control_index": 111.38387484957883,
+            "date": "2027-03-14",
+            "index_gap": -9.790533589174544,
+            "period": "pre",
+            "treatment": 9.6,
+            "treatment_index": 101.59334126040429
+          },
+          {
+            "control": 6.125,
+            "control_index": 104.95788206979543,
+            "date": "2027-03-15",
+            "index_gap": -20.296764352791854,
+            "period": "pre",
+            "treatment": 8.0,
+            "treatment_index": 84.66111771700358
+          },
+          {
+            "control": 4.75,
+            "control_index": 81.39590854392299,
+            "date": "2027-03-16",
+            "index_gap": 3.265209173080592,
+            "period": "pre",
+            "treatment": 8.0,
+            "treatment_index": 84.66111771700358
+          },
+          {
+            "control": 4.125,
+            "control_index": 70.68592057761734,
+            "date": "2027-03-17",
+            "index_gap": -7.190082289864655,
+            "period": "pre",
+            "treatment": 6.0,
+            "treatment_index": 63.49583828775268
+          },
+          {
+            "control": 6.25,
+            "control_index": 107.09987966305657,
+            "date": "2027-03-18",
+            "index_gap": -11.856122231427548,
+            "period": "pre",
+            "treatment": 9.0,
+            "treatment_index": 95.24375743162902
+          },
+          {
+            "control": 6.0,
+            "control_index": 102.81588447653431,
+            "date": "2027-03-19",
+            "index_gap": -28.737406474156188,
+            "period": "pre",
+            "treatment": 7.0,
+            "treatment_index": 74.07847800237812
+          },
+          {
+            "control": 7.5,
+            "control_index": 128.51985559566788,
+            "date": "2027-03-20",
+            "index_gap": -26.92651433526359,
+            "period": "pre",
+            "treatment": 9.6,
+            "treatment_index": 101.59334126040429
+          },
+          {
+            "control": 5.875,
+            "control_index": 100.67388688327317,
+            "date": "2027-03-21",
+            "index_gap": -18.129297109194695,
+            "period": "pre",
+            "treatment": 7.8,
+            "treatment_index": 82.54458977407847
+          },
+          {
+            "control": 4.5,
+            "control_index": 77.11191335740072,
+            "date": "2027-03-22",
+            "index_gap": 5.432676416677751,
+            "period": "pre",
+            "treatment": 7.8,
+            "treatment_index": 82.54458977407847
+          },
+          {
+            "control": 4.875,
+            "control_index": 83.53790613718412,
+            "date": "2027-03-23",
+            "index_gap": -20.04206784943144,
+            "period": "pre",
+            "treatment": 6.0,
+            "treatment_index": 63.49583828775268
+          },
+          {
+            "control": 6.25,
+            "control_index": 107.09987966305657,
+            "date": "2027-03-24",
+            "index_gap": -20.322234003127903,
+            "period": "pre",
+            "treatment": 8.2,
+            "treatment_index": 86.77764565992867
+          },
+          {
+            "control": 5.5,
+            "control_index": 94.24789410348978,
+            "date": "2027-03-25",
+            "index_gap": 39.09336630079085,
+            "period": "pre",
+            "treatment": 12.6,
+            "treatment_index": 133.34126040428063
+          },
+          {
+            "control": 7.625,
+            "control_index": 130.661853188929,
+            "date": "2027-03-26",
+            "index_gap": -14.252816328049093,
+            "period": "pre",
+            "treatment": 11.0,
+            "treatment_index": 116.40903686087991
+          },
+          {
+            "control": 6.125,
+            "control_index": 104.95788206979543,
+            "date": "2027-03-27",
+            "index_gap": -18.180236409866765,
+            "period": "pre",
+            "treatment": 8.2,
+            "treatment_index": 86.77764565992867
+          },
+          {
+            "control": 6.75,
+            "control_index": 115.66787003610108,
+            "date": "2027-03-28",
+            "index_gap": -35.23980820494769,
+            "period": "pre",
+            "treatment": 7.6,
+            "treatment_index": 80.42806183115339
+          },
+          {
+            "control": 6.375,
+            "control_index": 109.2418772563177,
+            "date": "2027-03-29",
+            "index_gap": -33.04687131101447,
+            "period": "pre",
+            "treatment": 7.2,
+            "treatment_index": 76.19500594530322
+          },
+          {
+            "control": 2.875,
+            "control_index": 49.26594464500602,
+            "date": "2027-03-30",
+            "index_gap": 77.72573193049934,
+            "period": "pre",
+            "treatment": 12.0,
+            "treatment_index": 126.99167657550537
+          },
+          {
+            "control": 5.375,
+            "control_index": 92.10589651022865,
+            "date": "2027-03-31",
+            "index_gap": 9.48744475017564,
+            "period": "pre",
+            "treatment": 9.6,
+            "treatment_index": 101.59334126040429
+          },
+          {
+            "control": 6.375,
+            "control_index": 109.2418772563177,
+            "date": "2027-04-01",
+            "index_gap": 15.63327137626257,
+            "period": "pre",
+            "treatment": 11.8,
+            "treatment_index": 124.87514863258026
+          },
+          {
+            "control": 6.0,
+            "control_index": 102.81588447653431,
+            "date": "2027-04-02",
+            "index_gap": 9.360096498495409,
+            "period": "pre",
+            "treatment": 10.6,
+            "treatment_index": 112.17598097502972
+          },
+          {
+            "control": 6.5,
+            "control_index": 111.38387484957883,
+            "date": "2027-04-03",
+            "index_gap": 7.14168995422618,
+            "period": "pre",
+            "treatment": 11.2,
+            "treatment_index": 118.52556480380501
+          },
+          {
+            "control": 8.5,
+            "control_index": 145.65583634175695,
+            "date": "2027-04-04",
+            "index_gap": -14.431103880401395,
+            "period": "pre",
+            "treatment": 12.4,
+            "treatment_index": 131.22473246135556
+          },
+          {
+            "control": 5.5,
+            "control_index": 94.24789410348978,
+            "date": "2027-04-05",
+            "index_gap": 45.4429501295661,
+            "period": "pre",
+            "treatment": 13.2,
+            "treatment_index": 139.69084423305588
+          },
+          {
+            "control": 6.5,
+            "control_index": 111.38387484957883,
+            "date": "2027-04-06",
+            "index_gap": -14.023589475024735,
+            "period": "pre",
+            "treatment": 9.2,
+            "treatment_index": 97.3602853745541
+          },
+          {
+            "control": 6.5,
+            "control_index": 111.38387484957883,
+            "date": "2027-04-07",
+            "index_gap": 5.025162011301077,
+            "period": "pre",
+            "treatment": 11.0,
+            "treatment_index": 116.40903686087991
+          },
+          {
+            "control": 5.125,
+            "control_index": 87.82190132370638,
+            "date": "2027-04-08",
+            "index_gap": 22.237551708398257,
+            "period": "pre",
+            "treatment": 10.4,
+            "treatment_index": 110.05945303210464
+          },
+          {
+            "control": 7.0,
+            "control_index": 119.95186522262335,
+            "date": "2027-04-09",
+            "index_gap": -16.241996019293964,
+            "period": "pre",
+            "treatment": 9.8,
+            "treatment_index": 103.70986920332939
+          },
+          {
+            "control": 5.375,
+            "control_index": 92.10589651022865,
+            "date": "2027-04-10",
+            "index_gap": 26.419668293576365,
+            "period": "pre",
+            "treatment": 11.2,
+            "treatment_index": 118.52556480380501
+          },
+          {
+            "control": 4.75,
+            "control_index": 81.39590854392299,
+            "date": "2027-04-11",
+            "index_gap": 45.59576803158238,
+            "period": "pre",
+            "treatment": 12.0,
+            "treatment_index": 126.99167657550537
+          },
+          {
+            "control": 5.875,
+            "control_index": 100.67388688327317,
+            "date": "2027-04-12",
+            "index_gap": -26.59540888089505,
+            "period": "pre",
+            "treatment": 7.0,
+            "treatment_index": 74.07847800237812
+          },
+          {
+            "control": 4.875,
+            "control_index": 83.53790613718412,
+            "date": "2027-04-13",
+            "index_gap": 24.40501895199543,
+            "period": "pre",
+            "treatment": 10.2,
+            "treatment_index": 107.94292508917955
+          },
+          {
+            "control": 4.875,
+            "control_index": 83.53790613718412,
+            "date": "2027-04-14",
+            "index_gap": 11.705851294444898,
+            "period": "pre",
+            "treatment": 9.0,
+            "treatment_index": 95.24375743162902
+          },
+          {
+            "control": 6.375,
+            "control_index": 109.2418772563177,
+            "date": "2027-04-15",
+            "index_gap": -11.881591881763597,
+            "period": "pre",
+            "treatment": 9.2,
+            "treatment_index": 97.3602853745541
+          },
+          {
+            "control": 5.75,
+            "control_index": 98.53188929001205,
+            "date": "2027-04-16",
+            "index_gap": -9.637715687158291,
+            "period": "pre",
+            "treatment": 8.4,
+            "treatment_index": 88.89417360285375
+          },
+          {
+            "control": 5.625,
+            "control_index": 96.38989169675091,
+            "date": "2027-04-17",
+            "index_gap": 41.1844245933799,
+            "period": "pre",
+            "treatment": 13.0,
+            "treatment_index": 137.5743162901308
+          },
+          {
+            "control": 6.25,
+            "control_index": 107.09987966305657,
+            "date": "2027-04-18",
+            "index_gap": -20.322234003127903,
+            "period": "pre",
+            "treatment": 8.2,
+            "treatment_index": 86.77764565992867
+          },
+          {
+            "control": 6.25,
+            "control_index": 107.09987966305657,
+            "date": "2027-04-19",
+            "index_gap": -18.205706060202814,
+            "period": "pre",
+            "treatment": 8.4,
+            "treatment_index": 88.89417360285375
+          },
+          {
+            "control": 5.375,
+            "control_index": 92.10589651022865,
+            "date": "2027-04-20",
+            "index_gap": -15.910890564925424,
+            "period": "pre",
+            "treatment": 7.2,
+            "treatment_index": 76.19500594530322
+          },
+          {
+            "control": 4.375,
+            "control_index": 74.9699157641396,
+            "date": "2027-04-21",
+            "index_gap": 26.623425496264687,
+            "period": "pre",
+            "treatment": 9.6,
+            "treatment_index": 101.59334126040429
+          },
+          {
+            "control": 6.125,
+            "control_index": 104.95788206979543,
+            "date": "2027-04-22",
+            "index_gap": -1.2480128664660413,
+            "period": "pre",
+            "treatment": 9.8,
+            "treatment_index": 103.70986920332939
+          },
+          {
+            "control": 7.5,
+            "control_index": 128.51985559566788,
+            "date": "2027-04-23",
+            "index_gap": -41.74220993573921,
+            "period": "pre",
+            "treatment": 8.2,
+            "treatment_index": 86.77764565992867
+          },
+          {
+            "control": 5.5,
+            "control_index": 94.24789410348978,
+            "date": "2027-04-24",
+            "index_gap": 15.811558928614858,
+            "period": "pre",
+            "treatment": 10.4,
+            "treatment_index": 110.05945303210464
+          },
+          {
+            "control": 6.375,
+            "control_index": 109.2418772563177,
+            "date": "2027-04-25",
+            "index_gap": -9.76506393883848,
+            "period": "pre",
+            "treatment": 9.4,
+            "treatment_index": 99.47681331747921
+          },
+          {
+            "control": 5.625,
+            "control_index": 96.38989169675091,
+            "date": "2027-04-26",
+            "index_gap": -18.078357808522597,
+            "period": "pre",
+            "treatment": 7.4,
+            "treatment_index": 78.31153388822831
+          },
+          {
+            "control": 6.125,
+            "control_index": 104.95788206979543,
+            "date": "2027-04-27",
+            "index_gap": -24.529820238642046,
+            "period": "pre",
+            "treatment": 7.6,
+            "treatment_index": 80.42806183115339
+          },
+          {
+            "control": 5.25,
+            "control_index": 89.96389891696751,
+            "date": "2027-04-28",
+            "index_gap": 11.629442343436779,
+            "period": "pre",
+            "treatment": 9.6,
+            "treatment_index": 101.59334126040429
+          },
+          {
+            "control": 7.125,
+            "control_index": 122.09386281588448,
+            "date": "2027-04-29",
+            "index_gap": -5.68482595500457,
+            "period": "pre",
+            "treatment": 11.0,
+            "treatment_index": 116.40903686087991
+          },
+          {
+            "control": 8.125,
+            "control_index": 139.22984356197355,
+            "date": "2027-04-30",
+            "index_gap": -18.587750815243453,
+            "period": "pre",
+            "treatment": 11.4,
+            "treatment_index": 120.6420927467301
+          },
+          {
+            "control": 7.125,
+            "control_index": 122.09386281588448,
+            "date": "2027-05-01",
+            "index_gap": -7.801353897929644,
+            "period": "post",
+            "treatment": 10.8,
+            "treatment_index": 114.29250891795483
+          },
+          {
+            "control": 5.875,
+            "control_index": 100.67388688327317,
+            "date": "2027-05-02",
+            "index_gap": -13.896241223344504,
+            "period": "post",
+            "treatment": 8.2,
+            "treatment_index": 86.77764565992867
+          },
+          {
+            "control": 4.25,
+            "control_index": 72.82791817087848,
+            "date": "2027-05-03",
+            "index_gap": 32.99847897537599,
+            "period": "post",
+            "treatment": 10.0,
+            "treatment_index": 105.82639714625446
+          },
+          {
+            "control": 5.875,
+            "control_index": 100.67388688327317,
+            "date": "2027-05-04",
+            "index_gap": -9.663185337494326,
+            "period": "post",
+            "treatment": 8.6,
+            "treatment_index": 91.01070154577884
+          },
+          {
+            "control": 4.625,
+            "control_index": 79.25391095066186,
+            "date": "2027-05-05",
+            "index_gap": 7.5237347092668045,
+            "period": "post",
+            "treatment": 8.2,
+            "treatment_index": 86.77764565992867
+          },
+          {
+            "control": 5.625,
+            "control_index": 96.38989169675091,
+            "date": "2027-05-06",
+            "index_gap": 20.019145164129,
+            "period": "post",
+            "treatment": 11.0,
+            "treatment_index": 116.40903686087991
+          },
+          {
+            "control": 7.25,
+            "control_index": 124.23586040914563,
+            "date": "2027-05-07",
+            "index_gap": 0.6392882234346331,
+            "period": "post",
+            "treatment": 11.8,
+            "treatment_index": 124.87514863258026
+          },
+          {
+            "control": 8.125,
+            "control_index": 139.22984356197355,
+            "date": "2027-05-08",
+            "index_gap": -54.568725844969975,
+            "period": "post",
+            "treatment": 8.0,
+            "treatment_index": 84.66111771700358
+          },
+          {
+            "control": 5.5,
+            "control_index": 94.24789410348978,
+            "date": "2027-05-09",
+            "index_gap": 66.60822955881699,
+            "period": "post",
+            "treatment": 15.2,
+            "treatment_index": 160.85612366230677
+          },
+          {
+            "control": 4.875,
+            "control_index": 83.53790613718412,
+            "date": "2027-05-10",
+            "index_gap": 22.28849100907034,
+            "period": "post",
+            "treatment": 10.0,
+            "treatment_index": 105.82639714625446
+          },
+          {
+            "control": 5.125,
+            "control_index": 87.82190132370638,
+            "date": "2027-05-11",
+            "index_gap": 30.703663480098626,
+            "period": "post",
+            "treatment": 11.2,
+            "treatment_index": 118.52556480380501
+          },
+          {
+            "control": 5.375,
+            "control_index": 92.10589651022865,
+            "date": "2027-05-12",
+            "index_gap": -15.910890564925424,
+            "period": "post",
+            "treatment": 7.2,
+            "treatment_index": 76.19500594530322
+          },
+          {
+            "control": 4.0,
+            "control_index": 68.5439229843562,
+            "date": "2027-05-13",
+            "index_gap": 56.33122564822406,
+            "period": "post",
+            "treatment": 11.8,
+            "treatment_index": 124.87514863258026
+          },
+          {
+            "control": 6.625,
+            "control_index": 113.52587244283995,
+            "date": "2027-05-14",
+            "index_gap": -14.049059125360742,
+            "period": "post",
+            "treatment": 9.4,
+            "treatment_index": 99.47681331747921
+          },
+          {
+            "control": 7.0,
+            "control_index": 119.95186522262335,
+            "date": "2027-05-15",
+            "index_gap": -9.892412190518712,
+            "period": "post",
+            "treatment": 10.4,
+            "treatment_index": 110.05945303210464
+          },
+          {
+            "control": 4.75,
+            "control_index": 81.39590854392299,
+            "date": "2027-05-16",
+            "index_gap": 35.01312831695692,
+            "period": "post",
+            "treatment": 11.0,
+            "treatment_index": 116.40903686087991
+          },
+          {
+            "control": 6.625,
+            "control_index": 113.52587244283995,
+            "date": "2027-05-17",
+            "index_gap": -24.6316988399862,
+            "period": "post",
+            "treatment": 8.4,
+            "treatment_index": 88.89417360285375
+          },
+          {
+            "control": 6.125,
+            "control_index": 104.95788206979543,
+            "date": "2027-05-18",
+            "index_gap": 19.91726656278483,
+            "period": "post",
+            "treatment": 11.8,
+            "treatment_index": 124.87514863258026
+          },
+          {
+            "control": 5.5,
+            "control_index": 94.24789410348978,
+            "date": "2027-05-19",
+            "index_gap": -18.052888158186562,
+            "period": "post",
+            "treatment": 7.2,
+            "treatment_index": 76.19500594530322
+          },
+          {
+            "control": 6.375,
+            "control_index": 109.2418772563177,
+            "date": "2027-05-20",
+            "index_gap": -1.2989521671381397,
+            "period": "post",
+            "treatment": 10.2,
+            "treatment_index": 107.94292508917955
+          },
+          {
+            "control": 7.0,
+            "control_index": 119.95186522262335,
+            "date": "2027-05-21",
+            "index_gap": 11.272867238732204,
+            "period": "post",
+            "treatment": 12.4,
+            "treatment_index": 131.22473246135556
+          },
+          {
+            "control": 4.875,
+            "control_index": 83.53790613718412,
+            "date": "2027-05-22",
+            "index_gap": 7.47279540859472,
+            "period": "post",
+            "treatment": 8.6,
+            "treatment_index": 91.01070154577884
+          },
+          {
+            "control": 4.5,
+            "control_index": 77.11191335740072,
+            "date": "2027-05-23",
+            "index_gap": 20.248372017153372,
+            "period": "post",
+            "treatment": 9.2,
+            "treatment_index": 97.3602853745541
+          },
+          {
+            "control": 6.0,
+            "control_index": 102.81588447653431,
+            "date": "2027-05-24",
+            "index_gap": -20.271294702455833,
+            "period": "post",
+            "treatment": 7.8,
+            "treatment_index": 82.54458977407847
+          },
+          {
+            "control": 4.25,
+            "control_index": 72.82791817087848,
+            "date": "2027-05-25",
+            "index_gap": 13.94972748905019,
+            "period": "post",
+            "treatment": 8.2,
+            "treatment_index": 86.77764565992867
+          },
+          {
+            "control": 4.375,
+            "control_index": 74.9699157641396,
+            "date": "2027-05-26",
+            "index_gap": 1.2250901811636226,
+            "period": "post",
+            "treatment": 7.2,
+            "treatment_index": 76.19500594530322
+          },
+          {
+            "control": 5.875,
+            "control_index": 100.67388688327317,
+            "date": "2027-05-27",
+            "index_gap": -1.197073565793957,
+            "period": "post",
+            "treatment": 9.4,
+            "treatment_index": 99.47681331747921
+          },
+          {
+            "control": 6.375,
+            "control_index": 109.2418772563177,
+            "date": "2027-05-28",
+            "index_gap": 21.982855205037865,
+            "period": "post",
+            "treatment": 12.4,
+            "treatment_index": 131.22473246135556
+          }
+        ],
+        "unit": "per-market average"
+      },
+      {
+        "baseline": {
+          "control": 0.03055870379086557,
+          "treatment": 0.02878638814577156
+        },
+        "delta_frequency": "daily",
+        "delta_points": [
+          {
+            "date": "2027-02-01",
+            "index_gap": 39.34952352675202,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-02",
+            "index_gap": 18.203236401500874,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-03",
+            "index_gap": 41.19043602149918,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-04",
+            "index_gap": -10.329536967426662,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-05",
+            "index_gap": -14.710681335208434,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-06",
+            "index_gap": -9.073788298634625,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-07",
+            "index_gap": 21.28263982168501,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-08",
+            "index_gap": 26.058456065727995,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-09",
+            "index_gap": 43.123566776525834,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-10",
+            "index_gap": -15.466066855710253,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-11",
+            "index_gap": 8.80426806512952,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-12",
+            "index_gap": -34.25378186699784,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-13",
+            "index_gap": 14.143998831802875,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-14",
+            "index_gap": -39.88190886964715,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-15",
+            "index_gap": -10.387680765408632,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-16",
+            "index_gap": -1.6793331950687644,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-17",
+            "index_gap": 7.897456220561082,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-18",
+            "index_gap": 39.16097485896603,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-19",
+            "index_gap": 14.37287222060938,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-20",
+            "index_gap": 8.026294065094532,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-21",
+            "index_gap": 8.418885435201332,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-22",
+            "index_gap": -9.158503132433097,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-23",
+            "index_gap": 1.3249337574047502,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-24",
+            "index_gap": -6.765736575182686,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-25",
+            "index_gap": 26.249021866247134,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-26",
+            "index_gap": -4.928450078084808,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-27",
+            "index_gap": -12.224692442611286,
+            "period": "pre"
+          },
+          {
+            "date": "2027-02-28",
+            "index_gap": 17.88702891606451,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-01",
+            "index_gap": -24.693012710966173,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-02",
+            "index_gap": 13.397729020455188,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-03",
+            "index_gap": -26.601749261685484,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-04",
+            "index_gap": 16.834034464538135,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-05",
+            "index_gap": 30.172191346910054,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-06",
+            "index_gap": 26.114393017714676,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-07",
+            "index_gap": -6.990885426250728,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-08",
+            "index_gap": -29.235853919319155,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-09",
+            "index_gap": 16.71308612377419,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-10",
+            "index_gap": -18.479333026587838,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-11",
+            "index_gap": 2.8515016333395664,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-12",
+            "index_gap": -18.82788929958741,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-13",
+            "index_gap": -9.313176242652432,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-14",
+            "index_gap": -7.793057794871089,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-15",
+            "index_gap": -24.32954147538983,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-16",
+            "index_gap": 3.4095741100249057,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-17",
+            "index_gap": -11.732105471953432,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-18",
+            "index_gap": -9.630168303680719,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-19",
+            "index_gap": -33.1334495379742,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-20",
+            "index_gap": -28.148869704090117,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-21",
+            "index_gap": -18.9265080963295,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-22",
+            "index_gap": 10.431868633782372,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-23",
+            "index_gap": -19.880691821669856,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-24",
+            "index_gap": -16.931901876374226,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-25",
+            "index_gap": 32.179613992745985,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-26",
+            "index_gap": -21.428639266621815,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-27",
+            "index_gap": -18.190960256288463,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-28",
+            "index_gap": -32.27904469384397,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-29",
+            "index_gap": -29.53724376685605,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-30",
+            "index_gap": 82.59240190728221,
+            "period": "pre"
+          },
+          {
+            "date": "2027-03-31",
+            "index_gap": 5.107380764359988,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-01",
+            "index_gap": 14.990373969343935,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-02",
+            "index_gap": 6.042825445962251,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-03",
+            "index_gap": -0.8139775714283104,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-04",
+            "index_gap": -10.316512800520385,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-05",
+            "index_gap": 37.955210376436526,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-06",
+            "index_gap": -14.441370188467403,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-07",
+            "index_gap": 1.8105344594434882,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-08",
+            "index_gap": 22.422448811392997,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-09",
+            "index_gap": -7.093492049348612,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-10",
+            "index_gap": 19.63420910095742,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-11",
+            "index_gap": 35.73098260332773,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-12",
+            "index_gap": -30.33462694257382,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-13",
+            "index_gap": 19.906112451384658,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-14",
+            "index_gap": 9.752612455790683,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-15",
+            "index_gap": -10.679542686882314,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-16",
+            "index_gap": -9.481035663357773,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-17",
+            "index_gap": 37.16253209894515,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-18",
+            "index_gap": -23.051080676849722,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-19",
+            "index_gap": -15.359331994365618,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-20",
+            "index_gap": -23.981611728651316,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-21",
+            "index_gap": 32.98752040479357,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-22",
+            "index_gap": -5.460950610226448,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-23",
+            "index_gap": -37.199578052403496,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-24",
+            "index_gap": 17.349742393411162,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-25",
+            "index_gap": -12.456142394091714,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-26",
+            "index_gap": -12.04126078699305,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-27",
+            "index_gap": -26.948402766255185,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-28",
+            "index_gap": 11.191048712991801,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-29",
+            "index_gap": -11.462098145075771,
+            "period": "pre"
+          },
+          {
+            "date": "2027-04-30",
+            "index_gap": -16.168263756981943,
+            "period": "pre"
+          },
+          {
+            "date": "2027-05-01",
+            "index_gap": -7.858543755117395,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-02",
+            "index_gap": -7.370930658167268,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-03",
+            "index_gap": 38.30836873408019,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-04",
+            "index_gap": -5.471301331366021,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-05",
+            "index_gap": 12.15948363879724,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-06",
+            "index_gap": 13.679811592157876,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-07",
+            "index_gap": -3.2641866693444825,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-08",
+            "index_gap": -41.62119889928093,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-09",
+            "index_gap": 55.65484331956827,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-10",
+            "index_gap": 22.418379310354197,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-11",
+            "index_gap": 35.426879341612235,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-12",
+            "index_gap": -15.128622439054269,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-13",
+            "index_gap": 51.04045199029733,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-14",
+            "index_gap": -11.110496673926448,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-15",
+            "index_gap": -3.8459014244519807,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-16",
+            "index_gap": 39.45344133989846,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-17",
+            "index_gap": -29.341787452123015,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-18",
+            "index_gap": 23.02966474004387,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-19",
+            "index_gap": -13.574960159946627,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-20",
+            "index_gap": 7.537041392480134,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-21",
+            "index_gap": 8.362860562791084,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-22",
+            "index_gap": 7.100831293272989,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-23",
+            "index_gap": 19.544428365747052,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-24",
+            "index_gap": -13.859975118605334,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-25",
+            "index_gap": 19.558535185046836,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-26",
+            "index_gap": 2.647052012914031,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-27",
+            "index_gap": -1.2456677840661854,
+            "period": "post"
+          },
+          {
+            "date": "2027-05-28",
+            "index_gap": 14.491735017584247,
+            "period": "post"
+          }
+        ],
+        "index_base": 100,
+        "metric": "conversion_rate",
+        "points": [
+          {
+            "control": 0.02197112366603892,
+            "control_index": 71.89808774744694,
+            "date": "2027-02-01",
+            "index_gap": 39.34952352675202,
+            "period": "pre",
+            "treatment": 0.03202416918429003,
+            "treatment_index": 111.24761127419896
+          },
+          {
+            "control": 0.0297029702970297,
+            "control_index": 97.19970617964607,
+            "date": "2027-02-02",
+            "index_gap": 18.203236401500874,
+            "period": "pre",
+            "treatment": 0.033220338983050844,
+            "treatment_index": 115.40294258114695
+          },
+          {
+            "control": 0.02700675168792198,
+            "control_index": 88.37662707406679,
+            "date": "2027-02-03",
+            "index_gap": 41.19043602149918,
+            "period": "pre",
+            "treatment": 0.03729767769176636,
+            "treatment_index": 129.56706309556597
+          },
+          {
+            "control": 0.04005252790544977,
+            "control_index": 131.0674961201137,
+            "date": "2027-02-04",
+            "index_gap": -10.329536967426662,
+            "period": "pre",
+            "treatment": 0.03475609756097561,
+            "treatment_index": 120.73795915268704
+          },
+          {
+            "control": 0.03755868544600939,
+            "control_index": 122.9066707248107,
+            "date": "2027-02-05",
+            "index_gap": -14.710681335208434,
+            "period": "pre",
+            "treatment": 0.03114571746384872,
+            "treatment_index": 108.19598938960226
+          },
+          {
+            "control": 0.03009259259259259,
+            "control_index": 98.47470232552105,
+            "date": "2027-02-06",
+            "index_gap": -9.073788298634625,
+            "period": "pre",
+            "treatment": 0.025735294117647058,
+            "treatment_index": 89.40091402688643
+          },
+          {
+            "control": 0.027989821882951654,
+            "control_index": 91.5936162557988,
+            "date": "2027-02-07",
+            "index_gap": 21.28263982168501,
+            "period": "pre",
+            "treatment": 0.032492997198879554,
+            "treatment_index": 112.87625607748382
+          },
+          {
+            "control": 0.02736156351791531,
+            "control_index": 89.53770979675542,
+            "date": "2027-02-08",
+            "index_gap": 26.058456065727995,
+            "period": "pre",
+            "treatment": 0.03327596098680436,
+            "treatment_index": 115.59616586248342
+          },
+          {
+            "control": 0.025991792065663474,
+            "control_index": 85.05528324611986,
+            "date": "2027-02-09",
+            "index_gap": 43.123566776525834,
+            "period": "pre",
+            "treatment": 0.03689806128830519,
+            "treatment_index": 128.1788500226457
+          },
+          {
+            "control": 0.03681392235609103,
+            "control_index": 120.46951535652252,
+            "date": "2027-02-10",
+            "index_gap": -15.466066855710253,
+            "period": "pre",
+            "treatment": 0.030226700251889168,
+            "treatment_index": 105.00344850081227
+          },
+          {
+            "control": 0.029169308814204185,
+            "control_index": 95.45335762220158,
+            "date": "2027-02-11",
+            "index_gap": 8.80426806512952,
+            "period": "pre",
+            "treatment": 0.030012004801920768,
+            "treatment_index": 104.2576256873311
+          },
+          {
+            "control": 0.033810888252149,
+            "control_index": 110.64241626065159,
+            "date": "2027-02-12",
+            "index_gap": -34.25378186699784,
+            "period": "pre",
+            "treatment": 0.02198952879581152,
+            "treatment_index": 76.38863439365375
+          },
+          {
+            "control": 0.02857142857142857,
+            "control_index": 93.49686022994528,
+            "date": "2027-02-13",
+            "index_gap": 14.143998831802875,
+            "period": "pre",
+            "treatment": 0.030985915492957747,
+            "treatment_index": 107.64085906174816
+          },
+          {
+            "control": 0.030599755201958383,
+            "control_index": 100.13433623158154,
+            "date": "2027-02-14",
+            "index_gap": -39.88190886964715,
+            "period": "pre",
+            "treatment": 0.017344497607655503,
+            "treatment_index": 60.252427361934394
+          },
+          {
+            "control": 0.03178991015894955,
+            "control_index": 104.02898753988383,
+            "date": "2027-02-15",
+            "index_gap": -10.387680765408632,
+            "period": "pre",
+            "treatment": 0.02695595003287311,
+            "treatment_index": 93.6413067744752
+          },
+          {
+            "control": 0.028941355674028942,
+            "control_index": 94.70740602119362,
+            "date": "2027-02-16",
+            "index_gap": -1.6793331950687644,
+            "period": "pre",
+            "treatment": 0.026779422128259338,
+            "treatment_index": 93.02807282612486
+          },
+          {
+            "control": 0.030878859857482184,
+            "control_index": 101.0476755454278,
+            "date": "2027-02-17",
+            "index_gap": 7.897456220561082,
+            "period": "pre",
+            "treatment": 0.03136136849607983,
+            "treatment_index": 108.94513176598888
+          },
+          {
+            "control": 0.020618556701030927,
+            "control_index": 67.47196099068216,
+            "date": "2027-02-18",
+            "index_gap": 39.16097485896603,
+            "period": "pre",
+            "treatment": 0.030695770804911322,
+            "treatment_index": 106.63293584964819
+          },
+          {
+            "control": 0.026248399487836107,
+            "control_index": 85.89500283608929,
+            "date": "2027-02-19",
+            "index_gap": 14.37287222060938,
+            "period": "pre",
+            "treatment": 0.028863499699338546,
+            "treatment_index": 100.26787505669867
+          },
+          {
+            "control": 0.033394049787492414,
+            "control_index": 109.27835819225542,
+            "date": "2027-02-20",
+            "index_gap": 8.026294065094532,
+            "period": "pre",
+            "treatment": 0.03376777251184834,
+            "treatment_index": 117.30465225734996
+          },
+          {
+            "control": 0.024949426837491573,
+            "control_index": 81.64425758447683,
+            "date": "2027-02-21",
+            "index_gap": 8.418885435201332,
+            "period": "pre",
+            "treatment": 0.025925925925925925,
+            "treatment_index": 90.06314301967817
+          },
+          {
+            "control": 0.03875968992248062,
+            "control_index": 126.83682589333662,
+            "date": "2027-02-22",
+            "index_gap": -9.158503132433097,
+            "period": "pre",
+            "treatment": 0.03387533875338753,
+            "treatment_index": 117.67832276090353
+          },
+          {
+            "control": 0.028611304954640614,
+            "control_index": 93.6273513119131,
+            "date": "2027-02-23",
+            "index_gap": 1.3249337574047502,
+            "period": "pre",
+            "treatment": 0.027333333333333334,
+            "treatment_index": 94.95228506931785
+          },
+          {
+            "control": 0.032214765100671144,
+            "control_index": 105.41927864852892,
+            "date": "2027-02-24",
+            "index_gap": -6.765736575182686,
+            "period": "pre",
+            "treatment": 0.0283987915407855,
+            "treatment_index": 98.65354207334623
+          },
+          {
+            "control": 0.026366559485530548,
+            "control_index": 86.28166844371155,
+            "date": "2027-02-25",
+            "index_gap": 26.249021866247134,
+            "period": "pre",
+            "treatment": 0.03239352129574085,
+            "treatment_index": 112.53069030995869
+          },
+          {
+            "control": 0.03076923076923077,
+            "control_index": 100.68892640147953,
+            "date": "2027-02-26",
+            "index_gap": -4.928450078084808,
+            "period": "pre",
+            "treatment": 0.02756598240469208,
+            "treatment_index": 95.76047632339473
+          },
+          {
+            "control": 0.03629536921151439,
+            "control_index": 118.7726071757127,
+            "date": "2027-02-27",
+            "index_gap": -12.224692442611286,
+            "period": "pre",
+            "treatment": 0.030671296296296297,
+            "treatment_index": 106.54791473310141
+          },
+          {
+            "control": 0.02696225284601558,
+            "control_index": 88.2310095039927,
+            "date": "2027-02-28",
+            "index_gap": 17.88702891606451,
+            "period": "pre",
+            "treatment": 0.03054755043227666,
+            "treatment_index": 106.1180384200572
+          },
+          {
+            "control": 0.033249686323713924,
+            "control_index": 108.80594462142312,
+            "date": "2027-03-01",
+            "index_gap": -24.693012710966173,
+            "period": "pre",
+            "treatment": 0.024213075060532687,
+            "treatment_index": 84.11293191045695
+          },
+          {
+            "control": 0.027326440177252585,
+            "control_index": 89.42277252420911,
+            "date": "2027-03-02",
+            "index_gap": 13.397729020455188,
+            "period": "pre",
+            "treatment": 0.02959830866807611,
+            "treatment_index": 102.8205015446643
+          },
+          {
+            "control": 0.03084040092521203,
+            "control_index": 100.92182291590083,
+            "date": "2027-03-03",
+            "index_gap": -26.601749261685484,
+            "period": "pre",
+            "treatment": 0.02139406487232574,
+            "treatment_index": 74.32007365421535
+          },
+          {
+            "control": 0.027777777777777776,
+            "control_index": 90.89972522355791,
+            "date": "2027-03-04",
+            "index_gap": 16.834034464538135,
+            "period": "pre",
+            "treatment": 0.0310126582278481,
+            "treatment_index": 107.73375968809604
+          },
+          {
+            "control": 0.024539877300613498,
+            "control_index": 80.30405173124134,
+            "date": "2027-03-05",
+            "index_gap": 30.172191346910054,
+            "period": "pre",
+            "treatment": 0.03180212014134275,
+            "treatment_index": 110.4762430781514
+          },
+          {
+            "control": 0.026814911706998037,
+            "control_index": 87.74885181816316,
+            "date": "2027-03-06",
+            "index_gap": 26.114393017714676,
+            "period": "pre",
+            "treatment": 0.032777115613825986,
+            "treatment_index": 113.86324483587784
+          },
+          {
+            "control": 0.03153153153153153,
+            "control_index": 103.18347187539005,
+            "date": "2027-03-07",
+            "index_gap": -6.990885426250728,
+            "period": "pre",
+            "treatment": 0.027690371302706105,
+            "treatment_index": 96.19258644913933
+          },
+          {
+            "control": 0.034310221586847746,
+            "control_index": 112.27642972573841,
+            "date": "2027-03-08",
+            "index_gap": -29.235853919319155,
+            "period": "pre",
+            "treatment": 0.02390438247011952,
+            "treatment_index": 83.04057580641926
+          },
+          {
+            "control": 0.029257314328582147,
+            "control_index": 95.74134599690571,
+            "date": "2027-03-09",
+            "index_gap": 16.71308612377419,
+            "period": "pre",
+            "treatment": 0.03237156931738212,
+            "treatment_index": 112.4544321206799
+          },
+          {
+            "control": 0.02949438202247191,
+            "control_index": 96.51712397332834,
+            "date": "2027-03-10",
+            "index_gap": -18.479333026587838,
+            "period": "pre",
+            "treatment": 0.0224642614023145,
+            "treatment_index": 78.0377909467405
+          },
+          {
+            "control": 0.03350854139290407,
+            "control_index": 109.65301938925909,
+            "date": "2027-03-11",
+            "index_gap": 2.8515016333395664,
+            "period": "pre",
+            "treatment": 0.03238598810310641,
+            "treatment_index": 112.50452102259865
+          },
+          {
+            "control": 0.03264490339773484,
+            "control_index": 106.8268589569328,
+            "date": "2027-03-12",
+            "index_gap": -18.82788929958741,
+            "period": "pre",
+            "treatment": 0.025331724969843185,
+            "treatment_index": 87.99896965734538
+          },
+          {
+            "control": 0.028811524609843937,
+            "control_index": 94.28254813103726,
+            "date": "2027-03-13",
+            "index_gap": -9.313176242652432,
+            "period": "pre",
+            "treatment": 0.024459613196814563,
+            "treatment_index": 84.96937188838483
+          },
+          {
+            "control": 0.03276622558286074,
+            "control_index": 107.22387247542558,
+            "date": "2027-03-14",
+            "index_gap": -7.793057794871089,
+            "period": "pre",
+            "treatment": 0.028622540250447227,
+            "treatment_index": 99.43081468055449
+          },
+          {
+            "control": 0.036242603550295856,
+            "control_index": 118.59993734789656,
+            "date": "2027-03-15",
+            "index_gap": -24.32954147538983,
+            "period": "pre",
+            "treatment": 0.027137042062415198,
+            "treatment_index": 94.27039587250673
+          },
+          {
+            "control": 0.03013481363996828,
+            "control_index": 98.6128660633047,
+            "date": "2027-03-16",
+            "index_gap": 3.4095741100249057,
+            "period": "pre",
+            "treatment": 0.02936857562408223,
+            "treatment_index": 102.0224401733296
+          },
+          {
+            "control": 0.024830699774266364,
+            "control_index": 81.25573631722106,
+            "date": "2027-03-17",
+            "index_gap": -11.732105471953432,
+            "period": "pre",
+            "treatment": 0.0200133422281521,
+            "treatment_index": 69.52363084526763
+          },
+          {
+            "control": 0.035285815102328866,
+            "control_index": 115.46895229527469,
+            "date": "2027-03-18",
+            "index_gap": -9.630168303680719,
+            "period": "pre",
+            "treatment": 0.03046716316858497,
+            "treatment_index": 105.83878399159397
+          },
+          {
+            "control": 0.032989690721649485,
+            "control_index": 107.95513758509145,
+            "date": "2027-03-19",
+            "index_gap": -33.1334495379742,
+            "period": "pre",
+            "treatment": 0.021538461538461538,
+            "treatment_index": 74.82168804711725
+          },
+          {
+            "control": 0.03740648379052369,
+            "control_index": 122.40860753297076,
+            "date": "2027-03-20",
+            "index_gap": -28.148869704090117,
+            "period": "pre",
+            "treatment": 0.027133973996608253,
+            "treatment_index": 94.25973782888065
+          },
+          {
+            "control": 0.03098220171390903,
+            "control_index": 101.38585041414632,
+            "date": "2027-03-21",
+            "index_gap": -18.9265080963295,
+            "period": "pre",
+            "treatment": 0.023737066342057214,
+            "treatment_index": 82.45934231781682
+          },
+          {
+            "control": 0.0262582056892779,
+            "control_index": 85.92709255268494,
+            "date": "2027-03-22",
+            "index_gap": 10.431868633782372,
+            "period": "pre",
+            "treatment": 0.027738264580369845,
+            "treatment_index": 96.35896118646731
+          },
+          {
+            "control": 0.029770992366412213,
+            "control_index": 97.42230092662237,
+            "date": "2027-03-23",
+            "index_gap": -19.880691821669856,
+            "period": "pre",
+            "treatment": 0.022321428571428572,
+            "treatment_index": 77.54160910495251
+          },
+          {
+            "control": 0.034722222222222224,
+            "control_index": 113.62465652944739,
+            "date": "2027-03-24",
+            "index_gap": -16.931901876374226,
+            "period": "pre",
+            "treatment": 0.027834351663272233,
+            "treatment_index": 96.69275465307317
+          },
+          {
+            "control": 0.027177269919703522,
+            "control_index": 88.93462924899057,
+            "date": "2027-03-25",
+            "index_gap": 32.179613992745985,
+            "period": "pre",
+            "treatment": 0.034864416159380185,
+            "treatment_index": 121.11424324173656
+          },
+          {
+            "control": 0.03777089783281734,
+            "control_index": 123.60111244020631,
+            "date": "2027-03-26",
+            "index_gap": -21.428639266621815,
+            "period": "pre",
+            "treatment": 0.029411764705882353,
+            "treatment_index": 102.17247317358449
+          },
+          {
+            "control": 0.03002450980392157,
+            "control_index": 98.25190888134568,
+            "date": "2027-03-27",
+            "index_gap": -18.190960256288463,
+            "period": "pre",
+            "treatment": 0.02304665542439573,
+            "treatment_index": 80.06094862505722
+          },
+          {
+            "control": 0.03400503778337532,
+            "control_index": 111.27774926611875,
+            "date": "2027-03-28",
+            "index_gap": -32.27904469384397,
+            "period": "pre",
+            "treatment": 0.022740873728306403,
+            "treatment_index": 78.99870457227478
+          },
+          {
+            "control": 0.0338420703384207,
+            "control_index": 110.74445621131541,
+            "date": "2027-03-29",
+            "index_gap": -29.53724376685605,
+            "period": "pre",
+            "treatment": 0.023376623376623377,
+            "treatment_index": 81.20721244445936
+          },
+          {
+            "control": 0.01617440225035162,
+            "control_index": 52.92895392764132,
+            "date": "2027-03-30",
+            "index_gap": 82.59240190728221,
+            "period": "pre",
+            "treatment": 0.03901170351105332,
+            "treatment_index": 135.52135583492353
+          },
+          {
+            "control": 0.02975778546712803,
+            "control_index": 97.37908280004682,
+            "date": "2027-03-31",
+            "index_gap": 5.107380764359988,
+            "period": "pre",
+            "treatment": 0.02950215119852489,
+            "treatment_index": 102.4864635644068
+          },
+          {
+            "control": 0.030965391621129327,
+            "control_index": 101.33084123281866,
+            "date": "2027-04-01",
+            "index_gap": 14.990373969343935,
+            "period": "pre",
+            "treatment": 0.03348467650397276,
+            "treatment_index": 116.32121520216259
+          },
+          {
+            "control": 0.028402366863905324,
+            "control_index": 92.9436243705965,
+            "date": "2027-04-02",
+            "index_gap": 6.042825445962251,
+            "period": "pre",
+            "treatment": 0.02849462365591398,
+            "treatment_index": 98.98644981655875
+          },
+          {
+            "control": 0.029562251279135872,
+            "control_index": 96.73921865747607,
+            "date": "2027-04-03",
+            "index_gap": -0.8139775714283104,
+            "period": "pre",
+            "treatment": 0.027613412228796843,
+            "treatment_index": 95.92524108604776
+          },
+          {
+            "control": 0.03775680177679067,
+            "control_index": 123.55498464590215,
+            "date": "2027-04-04",
+            "index_gap": -10.316512800520385,
+            "period": "pre",
+            "treatment": 0.03259726603575184,
+            "treatment_index": 113.23847184538177
+          },
+          {
+            "control": 0.028460543337645538,
+            "control_index": 93.13400048778507,
+            "date": "2027-04-05",
+            "index_gap": 37.955210376436526,
+            "period": "pre",
+            "treatment": 0.03773584905660377,
+            "treatment_index": 131.0892108642216
+          },
+          {
+            "control": 0.033205619412515965,
+            "control_index": 108.66174049712669,
+            "date": "2027-04-06",
+            "index_gap": -14.441370188467403,
+            "period": "pre",
+            "treatment": 0.027122641509433963,
+            "treatment_index": 94.22037030865928
+          },
+          {
+            "control": 0.03260188087774295,
+            "control_index": 106.68607248808803,
+            "date": "2027-04-07",
+            "index_gap": 1.8105344594434882,
+            "period": "pre",
+            "treatment": 0.031232254400908575,
+            "treatment_index": 108.49660694753152
+          },
+          {
+            "control": 0.024818401937046004,
+            "control_index": 81.21549299635078,
+            "date": "2027-04-08",
+            "index_gap": 22.422448811392997,
+            "period": "pre",
+            "treatment": 0.02983362019506598,
+            "treatment_index": 103.63794180774377
+          },
+          {
+            "control": 0.030922142462727776,
+            "control_index": 101.18931311468403,
+            "date": "2027-04-09",
+            "index_gap": -7.093492049348612,
+            "period": "pre",
+            "treatment": 0.027086788280818133,
+            "treatment_index": 94.09582106533541
+          },
+          {
+            "control": 0.023458810692853247,
+            "control_index": 76.7663800578656,
+            "date": "2027-04-10",
+            "index_gap": 19.63420910095742,
+            "period": "pre",
+            "treatment": 0.027750247770069375,
+            "treatment_index": 96.40058915882302
+          },
+          {
+            "control": 0.023270055113288425,
+            "control_index": 76.1486981664588,
+            "date": "2027-04-11",
+            "index_gap": 35.73098260332773,
+            "period": "pre",
+            "treatment": 0.0322061191626409,
+            "treatment_index": 111.87968076978653
+          },
+          {
+            "control": 0.03133333333333333,
+            "control_index": 102.53489005217331,
+            "date": "2027-04-12",
+            "index_gap": -30.33462694257382,
+            "period": "pre",
+            "treatment": 0.020783847980997625,
+            "treatment_index": 72.20026310959949
+          },
+          {
+            "control": 0.02698961937716263,
+            "control_index": 88.3205634698099,
+            "date": "2027-04-13",
+            "index_gap": 19.906112451384658,
+            "period": "pre",
+            "treatment": 0.031154551007941355,
+            "treatment_index": 108.22667592119456
+          },
+          {
+            "control": 0.027139874739039668,
+            "control_index": 88.8122576296975,
+            "date": "2027-04-14",
+            "index_gap": 9.752612455790683,
+            "period": "pre",
+            "treatment": 0.02837326607818411,
+            "treatment_index": 98.56487008548818
+          },
+          {
+            "control": 0.03450608930987822,
+            "control_index": 112.91738532506923,
+            "date": "2027-04-15",
+            "index_gap": -10.679542686882314,
+            "period": "pre",
+            "treatment": 0.02943058221369162,
+            "treatment_index": 102.23784263818692
+          },
+          {
+            "control": 0.027777777777777776,
+            "control_index": 90.89972522355791,
+            "date": "2027-04-16",
+            "index_gap": -9.481035663357773,
+            "period": "pre",
+            "treatment": 0.0234375,
+            "treatment_index": 81.41868956020014
+          },
+          {
+            "control": 0.024903154399557276,
+            "control_index": 81.49283611630537,
+            "date": "2027-04-17",
+            "index_gap": 37.16253209894515,
+            "period": "pre",
+            "treatment": 0.03415659485023647,
+            "treatment_index": 118.65536821525052
+          },
+          {
+            "control": 0.03462603878116344,
+            "control_index": 113.30990678836858,
+            "date": "2027-04-18",
+            "index_gap": -23.051080676849722,
+            "period": "pre",
+            "treatment": 0.025982256020278833,
+            "treatment_index": 90.25882611151886
+          },
+          {
+            "control": 0.037285607755406416,
+            "control_index": 122.01305399135292,
+            "date": "2027-04-19",
+            "index_gap": -15.359331994365618,
+            "period": "pre",
+            "treatment": 0.03070175438596491,
+            "treatment_index": 106.6537219969873
+          },
+          {
+            "control": 0.032306536438767845,
+            "control_index": 105.7195902675189,
+            "date": "2027-04-20",
+            "index_gap": -23.981611728651316,
+            "period": "pre",
+            "treatment": 0.023529411764705882,
+            "treatment_index": 81.73797853886758
+          },
+          {
+            "control": 0.027386541471048513,
+            "control_index": 89.6194474035078,
+            "date": "2027-04-21",
+            "index_gap": 32.98752040479357,
+            "period": "pre",
+            "treatment": 0.03529411764705882,
+            "treatment_index": 122.60696780830138
+          },
+          {
+            "control": 0.034653465346534656,
+            "control_index": 113.39965720958712,
+            "date": "2027-04-22",
+            "index_gap": -5.460950610226448,
+            "period": "pre",
+            "treatment": 0.031071655041217502,
+            "treatment_index": 107.93870659936067
+          },
+          {
+            "control": 0.03654080389768575,
+            "control_index": 119.57576521491174,
+            "date": "2027-04-23",
+            "index_gap": -37.199578052403496,
+            "period": "pre",
+            "treatment": 0.02371312897628687,
+            "treatment_index": 82.37618716250824
+          },
+          {
+            "control": 0.02669902912621359,
+            "control_index": 87.36963880710906,
+            "date": "2027-04-24",
+            "index_gap": 17.349742393411162,
+            "period": "pre",
+            "treatment": 0.030144927536231884,
+            "treatment_index": 104.71938120052022
+          },
+          {
+            "control": 0.03288201160541586,
+            "control_index": 107.60276951028519,
+            "date": "2027-04-25",
+            "index_gap": -12.456142394091714,
+            "period": "pre",
+            "treatment": 0.027389277389277388,
+            "treatment_index": 95.14662711619347
+          },
+          {
+            "control": 0.029469548133595286,
+            "control_index": 96.4358578010241,
+            "date": "2027-04-26",
+            "index_gap": -12.04126078699305,
+            "period": "pre",
+            "treatment": 0.024294156270518712,
+            "treatment_index": 84.39459701403105
+          },
+          {
+            "control": 0.03365384615384615,
+            "control_index": 110.12851325161823,
+            "date": "2027-04-27",
+            "index_gap": -26.948402766255185,
+            "period": "pre",
+            "treatment": 0.023944549464398234,
+            "treatment_index": 83.18011048536304
+          },
+          {
+            "control": 0.030303030303030304,
+            "control_index": 99.16333660751772,
+            "date": "2027-04-28",
+            "index_gap": 11.191048712991801,
+            "period": "pre",
+            "treatment": 0.03176704169424222,
+            "treatment_index": 110.35438532050952
+          },
+          {
+            "control": 0.038050734312416554,
+            "control_index": 124.51684656791777,
+            "date": "2027-04-29",
+            "index_gap": -11.462098145075771,
+            "period": "pre",
+            "treatment": 0.03254437869822485,
+            "treatment_index": 113.054748422842
+          },
+          {
+            "control": 0.036051026067665005,
+            "control_index": 117.9730210888106,
+            "date": "2027-04-30",
+            "index_gap": -16.168263756981943,
+            "period": "pre",
+            "treatment": 0.02930591259640103,
+            "treatment_index": 101.80475733182865
+          },
+          {
+            "control": 0.03225806451612903,
+            "control_index": 105.56097122735757,
+            "date": "2027-05-01",
+            "index_gap": -7.858543755117395,
+            "period": "post",
+            "treatment": 0.028125,
+            "treatment_index": 97.70242747224017
+          },
+          {
+            "control": 0.027151935297515885,
+            "control_index": 88.85172448195262,
+            "date": "2027-05-02",
+            "index_gap": -7.370930658167268,
+            "period": "post",
+            "treatment": 0.02345537757437071,
+            "treatment_index": 81.48079382378535
+          },
+          {
+            "control": 0.02467343976777939,
+            "control_index": 80.74112022760151,
+            "date": "2027-05-03",
+            "index_gap": 38.30836873408019,
+            "period": "post",
+            "treatment": 0.03427004797806717,
+            "treatment_index": 119.0494889616817
+          },
+          {
+            "control": 0.033886085075702954,
+            "control_index": 110.88848960220619,
+            "date": "2027-05-04",
+            "index_gap": -5.471301331366021,
+            "period": "post",
+            "treatment": 0.030345800988002825,
+            "treatment_index": 105.41718827084017
+          },
+          {
+            "control": 0.026657060518731988,
+            "control_index": 87.2323011511377,
+            "date": "2027-05-05",
+            "index_gap": 12.15948363879724,
+            "period": "post",
+            "treatment": 0.028611304954640614,
+            "treatment_index": 99.39178478993495
+          },
+          {
+            "control": 0.03103448275862069,
+            "control_index": 101.55693438769917,
+            "date": "2027-05-06",
+            "index_gap": 13.679811592157876,
+            "period": "post",
+            "treatment": 0.033172496984318456,
+            "treatment_index": 115.23674597985705
+          },
+          {
+            "control": 0.034688995215311005,
+            "control_index": 113.51592480071106,
+            "date": "2027-05-07",
+            "index_gap": -3.2641866693444825,
+            "period": "post",
+            "treatment": 0.03173749327595481,
+            "treatment_index": 110.25173813136658
+          },
+          {
+            "control": 0.035733919736118745,
+            "control_index": 116.9353254662592,
+            "date": "2027-05-08",
+            "index_gap": -41.62119889928093,
+            "period": "post",
+            "treatment": 0.02168021680216802,
+            "treatment_index": 75.31412656697827
+          },
+          {
+            "control": 0.027346177750155375,
+            "control_index": 89.48736156253307,
+            "date": "2027-05-09",
+            "index_gap": 55.65484331956827,
+            "period": "post",
+            "treatment": 0.04178119846069269,
+            "treatment_index": 145.14220488210134
+          },
+          {
+            "control": 0.0273492286115007,
+            "control_index": 89.49734517102056,
+            "date": "2027-05-10",
+            "index_gap": 22.418379310354197,
+            "period": "post",
+            "treatment": 0.03221649484536082,
+            "treatment_index": 111.91572448137475
+          },
+          {
+            "control": 0.029098651525904896,
+            "control_index": 95.22213941090949,
+            "date": "2027-05-11",
+            "index_gap": 35.426879341612235,
+            "period": "post",
+            "treatment": 0.03760913364674278,
+            "treatment_index": 130.64901875252173
+          },
+          {
+            "control": 0.03041018387553041,
+            "control_index": 99.51398489820907,
+            "date": "2027-05-12",
+            "index_gap": -15.128622439054269,
+            "period": "post",
+            "treatment": 0.024291497975708502,
+            "treatment_index": 84.3853624591548
+          },
+          {
+            "control": 0.02109426499670402,
+            "control_index": 69.0286641117592,
+            "date": "2027-05-13",
+            "index_gap": 51.04045199029733,
+            "period": "post",
+            "treatment": 0.03456356180433509,
+            "treatment_index": 120.06911610205653
+          },
+          {
+            "control": 0.03221884498480243,
+            "control_index": 105.43262962100212,
+            "date": "2027-05-14",
+            "index_gap": -11.110496673926448,
+            "period": "post",
+            "treatment": 0.027151935297515885,
+            "treatment_index": 94.32213294707567
+          },
+          {
+            "control": 0.03286384976525822,
+            "control_index": 107.54333688420937,
+            "date": "2027-05-15",
+            "index_gap": -3.8459014244519807,
+            "period": "post",
+            "treatment": 0.029850746268656716,
+            "treatment_index": 103.69743545975739
+          },
+          {
+            "control": 0.024967148488830485,
+            "control_index": 81.70224974101656,
+            "date": "2027-05-16",
+            "index_gap": 39.45344133989846,
+            "period": "post",
+            "treatment": 0.03487634749524413,
+            "treatment_index": 121.15569108091502
+          },
+          {
+            "control": 0.03745583038869258,
+            "control_index": 122.57008885268445,
+            "date": "2027-05-17",
+            "index_gap": -29.341787452123015,
+            "period": "post",
+            "treatment": 0.0268370607028754,
+            "treatment_index": 93.22830140056143
+          },
+          {
+            "control": 0.03308575286968265,
+            "control_index": 108.26949040807304,
+            "date": "2027-05-18",
+            "index_gap": 23.02966474004387,
+            "period": "post",
+            "treatment": 0.03779628443305574,
+            "treatment_index": 131.2991551481169
+          },
+          {
+            "control": 0.027380211574362167,
+            "control_index": 89.59873351220644,
+            "date": "2027-05-19",
+            "index_gap": -13.574960159946627,
+            "period": "post",
+            "treatment": 0.02188449848024316,
+            "treatment_index": 76.02377335225981
+          },
+          {
+            "control": 0.030213270142180094,
+            "control_index": 98.86960634505469,
+            "date": "2027-05-20",
+            "index_gap": 7.537041392480134,
+            "period": "post",
+            "treatment": 0.03063063063063063,
+            "treatment_index": 106.40664773753483
+          },
+          {
+            "control": 0.030922142462727776,
+            "control_index": 101.18931311468403,
+            "date": "2027-05-21",
+            "index_gap": 8.362860562791084,
+            "period": "post",
+            "treatment": 0.03153611393692777,
+            "treatment_index": 109.55217367747511
+          },
+          {
+            "control": 0.02304964539007092,
+            "control_index": 75.42743156848421,
+            "date": "2027-05-22",
+            "index_gap": 7.100831293272989,
+            "period": "post",
+            "treatment": 0.023756906077348067,
+            "treatment_index": 82.5282628617572
+          },
+          {
+            "control": 0.023076923076923078,
+            "control_index": 75.51669480110965,
+            "date": "2027-05-23",
+            "index_gap": 19.544428365747052,
+            "period": "post",
+            "treatment": 0.027364663890541343,
+            "treatment_index": 95.0611231668567
+          },
+          {
+            "control": 0.03247631935047361,
+            "control_index": 106.27518618830045,
+            "date": "2027-05-24",
+            "index_gap": -13.859975118605334,
+            "period": "post",
+            "treatment": 0.02660300136425648,
+            "treatment_index": 92.41521106969512
+          },
+          {
+            "control": 0.0264797507788162,
+            "control_index": 86.6520745121767,
+            "date": "2027-05-25",
+            "index_gap": 19.558535185046836,
+            "period": "post",
+            "treatment": 0.030574198359433258,
+            "treatment_index": 106.21060969722353
+          },
+          {
+            "control": 0.02625656414103526,
+            "control_index": 85.92172076645383,
+            "date": "2027-05-26",
+            "index_gap": 2.647052012914031,
+            "period": "post",
+            "treatment": 0.025495750708215296,
+            "treatment_index": 88.56877277936786
+          },
+          {
+            "control": 0.03230240549828179,
+            "control_index": 105.7060722187354,
+            "date": "2027-05-27",
+            "index_gap": -1.2456677840661854,
+            "period": "post",
+            "treatment": 0.030070377479206652,
+            "treatment_index": 104.46040443466921
+          },
+          {
+            "control": 0.031994981179422836,
+            "control_index": 104.70005991872793,
+            "date": "2027-05-28",
+            "index_gap": 14.491735017584247,
+            "period": "post",
+            "treatment": 0.03431101272827892,
+            "treatment_index": 119.19179493631218
+          }
+        ],
+        "unit": "ratio of sums"
+      }
+    ],
+    "time_series_frequency": "daily"
+  }
+}

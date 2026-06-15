@@ -1,0 +1,36 @@
+roadmap_name: "Supergeo Planning Example"
+markets:
+  universe: "synthetic_us_dma"
+defaults:
+  overlap_policy: "shared_controls"
+  min_control_markets: 6
+  max_shared_control_usage: 2
+  treatment_cooldown_days: 45
+  min_treatment_share: 0.10
+  max_treatment_share: 0.20
+  candidate_count: 30
+  assignment_policy:
+    kind: "supergeo"
+    treatment_count: 4
+    max_enumerated_assignments: 2000
+    monte_carlo_samples: 5000
+  interference:
+    mode: "distance_threshold"
+    buffer_radius: 50.0
+    exclude_buffer_controls: true
+tests:
+  - name: "supergeo_media_q4"
+    domain: "marketing"
+    priority: 9
+    earliest_start: "2027-10-01"
+    latest_end: "2027-12-15"
+    candidate_durations: [28]
+    primary_metrics: ["orders"]
+    metrics:
+      orders:
+        type: "count"
+        column: "orders"
+    estimator_suite:
+      estimators: ["did", "synthetic_control", "synthetic_did", "matrix_completion"]
+      include_experimental: true
+
