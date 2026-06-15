@@ -382,11 +382,30 @@ class GeoPanel:
         start: str | pd.Timestamp | None = None,
         end: str | pd.Timestamp | None = None,
         by: str | list[str] | None = None,
+        freq: str | pd.Timedelta | None = None,
         agg: str | Mapping[str, str] = "sum",
     ) -> pd.DataFrame:
         panel = self.slice(start, end, geos=geos) if any([start, end, geos]) else self
         column_list = list(columns)
         require_columns(panel.df, column_list, context="panel metrics")
+        if freq is not None:
+            grouping: list[Any] = []
+            if by is None:
+                grouping.append(panel.geo_col)
+            elif isinstance(by, str):
+                grouping.append(by)
+            else:
+                grouping.extend(by)
+            grouping.append(pd.Grouper(key=panel.time_col, freq=freq))
+            return (
+                panel.df.groupby(grouping, as_index=False, observed=True, sort=True)[column_list]
+                .agg(agg)
+                .sort_values(
+                    [key for key in [*grouping[:-1], panel.time_col] if isinstance(key, str)],
+                    kind="mergesort",
+                )
+                .reset_index(drop=True)
+            )
         if by is None:
             return panel.df[column_list].agg(agg).to_frame().T
         return panel.df.groupby(by, as_index=False, observed=True)[column_list].agg(agg)

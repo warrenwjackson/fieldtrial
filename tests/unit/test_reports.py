@@ -176,6 +176,33 @@ def test_analysis_report_executive_readout_uses_interval_tracks():
     assert "20.00%" in html
 
 
+def test_analysis_report_surfaces_fit_diagnostics():
+    html = render_analysis_report(
+        [
+            EstimatorResult(
+                "synthetic_control",
+                "synthetic_control_cumulative_att",
+                "orders",
+                4.0,
+                relative_lift=0.04,
+                diagnostics={
+                    "pre_period_rmse": 2.5,
+                    "pre_period_rmse_ratio": 0.03,
+                    "donor_weight_concentration": 0.58,
+                    "donor_weight_max": 0.7,
+                    "fit_intercept": True,
+                },
+                artifacts={"weights": {"c1": 0.7, "c2": 0.3}},
+            ).to_dict()
+        ]
+    )
+
+    assert "Fit Diagnostics" in html
+    assert "c1: 0.700" in html
+    assert "RMSE / observed" in html
+    assert "intercept on" in html
+
+
 def test_analysis_report_pairs_time_series_with_delta_bar_chart():
     payload = normalize_analysis_payload(
         {

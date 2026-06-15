@@ -56,6 +56,7 @@ class SyntheticDIDEstimator(BaseEstimator):
         warnings: list[str] = []
         info = metric_info(metric)
         setup = self._build_sdid_matrix(panel, design, metric)
+        warnings.extend(setup.get("warnings", []))
         y = setup["Y"]
         geos = setup["geos"]
         dates = setup["dates"]
@@ -69,6 +70,8 @@ class SyntheticDIDEstimator(BaseEstimator):
             raise ValueError("Synthetic DiD requires at least one control market")
 
         fit = self._fit_sdid_weights(y, n0=n0, t0=t0)
+        if fit.get("warning"):
+            warnings.append(str(fit["warning"]))
         omega = fit["omega"]
         lambd = fit["lambda"]
         row_weights = np.concatenate([-omega, np.full(n1, 1.0 / n1)])
@@ -106,6 +109,14 @@ class SyntheticDIDEstimator(BaseEstimator):
         unit_weight_fit_rmse = float(
             np.sqrt(np.mean((weighted_control_pre - treated_pre_profile) ** 2))
         )
+        unit_weight_concentration = float(np.square(omega).sum())
+        time_weight_concentration = float(np.square(lambd).sum())
+        time_weight_effective_periods = (
+            float(1.0 / time_weight_concentration) if time_weight_concentration > 0 else None
+        )
+        unit_weight_effective_controls = (
+            float(1.0 / unit_weight_concentration) if unit_weight_concentration > 0 else None
+        )
         counterfactual_records = [
             {
                 "date": date_value,
@@ -134,14 +145,24 @@ class SyntheticDIDEstimator(BaseEstimator):
             "n_treatment_geos": n1,
             "n_pre_periods": t0,
             "n_post_periods": t1,
+            "pre_period_to_control_ratio": fit["pre_period_to_control_ratio"],
             "noise_level": fit["noise_level"],
+            "eta_omega": fit["eta_omega"],
+            "eta_lambda": fit["eta_lambda"],
+            "time_weight_regularization_policy": fit["time_weight_regularization_policy"],
             "zeta_omega": fit["zeta_omega"],
             "zeta_lambda": fit["zeta_lambda"],
             "pre_gap_adjustment": pre_gap_adjustment,
             "post_effect_curve_mean": float(np.mean(post_gaps)),
             "relative_lift_baseline": counterfactual_post,
-            "unit_weight_concentration": float(np.square(omega).sum()),
-            "time_weight_concentration": float(np.square(lambd).sum()),
+            "unit_weight_concentration": unit_weight_concentration,
+            "time_weight_concentration": time_weight_concentration,
+            "unit_weight_effective_controls": unit_weight_effective_controls,
+            "time_weight_effective_pre_periods": time_weight_effective_periods,
+            "unit_weight_max": float(np.max(omega)),
+            "time_weight_max": float(np.max(lambd)),
+            "dropped_control_geos": setup.get("dropped_control_geos", []),
+            "zero_denominator_cells": setup.get("zero_denominator_cells", 0),
             "unit_weight_fit_rmse": unit_weight_fit_rmse,
             "time_weight_fit_rmse": time_weight_fit_rmse,
             "observed": observed_effect_summary(panel, design, metric),
@@ -188,6 +209,14 @@ class SyntheticDIDEstimator(BaseEstimator):
                         "and zeta regularization."
                     ),
                 },
+                "top_time_weights": [
+                    {"date": date_value, "weight": float(weight)}
+                    for date_value, weight in sorted(
+                        zip(pre_dates, lambd, strict=True),
+                        key=lambda item: item[1],
+                        reverse=True,
+                    )[:10]
+                ],
                 "treatment_geos": treatment_geos,
                 "effect_curve": {
                     date_value: float(value)
@@ -281,6 +310,7 @@ class SyntheticDIDEstimator(BaseEstimator):
                 grouped[numerator] / grouped[denominator],
                 np.nan,
             )
+            zero_denominator_cells = int((grouped[denominator] <= 0).sum())
         else:
             column = str(info.column or info.name)
             grouped = (
@@ -288,8 +318,11 @@ class SyntheticDIDEstimator(BaseEstimator):
                 .mean()
                 .reset_index(name="value")
             )
+            zero_denominator_cells = 0
 
-        geos = [*map(str, design.control_geos), *map(str, design.treatment_geos)]
+        control_geos = [*map(str, design.control_geos)]
+        treatment_geos = [*map(str, design.treatment_geos)]
+        geos = [*control_geos, *treatment_geos]
         dates = sorted(pd.Timestamp(value) for value in grouped[design.time_col].dropna().unique())
         wide = grouped.pivot_table(
             index=design.geo_col,
@@ -298,6 +331,48 @@ class SyntheticDIDEstimator(BaseEstimator):
             aggfunc="mean",
         ).reindex(index=geos, columns=dates)
         values = wide.to_numpy(dtype=float)
+        dropped_control_geos: list[str] = []
+        warnings: list[str] = []
+        if info.is_ratio and not np.isfinite(values).all():
+            n0 = len(control_geos)
+            finite_rows = np.isfinite(values)
+            bad_treatment_geos = [
+                geo
+                for geo, finite in zip(treatment_geos, finite_rows[n0:], strict=True)
+                if not bool(finite.all())
+            ]
+            if bad_treatment_geos:
+                raise ValueError(
+                    "Synthetic DiD requires finite ratio values for every treated market; "
+                    f"treated markets with missing or non-positive denominator cells: "
+                    f"{bad_treatment_geos}"
+                )
+            keep_controls = finite_rows[:n0].all(axis=1)
+            dropped_control_geos = [
+                geo
+                for geo, keep in zip(control_geos, keep_controls, strict=True)
+                if not bool(keep)
+            ]
+            if dropped_control_geos:
+                kept_control_geos = [
+                    geo
+                    for geo, keep in zip(control_geos, keep_controls, strict=True)
+                    if bool(keep)
+                ]
+                if not kept_control_geos:
+                    raise ValueError(
+                        "Synthetic DiD ratio metric has no complete finite control donor "
+                        "paths after dropping markets with missing values or non-positive "
+                        f"denominators: {dropped_control_geos}"
+                    )
+                values = np.vstack([values[:n0][keep_controls], values[n0:]])
+                control_geos = kept_control_geos
+                geos = [*control_geos, *treatment_geos]
+                warnings.append(
+                    "Synthetic DiD dropped control market(s) with incomplete ratio paths "
+                    "caused by missing values or non-positive denominators: "
+                    f"{dropped_control_geos}."
+                )
         if not np.isfinite(values).all():
             missing = [
                 str(geo)
@@ -322,8 +397,11 @@ class SyntheticDIDEstimator(BaseEstimator):
             "Y": values,
             "geos": geos,
             "dates": dates,
-            "N0": len(design.control_geos),
+            "N0": len(control_geos),
             "T0": len(pre_columns),
+            "dropped_control_geos": dropped_control_geos,
+            "zero_denominator_cells": zero_denominator_cells,
+            "warnings": warnings,
         }
 
     def _fit_sdid_weights(self, y: np.ndarray, *, n0: int, t0: int) -> dict[str, Any]:
@@ -337,7 +415,7 @@ class SyntheticDIDEstimator(BaseEstimator):
         if not np.isfinite(noise_level) or noise_level <= 0:
             noise_level = 1.0
         eta_omega = float((n1 * t1) ** 0.25)
-        eta_lambda = 1e-6
+        eta_lambda, regularization_policy, warning = self._adaptive_eta_lambda(n0=n0, t0=t0)
         zeta_omega = eta_omega * noise_level
         zeta_lambda = eta_lambda * noise_level
         collapsed = self._collapsed_form(y, n0=n0, t0=t0)
@@ -373,9 +451,35 @@ class SyntheticDIDEstimator(BaseEstimator):
             "lambda": lambda_fit["weights"],
             "omega": omega_fit["weights"],
             "noise_level": noise_level,
+            "eta_omega": eta_omega,
+            "eta_lambda": eta_lambda,
             "zeta_omega": zeta_omega,
             "zeta_lambda": zeta_lambda,
+            "pre_period_to_control_ratio": float(t0 / max(n0, 1)),
+            "time_weight_regularization_policy": regularization_policy,
+            "warning": warning,
         }
+
+    @staticmethod
+    def _adaptive_eta_lambda(
+        *,
+        n0: int,
+        t0: int,
+    ) -> tuple[float, str, str | None]:
+        base = 1e-6
+        ratio = float(t0 / max(n0, 1))
+        if ratio <= 8.0:
+            return base, "synthdid_default", None
+        eta_lambda = min(0.10, max(base, 0.01 * ratio / 8.0))
+        warning = None
+        if ratio >= 10.0:
+            warning = (
+                "Synthetic DiD has many more pre-periods than control markets "
+                f"(T0/N0={ratio:.1f}). Native SDID used adaptive time-weight "
+                "regularization; consider aggregating noisy daily panels with "
+                "GeoPanel.aggregate(..., freq='W') when the experiment design permits it."
+            )
+        return eta_lambda, "adaptive_high_T0_to_N0", warning
 
     @classmethod
     def _sc_weight_fw(

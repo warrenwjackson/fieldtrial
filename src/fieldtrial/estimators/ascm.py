@@ -78,6 +78,8 @@ class AugmentedSyntheticControlEstimator(BaseEstimator):
         synthetic = SyntheticControlEstimator(
             backend="native",
             ridge=self.scm_ridge,
+            fit_intercept=False,
+            max_pre_rmse_ratio=None,
             confidence=self.confidence,
         )
         series = synthetic._build_series(panel, design, metric)
@@ -368,6 +370,8 @@ class AugmentedSyntheticControlEstimator(BaseEstimator):
                 synthetic = SyntheticControlEstimator(
                     backend="native",
                     ridge=self.scm_ridge,
+                    fit_intercept=False,
+                    max_pre_rmse_ratio=None,
                     confidence=self.confidence,
                 )
                 try:

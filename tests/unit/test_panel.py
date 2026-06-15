@@ -119,6 +119,23 @@ def test_panel_from_adapter_filters_bounded_metric_columns():
     assert panel.df["orders"].tolist() == [12]
 
 
+def test_geopanel_aggregate_can_coarsen_by_frequency():
+    rows = []
+    for geo in ["a", "b"]:
+        for index, dt in enumerate(pd.date_range("2027-01-01", periods=4, freq="D"), start=1):
+            rows.append({"geo_id": geo, "date": dt, "orders": index})
+    panel = GeoPanel.from_dataframe(pd.DataFrame(rows), require_complete_grid=False)
+
+    aggregated = panel.aggregate(["orders"], freq="2D")
+
+    assert aggregated.columns.tolist() == ["geo_id", "date", "orders"]
+    assert aggregated["date"].dt.strftime("%Y-%m-%d").unique().tolist() == [
+        "2027-01-01",
+        "2027-01-03",
+    ]
+    assert aggregated.loc[aggregated["geo_id"] == "a", "orders"].tolist() == [3, 7]
+
+
 def test_default_frequency_accepts_complete_monthly_panel():
     dates = pd.date_range("2027-01-01", periods=3, freq="MS")
     df = pd.DataFrame(

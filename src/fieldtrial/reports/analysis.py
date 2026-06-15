@@ -1364,6 +1364,84 @@ def _compact_inference(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return compact
 
 
+def _first_finite_value(mapping: dict[str, Any], keys: list[str]) -> float | None:
+    for key in keys:
+        value = _finite_float(mapping.get(key))
+        if value is not None:
+            return value
+    return None
+
+
+def _top_weights(weights: Any, *, limit: int = 5) -> list[str]:
+    if not isinstance(weights, dict):
+        return []
+    rows: list[tuple[str, float]] = []
+    for label, value in weights.items():
+        number = _finite_float(value)
+        if number is not None:
+            rows.append((str(label), number))
+    rows.sort(key=lambda item: abs(item[1]), reverse=True)
+    return [f"{label}: {weight:.3f}" for label, weight in rows[:limit]]
+
+
+def _fit_diagnostic_rows(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for result in results:
+        diagnostics = result.get("diagnostics") or {}
+        artifacts = result.get("artifacts") or {}
+        if not isinstance(diagnostics, dict) or not isinstance(artifacts, dict):
+            continue
+        weights = artifacts.get("weights") or artifacts.get("unit_weights")
+        row = {
+            "metric": result.get("metric"),
+            "estimator_name": result.get("estimator_name"),
+            "pre_period_rmse": _first_finite_value(
+                diagnostics,
+                [
+                    "pre_period_rmse",
+                    "unit_weight_fit_rmse",
+                    "augmented_pre_period_rmse",
+                    "time_weight_fit_rmse",
+                ],
+            ),
+            "pre_period_rmse_ratio": _finite_float(diagnostics.get("pre_period_rmse_ratio")),
+            "donor_weight_concentration": _first_finite_value(
+                diagnostics,
+                ["donor_weight_concentration", "unit_weight_concentration"],
+            ),
+            "donor_weight_max": _first_finite_value(
+                diagnostics,
+                ["donor_weight_max", "unit_weight_max"],
+            ),
+            "time_weight_concentration": _finite_float(
+                diagnostics.get("time_weight_concentration")
+            ),
+            "time_weight_max": _finite_float(diagnostics.get("time_weight_max")),
+            "effective_pre_periods": _finite_float(
+                diagnostics.get("time_weight_effective_pre_periods")
+            ),
+            "fit_intercept": diagnostics.get("fit_intercept"),
+            "dropped_control_geos": diagnostics.get("dropped_control_geos") or [],
+            "top_donor_weights": _top_weights(weights),
+            "warnings": result.get("warnings") or [],
+        }
+        if any(
+            row.get(key) is not None
+            for key in [
+                "pre_period_rmse",
+                "pre_period_rmse_ratio",
+                "donor_weight_concentration",
+                "donor_weight_max",
+                "time_weight_concentration",
+                "time_weight_max",
+                "effective_pre_periods",
+                "fit_intercept",
+            ]
+        ) or row["top_donor_weights"] or row["dropped_control_geos"]:
+            rows.append(row)
+    return rows
+
+
 def _calibration_rows(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     status_order = {
@@ -1528,6 +1606,7 @@ def normalize_analysis_payload(analysis: Any, *, title: str | None = None) -> di
             "time_series_charts": _time_series_charts(visuals),
             "interval_charts": _interval_charts(metric_groups),
             "bayesian_summaries": _bayesian_summaries(normalized_results, test_framework or {}),
+            "fit_diagnostic_rows": _fit_diagnostic_rows(normalized_results),
             "calibration_rows": calibration_rows,
             "calibration_failures": [
                 row for row in calibration_rows if row.get("status") == "fail"

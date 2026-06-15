@@ -7,6 +7,7 @@ import pytest
 
 from fieldtrial.data.panel import GeoPanel
 from fieldtrial.data.synthetic import SyntheticTreatment, generate_synthetic_us_panel
+from fieldtrial.design.specs import CompletedExperimentSpec
 from fieldtrial.estimators.advanced import (
     MatrixCompletionEstimator as AdvancedMatrixCompletionEstimator,
 )
@@ -16,7 +17,7 @@ from fieldtrial.estimators.bayesian import BayesianTimeSeriesEstimator
 from fieldtrial.estimators.bootstrap import BlockBootstrapEstimator
 from fieldtrial.estimators.cuped import CUPEDAdjustedEstimator
 from fieldtrial.estimators.did import DifferenceInDifferencesEstimator
-from fieldtrial.estimators.ensemble import instantiate_estimator
+from fieldtrial.estimators.ensemble import analyze_completed_experiment, instantiate_estimator
 from fieldtrial.estimators.forecast import ForecastCounterfactualEstimator
 from fieldtrial.estimators.matrix_completion import MatrixCompletionEstimator
 from fieldtrial.estimators.ratio_delta import RatioDeltaEstimator
@@ -276,6 +277,85 @@ def test_synthetic_control_explicit_scpi_backend_fails_with_actionable_error(mon
         SyntheticControlEstimator(backend="scpi_pkg").fit(p, d, CountMetric("orders"))
 
 
+def test_scpi_frame_handles_real_geo_names_with_punctuation():
+    series = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2027-04-01", "2027-04-02"]),
+            "period": ["pre", "post"],
+            "treated": [1.0, 1.2],
+            "control__CA: Belleville": [0.9, 1.0],
+            "control__CA Market-2": [1.1, 1.1],
+        }
+    )
+
+    frame = SyntheticControlEstimator._scpi_frame(
+        series,
+        ["control__CA: Belleville", "control__CA Market-2"],
+    )
+
+    assert set(frame["unit"]) == {"treated", "CA: Belleville", "CA Market-2"}
+    assert len(frame) == 6
+    assert frame.loc[frame["unit"] == "CA: Belleville", "outcome"].tolist() == [0.9, 1.0]
+
+
+def test_synthetic_control_intercept_handles_treated_levels_above_every_donor():
+    rows = []
+    pre_dates = pd.date_range("2027-04-01", periods=8, freq="D")
+    post_dates = pd.date_range("2027-05-01", periods=4, freq="D")
+    for index, dt in enumerate([*pre_dates, *post_dates]):
+        rows.append({"geo_id": "t1", "date": dt, "orders": 100.0 + index})
+        rows.append({"geo_id": "c1", "date": dt, "orders": 10.0 + index})
+        rows.append({"geo_id": "c2", "date": dt, "orders": 20.0 + index})
+        rows.append({"geo_id": "c3", "date": dt, "orders": 30.0 + index})
+    panel_data = GeoPanel.from_dataframe(pd.DataFrame(rows), require_complete_grid=False)
+    completed = CompletedDesign(
+        experiment_id="level-mismatch",
+        treatment_geos=["t1"],
+        control_geos=["c1", "c2", "c3"],
+        start_date=date(2027, 5, 1),
+        end_date=date(2027, 5, 4),
+        pre_period_start=date(2027, 4, 1),
+        pre_period_end=date(2027, 4, 8),
+    )
+
+    result = SyntheticControlEstimator().fit(panel_data, completed, CountMetric("orders"))
+
+    assert result.estimate == pytest.approx(0.0, abs=1e-8)
+    assert result.relative_lift == pytest.approx(0.0, abs=1e-10)
+    assert result.diagnostics["fit_intercept"] is True
+    assert result.diagnostics["pre_period_rmse_ratio"] == pytest.approx(0.0, abs=1e-10)
+    assert result.diagnostics["treated_pre_outside_donor_range_share"] == 1.0
+    assert any("intercept" in warning for warning in result.warnings)
+
+
+def test_synthetic_control_rejects_poor_native_prefit():
+    rows = []
+    pre_dates = pd.date_range("2027-04-01", periods=8, freq="D")
+    post_dates = pd.date_range("2027-05-01", periods=2, freq="D")
+    for index, dt in enumerate([*pre_dates, *post_dates]):
+        rows.append({"geo_id": "t1", "date": dt, "orders": 100.0 + 10.0 * index})
+        rows.append({"geo_id": "c1", "date": dt, "orders": 10.0 + index})
+        rows.append({"geo_id": "c2", "date": dt, "orders": 20.0 + index})
+        rows.append({"geo_id": "c3", "date": dt, "orders": 30.0 + index})
+    panel_data = GeoPanel.from_dataframe(pd.DataFrame(rows), require_complete_grid=False)
+    completed = CompletedDesign(
+        experiment_id="bad-prefit",
+        treatment_geos=["t1"],
+        control_geos=["c1", "c2", "c3"],
+        start_date=date(2027, 5, 1),
+        end_date=date(2027, 5, 2),
+        pre_period_start=date(2027, 4, 1),
+        pre_period_end=date(2027, 4, 8),
+    )
+
+    with pytest.raises(ValueError, match="pre-period fit is too poor"):
+        SyntheticControlEstimator(fit_intercept=False, max_pre_rmse_ratio=0.05).fit(
+            panel_data,
+            completed,
+            CountMetric("orders"),
+        )
+
+
 def test_did_reports_parallel_trends_diagnostics():
     p, d = deterministic_recovery_panel()
 
@@ -510,3 +590,103 @@ def test_synthetic_did_emits_fitted_time_weights():
     assert abs(sum(time_weights.values()) - 1.0) < 1e-9
     assert result.diagnostics["implementation_status"] == "native_sdid_algorithm_1"
     assert result.method_metadata.name == "synthetic_did"
+
+
+def test_synthetic_did_uses_adaptive_time_regularization_for_wide_pre_periods():
+    rows = []
+    pre_dates = pd.date_range("2027-03-01", periods=24, freq="D")
+    post_dates = pd.date_range("2027-04-01", periods=3, freq="D")
+    for index, dt in enumerate([*pre_dates, *post_dates]):
+        untreated = 100.0 + 0.5 * index
+        rows.append({"geo_id": "t1", "date": dt, "orders": untreated})
+        rows.append({"geo_id": "c1", "date": dt, "orders": untreated - 2.0})
+        rows.append({"geo_id": "c2", "date": dt, "orders": untreated + 2.0})
+    panel_data = GeoPanel.from_dataframe(pd.DataFrame(rows), require_complete_grid=False)
+    completed = CompletedDesign(
+        experiment_id="wide-pre",
+        treatment_geos=["t1"],
+        control_geos=["c1", "c2"],
+        start_date=date(2027, 4, 1),
+        end_date=date(2027, 4, 3),
+        pre_period_start=date(2027, 3, 1),
+        pre_period_end=date(2027, 3, 24),
+    )
+
+    result = SyntheticDIDEstimator().fit(panel_data, completed, CountMetric("orders"))
+
+    assert result.diagnostics["pre_period_to_control_ratio"] == pytest.approx(12.0)
+    assert result.diagnostics["eta_lambda"] > 1e-6
+    assert result.diagnostics["time_weight_regularization_policy"] == "adaptive_high_T0_to_N0"
+    assert any("many more pre-periods" in warning for warning in result.warnings)
+
+
+def test_synthetic_did_drops_sparse_ratio_donors():
+    rows = []
+    pre_dates = pd.date_range("2027-04-01", periods=4, freq="D")
+    post_dates = pd.date_range("2027-05-01", periods=2, freq="D")
+    for dt in [*pre_dates, *post_dates]:
+        post = dt in post_dates
+        rows.append(
+            {
+                "geo_id": "t1",
+                "date": dt,
+                "orders": 11.0 if post else 10.0,
+                "sessions": 100.0,
+            }
+        )
+        rows.append({"geo_id": "c1", "date": dt, "orders": 10.0, "sessions": 100.0})
+        rows.append(
+            {
+                "geo_id": "c2",
+                "date": dt,
+                "orders": 10.0,
+                "sessions": 0.0 if dt == pre_dates[1] else 100.0,
+            }
+        )
+    panel_data = GeoPanel.from_dataframe(pd.DataFrame(rows), require_complete_grid=False)
+    completed = CompletedDesign(
+        experiment_id="sparse-ratio",
+        treatment_geos=["t1"],
+        control_geos=["c1", "c2"],
+        start_date=date(2027, 5, 1),
+        end_date=date(2027, 5, 2),
+        pre_period_start=date(2027, 4, 1),
+        pre_period_end=date(2027, 4, 4),
+    )
+
+    result = SyntheticDIDEstimator().fit(
+        panel_data,
+        completed,
+        RatioMetric("conversion_rate", numerator="orders", denominator="sessions"),
+    )
+
+    assert result.diagnostics["dropped_control_geos"] == ["c2"]
+    assert result.diagnostics["zero_denominator_cells"] == 1
+    assert list(result.artifacts["weights"]) == ["c1"]
+    assert any("dropped control market" in warning.lower() for warning in result.warnings)
+
+
+def test_analyze_completed_experiment_accepts_metric_selection():
+    p, d = deterministic_recovery_panel()
+    spec = CompletedExperimentSpec.model_validate(
+        {
+            "experiment_id": d.experiment_id,
+            "start_date": d.start_date.date().isoformat(),
+            "end_date": d.end_date.date().isoformat(),
+            "pre_period_start": d.pre_period_start.date().isoformat(),
+            "pre_period_end": d.pre_period_end.date().isoformat(),
+            "treatment_geos": list(d.treatment_geos),
+            "control_geos": list(d.control_geos),
+            "primary_metrics": ["orders"],
+            "metrics": {
+                "orders": {"type": "count", "column": "orders"},
+                "sessions": {"type": "count", "column": "sessions"},
+            },
+        }
+    )
+
+    selected = analyze_completed_experiment(p, spec, estimators=["did"], metrics=["sessions"])
+    all_results = analyze_completed_experiment(p, spec, estimators=["did"], run_all=True)
+
+    assert [result.metric for result in selected] == ["sessions"]
+    assert {result.metric for result in all_results} == {"orders", "sessions"}

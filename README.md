@@ -85,9 +85,9 @@ solution.report("examples/reports/plan.html")
 - SQLite experiment registry with CSV/YAML/JSON bootstrap imports.
 - Assignment policies and assignment matrix validation for shared controls, treatment exclusivity, balance diagnostics, and cooldown-aware planning.
 - Deterministic candidate generation, MDE scoring, and CP-SAT portfolio selection with optional learning-value bonuses and covariance/overlap risk penalties.
-- DiD, ratio delta, block bootstrap, native synthetic control with optional `scpi-pkg` backend, native Algorithm-1 synthetic DiD, ridge augmented SCM, MC-NNM matrix completion, TBR, paired iROAS, and native state-space predictive counterfactuals.
+- DiD, ratio delta, block bootstrap, native synthetic control with optional `scpi-pkg` backend and pre-fit guardrails, native Algorithm-1 synthetic DiD with adaptive time-weight safeguards, ridge augmented SCM, MC-NNM matrix completion, TBR, paired iROAS, and native state-space predictive counterfactuals.
 - Randomization, resampling, multiplicity, sequential, calibration, portfolio decisioning, roadmap monitoring, and replanning primitives with serializable methodology artifacts.
-- Jinja2 planning and analysis reports with calendar-year portfolio grids, family-aware consensus, inference details, method metadata, and balance diagnostics.
+- Jinja2 planning and analysis reports with calendar-year portfolio grids, family-aware consensus, inference details, method metadata, fit diagnostics, and balance diagnostics.
 - Typer CLI with JSON output and deterministic artifact manifests.
 
 ## Caveats

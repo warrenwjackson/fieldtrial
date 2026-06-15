@@ -552,6 +552,54 @@
 	      </table>
 	    </section>
 
+    {% if report.fit_diagnostic_rows %}
+    <section>
+      <h2>Fit Diagnostics</h2>
+      <p class="muted">Pre-fit error, donor concentration, and time-weight concentration are shown for estimators where these checks are available.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Estimator</th>
+            <th>Pre RMSE</th>
+            <th>RMSE / observed</th>
+            <th>Top donor weights</th>
+            <th>Donor concentration</th>
+            <th>Time weights</th>
+            <th>Flags</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for row in report.fit_diagnostic_rows %}
+          <tr>
+            <td>{{ row.metric }}</td>
+            <td><code>{{ row.estimator_name }}</code></td>
+            <td>{% if row.pre_period_rmse is not none %}{{ "%.4g"|format(row.pre_period_rmse) }}{% endif %}</td>
+            <td>{% if row.pre_period_rmse_ratio is not none %}{{ "%.2f%%"|format(row.pre_period_rmse_ratio * 100) }}{% endif %}</td>
+            <td>{{ row.top_donor_weights|join(", ") }}</td>
+            <td>
+              {% if row.donor_weight_concentration is not none %}HHI {{ "%.3f"|format(row.donor_weight_concentration) }}{% endif %}
+              {% if row.donor_weight_max is not none %}<br><span class="muted">max {{ "%.3f"|format(row.donor_weight_max) }}</span>{% endif %}
+              {% if row.fit_intercept is not none %}<br><span class="muted">intercept {{ "on" if row.fit_intercept else "off" }}</span>{% endif %}
+            </td>
+            <td>
+              {% if row.time_weight_concentration is not none %}HHI {{ "%.3f"|format(row.time_weight_concentration) }}{% endif %}
+              {% if row.time_weight_max is not none %}<br><span class="muted">max {{ "%.3f"|format(row.time_weight_max) }}</span>{% endif %}
+              {% if row.effective_pre_periods is not none %}<br><span class="muted">effective {{ "%.1f"|format(row.effective_pre_periods) }}</span>{% endif %}
+            </td>
+            <td>
+              {% if row.dropped_control_geos %}<div>Dropped donors: {{ row.dropped_control_geos|join(", ") }}</div>{% endif %}
+              {% for warning in row.warnings[:2] %}
+              <div>{{ warning }}</div>
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
 	    <section>
 	      <h2>Evidence Families</h2>
 	      {% for group in report.metric_groups %}

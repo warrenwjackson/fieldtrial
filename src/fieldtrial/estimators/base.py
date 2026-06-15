@@ -62,6 +62,49 @@ def _jsonable(value: Any) -> Any:
     return value
 
 
+def _finite_float(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if np.isfinite(number) else None
+
+
+def _finite_interval(value: Any) -> tuple[float, float] | None:
+    if not isinstance(value, (list, tuple)) or len(value) < 2:
+        return None
+    low = _finite_float(value[0])
+    high = _finite_float(value[1])
+    if low is None or high is None:
+        return None
+    return tuple(sorted((low, high)))
+
+
+def _derive_relative_interval(
+    *,
+    interval: tuple[float, float] | None,
+    estimate: float,
+    relative_lift: float | None,
+    diagnostics: dict[str, Any],
+) -> tuple[float, float] | None:
+    embedded = _finite_interval(diagnostics.get("relative_lift_interval"))
+    if embedded is not None:
+        return embedded
+    absolute_interval = _finite_interval(interval)
+    if absolute_interval is None:
+        return None
+    baseline = _finite_float(diagnostics.get("relative_lift_baseline"))
+    if baseline is not None and abs(baseline) >= 1e-12:
+        scale = 1.0 / abs(baseline)
+    else:
+        lift = _finite_float(relative_lift)
+        point = _finite_float(estimate)
+        if lift is None or point is None or abs(point) < 1e-12:
+            return None
+        scale = lift / point
+    return tuple(sorted((absolute_interval[0] * scale, absolute_interval[1] * scale)))
+
+
 @dataclass(frozen=True)
 class CompletedDesign:
     """Treatment/control assignment for one completed geo experiment."""
@@ -151,6 +194,7 @@ class EstimatorResult:
     estimate: float
     relative_lift: float | None = None
     interval: tuple[float, float] | None = None
+    relative_interval: tuple[float, float] | None = None
     p_value: float | None = None
     primary_adjusted_p_value: float | None = None
     decision_p_value: float | None = None
@@ -176,6 +220,16 @@ class EstimatorResult:
 
         metadata = MethodMetadata.coerce(self.method_metadata, method_name=self.estimator_name)
         object.__setattr__(self, "method_metadata", metadata)
+        relative_interval = _finite_interval(self.relative_interval)
+        if relative_interval is None:
+            diagnostics = self.diagnostics if isinstance(self.diagnostics, dict) else {}
+            relative_interval = _derive_relative_interval(
+                interval=self.interval,
+                estimate=self.estimate,
+                relative_lift=self.relative_lift,
+                diagnostics=diagnostics,
+            )
+        object.__setattr__(self, "relative_interval", relative_interval)
 
         inference_results = [InferenceResult.coerce(item) for item in self.inference_results]
         if not inference_results and (
@@ -214,6 +268,9 @@ class EstimatorResult:
         interval = payload.get("interval")
         if interval is not None:
             payload["interval"] = tuple(interval)
+        relative_interval = payload.get("relative_interval")
+        if relative_interval is not None:
+            payload["relative_interval"] = tuple(relative_interval)
         return cls(**payload)
 
 

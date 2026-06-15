@@ -147,6 +147,32 @@ def _estimator_params_for(
     return {}
 
 
+def _metric_names_for_analysis(
+    catalog: Any,
+    spec: Any,
+    *,
+    metrics: Iterable[str] | str | None,
+    run_all: bool,
+) -> list[str]:
+    if metrics is not None and run_all:
+        raise ValueError("Pass either metrics=... or run_all=True, not both")
+    if run_all:
+        names = list(catalog.names)
+    elif metrics is None:
+        names = list(getattr(spec, "primary_metrics", []))
+    elif isinstance(metrics, str):
+        names = [metrics]
+    else:
+        names = [str(metric) for metric in metrics]
+    names = list(dict.fromkeys(str(name) for name in names))
+    if not names:
+        raise ValueError("No metrics selected for completed experiment analysis")
+    unknown = sorted(name for name in names if name not in catalog)
+    if unknown:
+        raise ValueError(f"Unknown analysis metric(s): {unknown}")
+    return names
+
+
 class EstimatorEnsemble:
     """Run a list of estimators and collect standard FieldTrial results."""
 
@@ -197,6 +223,8 @@ def analyze_completed_experiment(
     spec: Any,
     *,
     estimators: list[str] | None = None,
+    metrics: Iterable[str] | str | None = None,
+    run_all: bool = False,
     return_errors: bool = False,
     geo_col: str | None = None,
     time_col: str | None = None,
@@ -237,9 +265,15 @@ def analyze_completed_experiment(
         metadata={"test_framework": spec.test_framework.model_dump(mode="json")},
     )
     _validate_inference_spec(spec.inference)
+    metric_names = _metric_names_for_analysis(
+        catalog,
+        spec,
+        metrics=metrics,
+        run_all=run_all,
+    )
     results: list[EstimatorResult] = []
     errors: list[dict[str, str]] = []
-    for metric_name in spec.primary_metrics:
+    for metric_name in metric_names:
         metric = catalog.get(metric_name)
         for estimator_name in estimator_names:
             try:

@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date
 from types import SimpleNamespace
 
+import pytest
+
 from fieldtrial.design.policies import AssignmentPolicy
 from fieldtrial.design.specs import CalibrationSpec, InferenceEngineSpec, MonitoringPlanSpec
 from fieldtrial.estimators.base import CompletedDesign, EstimatorResult
@@ -34,6 +36,7 @@ def test_estimator_result_keeps_legacy_fields_and_adds_contracts():
         interval=(2.0, 22.0),
         p_value=0.04,
         standard_error=5.0,
+        diagnostics={"relative_lift_baseline": 150.0},
     )
 
     payload = result.to_dict()
@@ -44,6 +47,7 @@ def test_estimator_result_keeps_legacy_fields_and_adds_contracts():
     assert payload["method_metadata"]["assumptions"]
     assert payload["inference_results"][0]["interval_type"] == "reported_interval"
     assert payload["inference_results"][0]["p_value"] == 0.04
+    assert payload["relative_interval"] == pytest.approx([2.0 / 150.0, 22.0 / 150.0])
 
 
 def test_methodology_status_rolls_up_placebo_exclusions():

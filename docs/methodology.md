@@ -47,11 +47,14 @@ The default completed-test suite is family-aware and uses:
 
 - difference-in-differences as the transparent DiD baseline;
 - ratio difference-in-differences for ratio-of-sums metrics;
-- native Algorithm-1 synthetic DiD with fitted unit and time weights,
-  explicitly labeled as native rather than the external `synthdid` package;
+- native Algorithm-1 synthetic DiD with fitted unit and time weights, adaptive
+  time-weight regularization when pre-periods greatly outnumber donors, and
+  sparse ratio-donor dropping diagnostics, explicitly labeled as native rather
+  than the external `synthdid` package;
 - market block bootstrap as a resampling readout;
-- native synthetic control with donor weights, pre-fit diagnostics, placebo
-  summaries, and counterfactual paths.
+- native synthetic control with donor weights, an additive intercept/demeaning
+  adjustment, pre-fit quality gating, placebo summaries, and counterfactual
+  paths.
 
 Additional native estimators are available when the design supports their
 assumptions:
@@ -214,9 +217,13 @@ external SDID package yet.
 ## Reports
 
 Analysis reports include family-aware consensus, method metadata, inference
-details, visible warnings, estimator details, and diagnostics. Planning reports
-include assignment policy and balance diagnostics alongside MDEs, score
-components, market profiles, shared-control usage, and constraint audit data.
+details, visible warnings, estimator details, fit diagnostics, and raw
+diagnostics. The fit-diagnostics section surfaces pre-period RMSE, donor-weight
+concentration, SDID time-weight concentration, dropped ratio donors, and related
+warnings so degenerate fits are visible before the raw JSON audit trail.
+Planning reports include assignment policy and balance diagnostics alongside
+MDEs, score components, market profiles, shared-control usage, and constraint
+audit data.
 
 The public embedded report JSON continues to scrub raw diagnostics, artifacts,
 metadata, and absolute paths by default. Full artifacts can be saved separately

@@ -41,6 +41,8 @@ class SyntheticControlEstimator(BaseEstimator):
         backend: str = "native",
         ridge: float = 1e-6,
         ridge_alpha: float | None = None,
+        fit_intercept: bool = True,
+        max_pre_rmse_ratio: float | None = 0.30,
         scpi_sims: int = 200,
         scpi_e_method: str = "all",
         scpi_u_missp: bool = True,
@@ -54,12 +56,16 @@ class SyntheticControlEstimator(BaseEstimator):
             ridge = ridge_alpha
         if ridge < 0:
             raise ValueError("ridge must be non-negative")
+        if max_pre_rmse_ratio is not None and max_pre_rmse_ratio <= 0:
+            raise ValueError("max_pre_rmse_ratio must be positive or None")
         if scpi_sims < 1:
             raise ValueError("scpi_sims must be positive")
         if scpi_e_method not in {"all", "gaussian", "ls", "qreg"}:
             raise ValueError("scpi_e_method must be one of: all, gaussian, ls, qreg")
         self.backend = backend
         self.ridge = ridge
+        self.fit_intercept = bool(fit_intercept)
+        self.max_pre_rmse_ratio = max_pre_rmse_ratio
         self.scpi_sims = int(scpi_sims)
         self.scpi_e_method = scpi_e_method
         self.scpi_u_missp = bool(scpi_u_missp)
@@ -153,15 +159,23 @@ class SyntheticControlEstimator(BaseEstimator):
         y_pre = series.loc[pre_mask, "treated"].to_numpy(dtype=float)
         x_pre = series.loc[pre_mask, control_columns].to_numpy(dtype=float)
         y_post = series.loc[post_mask, "treated"].to_numpy(dtype=float)
-        x_post = series.loc[post_mask, control_columns].to_numpy(dtype=float)
-        weights = self._solve_weights(x_pre, y_pre)
-        counterfactual_pre = x_pre @ weights
-        counterfactual_post = x_post @ weights
+        x_all = series[control_columns].to_numpy(dtype=float)
+        path = self._fit_native_path(x_pre=x_pre, y_pre=y_pre, x_all=x_all)
+        weights = path["weights"]
+        intercept = float(path["intercept"])
+        counterfactual_pre = path["counterfactual_all"][pre_mask]
+        counterfactual_post = path["counterfactual_all"][post_mask]
         post_gaps = y_post - counterfactual_post
         estimate = float(post_gaps.sum())
         relative_lift = safe_relative(estimate, float(counterfactual_post.sum()))
         pre_rmse = float(np.sqrt(np.mean((y_pre - counterfactual_pre) ** 2)))
         pre_mae = float(np.mean(np.abs(y_pre - counterfactual_pre)))
+        pre_fit = self._pre_fit_diagnostics(
+            y_pre=y_pre,
+            x_pre=x_pre,
+            counterfactual_pre=counterfactual_pre,
+        )
+        self._check_native_prefit_quality(pre_fit)
         (
             standard_error,
             interval,
@@ -219,10 +233,24 @@ class SyntheticControlEstimator(BaseEstimator):
             "n_post_periods": int(post_mask.sum()),
             "pre_period_rmse": pre_rmse,
             "pre_period_mae": pre_mae,
+            "pre_period_rmse_ratio": pre_fit["pre_period_rmse_ratio"],
+            "pre_period_observed_mean_abs": pre_fit["pre_period_observed_mean_abs"],
+            "treated_pre_outside_donor_range_share": pre_fit[
+                "treated_pre_outside_donor_range_share"
+            ],
+            "fit_intercept": self.fit_intercept,
+            "intercept": intercept,
+            "max_pre_rmse_ratio": self.max_pre_rmse_ratio,
             "donor_weight_concentration": float(np.square(weights).sum()),
+            "donor_weight_max": float(np.max(weights)),
             "observed": observed_effect_summary(panel, design, metric),
             **placebo_diagnostics,
         }
+        if self.fit_intercept and pre_fit["treated_pre_outside_donor_range_share"] >= 0.8:
+            warnings.append(
+                "Treated pre-period levels are mostly outside the donor range; native SCM "
+                "used an additive intercept/demeaning adjustment. Inspect pre-fit diagnostics."
+            )
 
         return EstimatorResult(
             estimator_name=self.name,
@@ -249,6 +277,7 @@ class SyntheticControlEstimator(BaseEstimator):
                     column.replace("control__", "", 1): float(weight)
                     for column, weight in zip(control_columns, weights, strict=True)
                 },
+                "intercept": intercept,
                 "counterfactual": counterfactual_records,
             },
             warnings=warnings,
@@ -458,20 +487,24 @@ class SyntheticControlEstimator(BaseEstimator):
     @staticmethod
     def _scpi_frame(series: pd.DataFrame, control_columns: list[str]) -> pd.DataFrame:
         rows: list[dict[str, Any]] = []
-        for row in series.itertuples(index=False):
+        columns = list(series.columns)
+        date_idx = columns.index("date")
+        treated_idx = columns.index("treated")
+        control_indices = [(column, columns.index(column)) for column in control_columns]
+        for row in series.itertuples(index=False, name=None):
             rows.append(
                 {
                     "unit": "treated",
-                    "date": row.date,
-                    "outcome": float(row.treated),
+                    "date": row[date_idx],
+                    "outcome": float(row[treated_idx]),
                 }
             )
-            for column in control_columns:
+            for column, index in control_indices:
                 rows.append(
                     {
                         "unit": column.replace("control__", "", 1),
-                        "date": row.date,
-                        "outcome": float(getattr(row, column)),
+                        "date": row[date_idx],
+                        "outcome": float(row[index]),
                     }
                 )
         return pd.DataFrame(rows)
@@ -646,6 +679,66 @@ class SyntheticControlEstimator(BaseEstimator):
         total = weights.sum()
         return weights / total if total > 0 else initial
 
+    def _fit_native_path(
+        self,
+        *,
+        x_pre: np.ndarray,
+        y_pre: np.ndarray,
+        x_all: np.ndarray,
+    ) -> dict[str, Any]:
+        if not np.isfinite(x_pre).all() or not np.isfinite(y_pre).all():
+            raise ValueError("Synthetic control weight fitting requires finite pre-period paths")
+        if self.fit_intercept:
+            donor_pre_means = x_pre.mean(axis=0)
+            treated_pre_mean = float(y_pre.mean())
+            weights = self._solve_weights(
+                x_pre - donor_pre_means,
+                y_pre - treated_pre_mean,
+            )
+            intercept = treated_pre_mean - float(donor_pre_means @ weights)
+        else:
+            weights = self._solve_weights(x_pre, y_pre)
+            intercept = 0.0
+        return {
+            "weights": weights,
+            "intercept": intercept,
+            "counterfactual_all": x_all @ weights + intercept,
+        }
+
+    @staticmethod
+    def _pre_fit_diagnostics(
+        *,
+        y_pre: np.ndarray,
+        x_pre: np.ndarray,
+        counterfactual_pre: np.ndarray,
+    ) -> dict[str, float | None]:
+        residuals = y_pre - counterfactual_pre
+        pre_rmse = float(np.sqrt(np.mean(residuals**2)))
+        observed_mean_abs = float(np.mean(np.abs(y_pre)))
+        rmse_ratio = pre_rmse / observed_mean_abs if observed_mean_abs >= 1e-12 else None
+        donor_min = np.min(x_pre, axis=1)
+        donor_max = np.max(x_pre, axis=1)
+        outside = (y_pre < donor_min) | (y_pre > donor_max)
+        return {
+            "pre_period_rmse": pre_rmse,
+            "pre_period_observed_mean_abs": observed_mean_abs,
+            "pre_period_rmse_ratio": float(rmse_ratio) if rmse_ratio is not None else None,
+            "treated_pre_outside_donor_range_share": float(np.mean(outside)),
+        }
+
+    def _check_native_prefit_quality(self, diagnostics: dict[str, float | None]) -> None:
+        ratio = diagnostics.get("pre_period_rmse_ratio")
+        if self.max_pre_rmse_ratio is None or ratio is None:
+            return
+        if ratio > self.max_pre_rmse_ratio:
+            raise ValueError(
+                "Synthetic control pre-period fit is too poor to report a native SCM estimate "
+                f"(pre_rmse/mean_abs_observed={ratio:.3f} exceeds "
+                f"max_pre_rmse_ratio={self.max_pre_rmse_ratio:.3f}). Use an augmented, "
+                "forecast, or DiD-family estimator, change donors, or explicitly relax "
+                "max_pre_rmse_ratio after inspecting diagnostics."
+            )
+
     def _build_series(self, panel: Any, design: CompletedDesign, metric: Any) -> pd.DataFrame:
         info = metric_info(metric)
         frame = coerce_panel_frame(panel)
@@ -767,11 +860,16 @@ class SyntheticControlEstimator(BaseEstimator):
             for pseudo_treated in control_columns:
                 donors = [column for column in control_columns if column != pseudo_treated]
                 y_pre = series.loc[pre_mask, pseudo_treated].to_numpy(dtype=float)
-                x_pre = series.loc[pre_mask, donors].to_numpy(dtype=float)
                 y_post = series.loc[post_mask, pseudo_treated].to_numpy(dtype=float)
-                x_post = series.loc[post_mask, donors].to_numpy(dtype=float)
-                weights = self._solve_weights(x_pre, y_pre)
-                placebo_gaps.append(float((y_post - x_post @ weights).sum()))
+                x_all = series[donors].to_numpy(dtype=float)
+                path = self._fit_native_path(
+                    x_pre=x_all[pre_mask],
+                    y_pre=y_pre,
+                    x_all=x_all,
+                )
+                placebo_gaps.append(
+                    float((y_post - path["counterfactual_all"][post_mask]).sum())
+                )
         diagnostics: dict[str, Any] = {"placebo_gap_count": len(placebo_gaps)}
         if placebo_gaps:
             placebo_array = np.asarray(placebo_gaps, dtype=float)

@@ -55,7 +55,11 @@ def test_augmented_synthetic_control_reduces_imperfect_scm_bias():
         pre_period_end=date(2027, 4, 12),
     )
     metric = CountMetric("orders")
-    scm = SyntheticControlEstimator().fit(panel, design, metric)
+    scm = SyntheticControlEstimator(fit_intercept=False, max_pre_rmse_ratio=None).fit(
+        panel,
+        design,
+        metric,
+    )
     ascm = AugmentedSyntheticControlEstimator(ridge_alpha=0.001).fit(panel, design, metric)
 
     true_effect = effect_per_period * len(post_dates)
