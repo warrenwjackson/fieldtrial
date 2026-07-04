@@ -285,7 +285,14 @@ class PairedIROASEstimator(BaseEstimator):
                 n_post = float(pivot.loc[geo, ("n_periods", "post")])
             except KeyError:
                 continue
-            if n_pre <= 0 or n_post <= 0:
+            if not (n_pre > 0 and n_post > 0):
+                # Inverted comparison so NaN period counts (pivot fills missing
+                # pre/post cells with NaN, and NaN <= 0 is False) skip the geo
+                # instead of poisoning every pair's influence score.
+                continue
+            if not np.all(
+                np.isfinite([response_pre, response_post, spend_pre, spend_post])
+            ):
                 continue
             effects[str(geo)] = {
                 "response_delta": response_post - response_pre / n_pre * n_post,

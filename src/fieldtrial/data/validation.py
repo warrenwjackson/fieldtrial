@@ -106,6 +106,28 @@ def require_columns(
         )
 
 
+def _infer_anchored_calendar_frequency(dates: pd.DatetimeIndex) -> str | None:
+    """Recognize anchored calendar cadences that ``pd.infer_freq`` misses.
+
+    A monthly panel with a whole month absent breaks ``pd.infer_freq``; without
+    this check the mode-of-diffs fallback builds a raw-Timedelta grid that never
+    lands on the observed dates, and completeness validation silently passes.
+    Coarser cadences are tried first so quarterly data is not mistaken for
+    monthly data with holes.
+    """
+
+    candidates: list[str] = []
+    if bool(dates.is_month_start.all()):
+        candidates.extend(["YS", "QS", "MS"])
+    elif bool(dates.is_month_end.all()):
+        candidates.extend(["YE", "QE", "ME"])
+    for candidate in candidates:
+        grid = pd.date_range(dates.min(), dates.max(), freq=candidate)
+        if len(grid) >= len(dates) and dates.difference(grid).empty:
+            return candidate
+    return None
+
+
 def infer_frequency(values: pd.Series) -> str | pd.Timedelta | None:
     dates = pd.Series(pd.to_datetime(values).dropna().unique()).sort_values()
     if len(dates) < 2:
@@ -120,6 +142,9 @@ def infer_frequency(values: pd.Series) -> str | pd.Timedelta | None:
     inferred = pd.infer_freq(dates)
     if inferred:
         return inferred
+    anchored = _infer_anchored_calendar_frequency(pd.DatetimeIndex(dates))
+    if anchored is not None:
+        return anchored
     diffs = dates.diff().dropna()
     if diffs.empty:
         return None

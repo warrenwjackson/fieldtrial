@@ -153,6 +153,7 @@ class GeoPanel:
             geo_col=geo_col,
             time_col=time_col,
             params=params,
+            frequency=frequency,
         )
         return cls.from_adapter(
             adapter,
@@ -191,6 +192,7 @@ class GeoPanel:
             fetcher=fetcher,
             geo_col=geo_col,
             time_col=time_col,
+            frequency=frequency,
             kwargs=kwargs,
         )
         return cls.from_adapter(
@@ -230,7 +232,8 @@ class GeoPanel:
             frame = result.to_pandas()
             geo_col = result.geo_col
             time_col = result.time_col
-            frequency = result.frequency
+            if frequency is None:
+                frequency = result.frequency
         else:
             frame = pd.DataFrame(result)
         return cls.from_dataframe(
@@ -370,7 +373,8 @@ class GeoPanel:
                 remediation="Load the required metric columns before analysis.",
             )
         include_keys = include_keys if include_geo_time is None else include_geo_time
-        panel = self.slice(start, end, geos=geos) if any([start, end, geos]) else self
+        should_slice = start is not None or end is not None or geos is not None
+        panel = self.slice(start, end, geos=geos) if should_slice else self
         cols = [self.geo_col, self.time_col] if include_keys else []
         return panel.df[[*cols, *metric_list]].copy()
 
@@ -385,7 +389,8 @@ class GeoPanel:
         freq: str | pd.Timedelta | None = None,
         agg: str | Mapping[str, str] = "sum",
     ) -> pd.DataFrame:
-        panel = self.slice(start, end, geos=geos) if any([start, end, geos]) else self
+        should_slice = start is not None or end is not None or geos is not None
+        panel = self.slice(start, end, geos=geos) if should_slice else self
         column_list = list(columns)
         require_columns(panel.df, column_list, context="panel metrics")
         if freq is not None:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable, Mapping
 from datetime import date, timedelta
 from typing import Any
@@ -67,6 +68,11 @@ def analysis_visual_payload(
         if getattr(spec, "pre_period_start", None) is not None
         else frame[time_col].min()
     )
+    pre_end = (
+        pd.Timestamp(spec.pre_period_end).normalize()
+        if getattr(spec, "pre_period_end", None) is not None
+        else start - pd.Timedelta(days=1)
+    )
     geos = set(str(geo) for geo in [*spec.treatment_geos, *spec.control_geos])
     frame = frame[frame[geo_col].isin(geos) & frame[time_col].between(pre_start, end)].copy()
     frame["ft_role"] = np.where(
@@ -88,6 +94,7 @@ def analysis_visual_payload(
             geo_col=geo_col,
             time_col=time_col,
             start=start,
+            pre_end=pre_end,
             frequency=frequency,
         )
         daily_series = (
@@ -100,6 +107,7 @@ def analysis_visual_payload(
                 geo_col=geo_col,
                 time_col=time_col,
                 start=start,
+                pre_end=pre_end,
                 frequency="D",
             )
         )
@@ -125,8 +133,8 @@ def planning_calendar_payload(
     market_name_column: str | None = None,
     pre_period_days: int = 14,
     cooldown_days: int = 30,
-    min_row_height: float = 7.0,
-    label_min_height: float = 18.0,
+    min_row_height: float = 14.0,
+    label_min_height: float = 11.0,
     target_body_height: float | None = None,
     week_start: str = "MON",
     calendar_extent: str = "year",
@@ -474,7 +482,14 @@ def _calendar_market_rows(
     volumes = {
         market: _positive_volume(volume_lookup.get(market), default=1.0) for market in markets
     }
-    total_volume = sum(volumes.values()) or float(len(markets) or 1)
+    # Row heights scale with sqrt(volume): raw proportional scaling lets a few
+    # giant markets crush every other row down to the minimum height, which in
+    # practice left no label tall enough to render. Square-root scaling keeps
+    # the big-market emphasis and the volume ordering while every row stays
+    # legible; a 14px floor plus an 11px label threshold means labels show on
+    # every row (in a compact font when the row is short).
+    scaled = {market: math.sqrt(volume) for market, volume in volumes.items()}
+    total_scaled = sum(scaled.values()) or float(len(markets) or 1)
     body_height = (
         float(target_body_height)
         if target_body_height is not None
@@ -483,7 +498,7 @@ def _calendar_market_rows(
     body_height = max(body_height, len(markets) * min_row_height)
     rows: list[dict[str, Any]] = []
     for market in sorted(markets, key=lambda item: (-volumes[item], item)):
-        height = max(min_row_height, volumes[market] / total_volume * body_height)
+        height = max(min_row_height, scaled[market] / total_scaled * body_height)
         label = name_lookup.get(market) or market
         rows.append(
             {
@@ -493,6 +508,7 @@ def _calendar_market_rows(
                 "volume_label": _format_number(volumes[market]),
                 "height_px": round(height, 2),
                 "label_visible": height >= label_min_height,
+                "label_compact": height < 18.0,
                 "cells": [],
             }
         )
@@ -924,11 +940,22 @@ def _metric_time_series(
     time_col: str,
     start: pd.Timestamp,
     frequency: str,
+    pre_end: pd.Timestamp | None = None,
 ) -> dict[str, Any]:
     work = frame.copy()
+    # Weekly bins are anchored to the test start so no bin mixes pre and post
+    # days; calendar-week grouping would split the first treatment week and
+    # dilute the first post-period point.
+    if frequency == "D":
+        work["ft_bin"] = work[time_col]
+    else:
+        offset_days = (work[time_col] - start).dt.days
+        week_index = np.floor(offset_days / 7.0)
+        work["ft_bin"] = start + pd.to_timedelta(week_index * 7.0, unit="D")
+    days_per_bin = work.groupby("ft_bin")[time_col].nunique()
     if isinstance(metric, RatioMetric):
         grouped = (
-            work.groupby([pd.Grouper(key=time_col, freq=frequency), "ft_role"], observed=True)[
+            work.groupby(["ft_bin", "ft_role"], observed=True)[
                 [str(metric.numerator), str(metric.denominator)]
             ]
             .sum()
@@ -940,19 +967,24 @@ def _metric_time_series(
     else:
         work["value"] = metric.compute_series(work)
         by_geo = (
-            work.groupby(
-                [pd.Grouper(key=time_col, freq=frequency), "ft_role", geo_col],
-                observed=True,
-            )["value"]
+            work.groupby(["ft_bin", "ft_role", geo_col], observed=True)["value"]
             .sum()
             .reset_index()
         )
-        grouped = by_geo.groupby([time_col, "ft_role"], observed=True)["value"].mean().reset_index()
-        unit = "per-market average"
+        grouped = (
+            by_geo.groupby(["ft_bin", "ft_role"], observed=True)["value"].mean().reset_index()
+        )
+        # Normalize partial bins (panel edges) to a per-day rate so a short
+        # first or last week does not render as a fabricated level collapse.
+        grouped["value"] = grouped["value"] / grouped["ft_bin"].map(days_per_bin).astype(float)
+        unit = "per-market daily average"
 
-    pivot = grouped.pivot_table(index=time_col, columns="ft_role", values="value", aggfunc="mean")
+    pivot = grouped.pivot_table(index="ft_bin", columns="ft_role", values="value", aggfunc="mean")
     pivot = pivot.sort_index()
-    pre = pivot[pivot.index < start]
+    # Index only to the declared pre-period so a washout gap between
+    # pre_period_end and the test start cannot distort the baseline of 100.
+    baseline_cutoff = pre_end if pre_end is not None else start - pd.Timedelta(days=1)
+    pre = pivot[pivot.index <= baseline_cutoff]
     baseline = {
         role: _safe_mean(pre[role]) if role in pre else None for role in ("treatment", "control")
     }

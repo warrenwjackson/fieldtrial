@@ -49,14 +49,19 @@ class _LowRankFit:
 
 
 class MatrixCompletionEstimator(BaseEstimator):
-    """Native matrix completion with MC-NNM-style nuclear-norm shrinkage.
+    """Native matrix completion with MC-NNM nuclear-norm shrinkage.
 
     Treated post-period cells are masked, the untreated panel is completed with
     an iterative soft-impute routine, and the treatment effect is the observed
-    treated-post total minus the completed counterfactual total. By default the
-    singular-value shrinkage penalty is selected from held-out pre-period cells,
-    matching the practical MC-NNM objective; setting ``ridge_alpha=0`` preserves
-    the older hard-rank interactive fixed-effects path.
+    treated-post total minus the completed counterfactual total. Following
+    Athey et al. (2021), unit and time fixed effects are estimated without
+    penalty each iteration and only the residual low-rank component is
+    soft-thresholded, so the panel level is never shrunk into the imputed
+    treated-post cells. By default the singular-value shrinkage penalty is
+    selected from held-out pre-period cells, matching the practical MC-NNM
+    objective; setting ``ridge_alpha=0`` preserves the older hard-rank
+    interactive fixed-effects path (raw-matrix truncation, which does not
+    shrink the level and so does not need the fixed-effect split).
     """
 
     name = "matrix_completion"
@@ -539,7 +544,8 @@ class MatrixCompletionEstimator(BaseEstimator):
         observed_mask: np.ndarray,
     ) -> np.ndarray:
         filled = self._initial_fill(values, observed_mask)
-        singular_values = np.linalg.svd(filled, compute_uv=False)
+        residual = filled - self._two_way_fixed_effects(filled)
+        singular_values = np.linalg.svd(residual, compute_uv=False)
         finite = singular_values[np.isfinite(singular_values) & (singular_values > 0)]
         if finite.size == 0:
             return np.asarray([1.0], dtype=float)
@@ -558,11 +564,22 @@ class MatrixCompletionEstimator(BaseEstimator):
         filled = self._initial_fill(values, observed_mask)
         last_delta = float("inf")
         reconstruction = filled.copy()
+        low_rank = np.zeros_like(filled)
+        # Athey et al. (2021): Y = L + Gamma 1' + 1 Delta' with only L
+        # penalized, so the panel level is never soft-thresholded. The
+        # hard-rank path keeps the raw-matrix truncation: truncation does not
+        # shrink the level, and unpenalized fixed effects would leave excess
+        # rank free to park arbitrary structure in the masked treated-post
+        # block (nothing in the hard-rank objective pulls it to zero).
+        use_fixed_effects = shrinkage > 0
+        fixed_effects = np.zeros_like(filled)
         singular_values = np.zeros(min(values.shape), dtype=float)
         iterations = 0
         for iteration in range(1, self.max_iter + 1):
             iterations = iteration
-            u, singular_values, vt = np.linalg.svd(filled, full_matrices=False)
+            if use_fixed_effects:
+                fixed_effects = self._two_way_fixed_effects(filled - low_rank)
+            u, singular_values, vt = np.linalg.svd(filled - fixed_effects, full_matrices=False)
             shrunk = np.maximum(singular_values - shrinkage, 0.0)
             positive_count = int((shrunk > 1e-12).sum())
             if rank_cap is None:
@@ -570,9 +587,10 @@ class MatrixCompletionEstimator(BaseEstimator):
             else:
                 keep = min(rank_cap, positive_count if shrinkage > 0 else len(singular_values))
             if keep > 0:
-                reconstruction = (u[:, :keep] * shrunk[:keep]) @ vt[:keep, :]
+                low_rank = (u[:, :keep] * shrunk[:keep]) @ vt[:keep, :]
             else:
-                reconstruction = np.zeros_like(filled)
+                low_rank = np.zeros_like(filled)
+            reconstruction = fixed_effects + low_rank
             updated = reconstruction.copy()
             updated[observed_mask] = values[observed_mask]
             denominator = float(np.linalg.norm(filled[~observed_mask]) + 1e-12)
@@ -589,6 +607,13 @@ class MatrixCompletionEstimator(BaseEstimator):
             iterations=iterations,
             convergence_delta=last_delta,
         )
+
+    @staticmethod
+    def _two_way_fixed_effects(matrix: np.ndarray) -> np.ndarray:
+        grand_mean = float(matrix.mean())
+        unit_effects = matrix.mean(axis=1) - grand_mean
+        time_effects = matrix.mean(axis=0) - grand_mean
+        return grand_mean + unit_effects[:, None] + time_effects[None, :]
 
     @staticmethod
     def _initial_fill(values: np.ndarray, observed_mask: np.ndarray) -> np.ndarray:

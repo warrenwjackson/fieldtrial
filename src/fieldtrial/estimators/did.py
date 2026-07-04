@@ -101,13 +101,19 @@ class DifferenceInDifferencesEstimator(BaseEstimator):
         standard_error = float(standard_error) if standard_error is not None else None
         df = fit_payload.get("degrees_of_freedom")
         df = float(df) if df is not None and np.isfinite(float(df)) else None
+        # Respect the backend's deliberate suppression of few-cluster inference:
+        # backfilling intervals from the (downward-biased) single-cluster SE
+        # would silently undo the guard.
+        inference_promoted = bool(fit_payload.get("few_arm_cluster_inference_promoted", True))
         interval = fit_payload.get("interval")
-        if interval is None and standard_error is not None and df is not None:
+        backfillable = standard_error is not None and df is not None
+        if interval is None and inference_promoted and backfillable:
             interval = t_interval(estimate, standard_error, df=df, confidence=self.confidence)
         p_value = fit_payload.get("p_value")
-        if p_value is None and df is not None:
+        if p_value is None and inference_promoted and df is not None:
             p_value = t_p_value(estimate, standard_error, df=df)
         relative_effect = estimate
+        denominator_mean = None
         if info.is_ratio:
             relative_effect, denominator_mean = linearized_ratio_effect(
                 estimate,
@@ -128,6 +134,21 @@ class DifferenceInDifferencesEstimator(BaseEstimator):
             observed,
         )
         diagnostics["relative_lift_baseline"] = relative_baseline
+        if (
+            info.is_ratio
+            and interval is not None
+            and denominator_mean is not None
+            and abs(float(denominator_mean)) >= 1e-12
+            and relative_baseline is not None
+            and abs(float(relative_baseline)) >= 1e-12
+        ):
+            # The fitted interval is on the linearized count scale. The generic
+            # relative-interval derivation divides by the ratio baseline only,
+            # which would inflate the lift interval by the denominator mean.
+            scale = 1.0 / (float(denominator_mean) * float(relative_baseline))
+            diagnostics["relative_lift_interval"] = tuple(
+                sorted((float(interval[0]) * scale, float(interval[1]) * scale))
+            )
 
         return EstimatorResult(
             estimator_name=self.name,

@@ -7,6 +7,7 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -310,20 +311,20 @@
           }
         },
         "metric_mde": {
-          "orders": 0.013426572400059737
+          "orders": 0.05616738210247832
         },
         "metric_roles": {
           "orders": "primary"
         },
-        "objective_score": 795.057342759994,
+        "objective_score": 790.7832617897521,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.013426572400059737,
-          "mde_penalty": -1.3426572400059738,
+          "mde_component": 0.05616738210247832,
+          "mde_penalty": -5.616738210247832,
           "objective_metric_count": 1.0,
           "objective_weight_sum": 1.0,
           "priority": 800.0,
-          "total": 795.057342759994
+          "total": 790.7832617897521
         },
         "start_date": "2027-05-06",
         "test_framework": {
@@ -356,6 +357,7 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -659,20 +661,20 @@
           }
         },
         "metric_mde": {
-          "orders": 0.013458612536651765
+          "orders": 0.05670214248648838
         },
         "metric_roles": {
           "orders": "primary"
         },
-        "objective_score": 795.0541387463348,
+        "objective_score": 790.7297857513512,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.013458612536651765,
-          "mde_penalty": -1.3458612536651764,
+          "mde_component": 0.05670214248648838,
+          "mde_penalty": -5.670214248648838,
           "objective_metric_count": 1.0,
           "objective_weight_sum": 1.0,
           "priority": 800.0,
-          "total": 795.0541387463348
+          "total": 790.7297857513512
         },
         "start_date": "2027-05-13",
         "test_framework": {
@@ -705,355 +707,7 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
-            "status": "executed",
-            "strata_values": {},
-            "unit_type": "market"
-          },
-          "fixed_control_markets": [],
-          "forbidden_treatment_markets": [],
-          "kind": "fixed_treatment_count",
-          "matching_columns": [],
-          "matching_metrics": [],
-          "max_enumerated_assignments": 10000,
-          "max_markets_per_supergeo": null,
-          "max_pair_distance": null,
-          "min_supergeo_volume": null,
-          "monte_carlo_samples": 5000,
-          "required_treatment_markets": [],
-          "rerandomization": {},
-          "seed": 0,
-          "shared_control_markets": [],
-          "strata": [],
-          "supergeo_group_columns": [],
-          "supergeo_volume_column": null,
-          "treatment_count": null
-        },
-        "balance_diagnostics": {
-          "control_market_count": 24,
-          "control_mean": 11.736344537815127,
-          "metric": "orders",
-          "ok": false,
-          "pre_period_trend_difference": 0.0015935723511516335,
-          "standardized_mean_difference": 0.3307582376182882,
-          "treatment_market_count": 10,
-          "treatment_mean": 17.81071428571429,
-          "variance_ratio": 5.764212477461825,
-          "warnings": [
-            "large_standardized_mean_difference",
-            "large_variance_ratio"
-          ]
-        },
-        "calibration": {
-          "effect_shapes": [
-            "constant"
-          ],
-          "injected_lifts": [],
-          "placebo_windows": 0,
-          "seed": 0,
-          "target_false_positive_rate": 0.05
-        },
-        "candidate_id": "lifecycle_q2:0001",
-        "control_markets": [
-          "dma_004",
-          "dma_007",
-          "dma_013",
-          "dma_016",
-          "dma_017",
-          "dma_021",
-          "dma_037",
-          "dma_040",
-          "dma_047",
-          "dma_050",
-          "dma_054",
-          "dma_055",
-          "dma_056",
-          "dma_062",
-          "dma_064",
-          "dma_065",
-          "dma_067",
-          "dma_069",
-          "dma_074",
-          "dma_076",
-          "dma_085",
-          "dma_090",
-          "dma_091",
-          "dma_099"
-        ],
-        "duration_days": 21,
-        "end_date": "2027-05-12",
-        "market_profile": {
-          "control": {
-            "count": 24,
-            "market_size_max": 993.2172727272728,
-            "market_size_median": 224.33363636363634,
-            "market_size_min": 80.0,
-            "markets": [
-              {
-                "geo_id": "dma_004",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_007",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_013",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_016",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_017",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_021",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_037",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_040",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_047",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_050",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_054",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_055",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_056",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_062",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_064",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_065",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_067",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_069",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_074",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_076",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_085",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_090",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_091",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_099",
-                "region": "Northeast"
-              }
-            ],
-            "region_counts": {
-              "Midwest": 4,
-              "Northeast": 2,
-              "South": 12,
-              "West": 6
-            },
-            "total_volume": 206089.0,
-            "volume_column": "orders"
-          },
-          "treatment": {
-            "count": 10,
-            "market_size_max": 1878.8063636363636,
-            "market_size_median": 168.8275,
-            "market_size_min": 80.0,
-            "markets": [
-              {
-                "geo_id": "dma_002",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_033",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_038",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_039",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_043",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_046",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_053",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_060",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_086",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_088",
-                "region": "South"
-              }
-            ],
-            "region_counts": {
-              "Northeast": 2,
-              "South": 5,
-              "West": 3
-            },
-            "total_volume": 130310.0,
-            "volume_column": "orders"
-          }
-        },
-        "metadata": {
-          "domain": "lifecycle",
-          "required": false,
-          "tags": []
-        },
-        "method_readiness": {
-          "assignment_policy_execution": {
-            "assignment_metadata": {
-              "exact": false,
-              "policy_kind": "fixed_treatment_count"
-            },
-            "status": "executed",
-            "unit_type": "market",
-            "warnings": []
-          },
-          "estimator_suite": {
-            "backend_overrides": {},
-            "estimator_params": {},
-            "estimators": [
-              "did",
-              "ratio_delta",
-              "synthetic_did",
-              "block_bootstrap",
-              "synthetic_control"
-            ],
-            "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
-          },
-          "inference": {
-            "bootstrap_samples": 1000,
-            "confidence": 0.95,
-            "family_id": null,
-            "methods": [
-              "estimator_default"
-            ],
-            "multiplicity": "none",
-            "randomization_samples": 5000
-          },
-          "interference": {
-            "adjacency_path": null,
-            "buffer_radius": null,
-            "distance_path": null,
-            "exclude_buffer_controls": false,
-            "exposure_path": null,
-            "mode": "none"
-          },
-          "interference_diagnostics": {},
-          "monitoring": {
-            "alpha_spending": null,
-            "information_fractions": [],
-            "look_dates": [],
-            "lower_bound": null,
-            "mode": "fixed_horizon",
-            "upper_bound": null,
-            "warn_on_unplanned_peeking": true
-          }
-        },
-        "metric_mde": {
-          "orders": 0.014106141435961493
-        },
-        "metric_roles": {
-          "orders": "primary"
-        },
-        "objective_score": 794.9893858564038,
-        "score_components": {
-          "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.014106141435961493,
-          "mde_penalty": -1.4106141435961495,
-          "objective_metric_count": 1.0,
-          "objective_weight_sum": 1.0,
-          "priority": 800.0,
-          "total": 794.9893858564038
-        },
-        "start_date": "2027-04-22",
-        "test_framework": {
-          "alpha": null,
-          "default_margin": 0.0,
-          "effect_scale": "relative_lift",
-          "kind": "superiority",
-          "label": null,
-          "margins": {},
-          "notes": null,
-          "posterior_probability_threshold": null
-        },
-        "test_name": "lifecycle_q2",
-        "treatment_markets": [
-          "dma_002",
-          "dma_033",
-          "dma_038",
-          "dma_039",
-          "dma_043",
-          "dma_046",
-          "dma_053",
-          "dma_060",
-          "dma_086",
-          "dma_088"
-        ],
-        "warnings": []
-      },
-      {
-        "assignment_policy": {
-          "allow_unpaired_markets": true,
-          "execution": {
-            "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -1358,20 +1012,20 @@
           }
         },
         "metric_mde": {
-          "orders": 0.015652560120328212
+          "orders": 0.06453715868744389
         },
         "metric_roles": {
           "orders": "primary"
         },
-        "objective_score": 794.8347439879672,
+        "objective_score": 789.9462841312555,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.015652560120328212,
-          "mde_penalty": -1.5652560120328212,
+          "mde_component": 0.06453715868744389,
+          "mde_penalty": -6.453715868744389,
           "objective_metric_count": 1.0,
           "objective_weight_sum": 1.0,
           "priority": 800.0,
-          "total": 794.8347439879672
+          "total": 789.9462841312555
         },
         "start_date": "2027-04-22",
         "test_framework": {
@@ -1404,6 +1058,7 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -1706,20 +1361,20 @@
           }
         },
         "metric_mde": {
-          "orders": 0.015723860999647395
+          "orders": 0.06671069243571215
         },
         "metric_roles": {
           "orders": "primary"
         },
-        "objective_score": 794.8276139000352,
+        "objective_score": 789.7289307564288,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.015723860999647395,
-          "mde_penalty": -1.5723860999647394,
+          "mde_component": 0.06671069243571215,
+          "mde_penalty": -6.671069243571215,
           "objective_metric_count": 1.0,
           "objective_weight_sum": 1.0,
           "priority": 800.0,
-          "total": 794.8276139000352
+          "total": 789.7289307564288
         },
         "start_date": "2027-05-20",
         "test_framework": {
@@ -1746,6 +1401,356 @@
           "dma_094"
         ],
         "warnings": []
+      },
+      {
+        "assignment_policy": {
+          "allow_unpaired_markets": true,
+          "execution": {
+            "matched_pairs": [],
+            "matching_window": null,
+            "status": "executed",
+            "strata_values": {},
+            "unit_type": "market"
+          },
+          "fixed_control_markets": [],
+          "forbidden_treatment_markets": [],
+          "kind": "fixed_treatment_count",
+          "matching_columns": [],
+          "matching_metrics": [],
+          "max_enumerated_assignments": 10000,
+          "max_markets_per_supergeo": null,
+          "max_pair_distance": null,
+          "min_supergeo_volume": null,
+          "monte_carlo_samples": 5000,
+          "required_treatment_markets": [],
+          "rerandomization": {},
+          "seed": 0,
+          "shared_control_markets": [],
+          "strata": [],
+          "supergeo_group_columns": [],
+          "supergeo_volume_column": null,
+          "treatment_count": null
+        },
+        "balance_diagnostics": {
+          "control_market_count": 24,
+          "control_mean": 11.736344537815127,
+          "metric": "orders",
+          "ok": false,
+          "pre_period_trend_difference": 0.0015935723511516335,
+          "standardized_mean_difference": 0.3307582376182882,
+          "treatment_market_count": 10,
+          "treatment_mean": 17.81071428571429,
+          "variance_ratio": 5.764212477461825,
+          "warnings": [
+            "large_standardized_mean_difference",
+            "large_variance_ratio"
+          ]
+        },
+        "calibration": {
+          "effect_shapes": [
+            "constant"
+          ],
+          "injected_lifts": [],
+          "placebo_windows": 0,
+          "seed": 0,
+          "target_false_positive_rate": 0.05
+        },
+        "candidate_id": "lifecycle_q2:0001",
+        "control_markets": [
+          "dma_004",
+          "dma_007",
+          "dma_013",
+          "dma_016",
+          "dma_017",
+          "dma_021",
+          "dma_037",
+          "dma_040",
+          "dma_047",
+          "dma_050",
+          "dma_054",
+          "dma_055",
+          "dma_056",
+          "dma_062",
+          "dma_064",
+          "dma_065",
+          "dma_067",
+          "dma_069",
+          "dma_074",
+          "dma_076",
+          "dma_085",
+          "dma_090",
+          "dma_091",
+          "dma_099"
+        ],
+        "duration_days": 21,
+        "end_date": "2027-05-12",
+        "market_profile": {
+          "control": {
+            "count": 24,
+            "market_size_max": 993.2172727272728,
+            "market_size_median": 224.33363636363634,
+            "market_size_min": 80.0,
+            "markets": [
+              {
+                "geo_id": "dma_004",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_007",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_013",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_016",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_017",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_021",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_037",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_040",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_047",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_050",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_054",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_055",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_056",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_062",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_064",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_065",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_067",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_069",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_074",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_076",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_085",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_090",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_091",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_099",
+                "region": "Northeast"
+              }
+            ],
+            "region_counts": {
+              "Midwest": 4,
+              "Northeast": 2,
+              "South": 12,
+              "West": 6
+            },
+            "total_volume": 206089.0,
+            "volume_column": "orders"
+          },
+          "treatment": {
+            "count": 10,
+            "market_size_max": 1878.8063636363636,
+            "market_size_median": 168.8275,
+            "market_size_min": 80.0,
+            "markets": [
+              {
+                "geo_id": "dma_002",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_033",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_038",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_039",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_043",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_046",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_053",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_060",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_086",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_088",
+                "region": "South"
+              }
+            ],
+            "region_counts": {
+              "Northeast": 2,
+              "South": 5,
+              "West": 3
+            },
+            "total_volume": 130310.0,
+            "volume_column": "orders"
+          }
+        },
+        "metadata": {
+          "domain": "lifecycle",
+          "required": false,
+          "tags": []
+        },
+        "method_readiness": {
+          "assignment_policy_execution": {
+            "assignment_metadata": {
+              "exact": false,
+              "policy_kind": "fixed_treatment_count"
+            },
+            "status": "executed",
+            "unit_type": "market",
+            "warnings": []
+          },
+          "estimator_suite": {
+            "backend_overrides": {},
+            "estimator_params": {},
+            "estimators": [
+              "did",
+              "ratio_delta",
+              "synthetic_did",
+              "block_bootstrap",
+              "synthetic_control"
+            ],
+            "include_experimental": false,
+            "optional_backend_policy": "warn_and_fallback"
+          },
+          "inference": {
+            "bootstrap_samples": 1000,
+            "confidence": 0.95,
+            "family_id": null,
+            "methods": [
+              "estimator_default"
+            ],
+            "multiplicity": "none",
+            "randomization_samples": 5000
+          },
+          "interference": {
+            "adjacency_path": null,
+            "buffer_radius": null,
+            "distance_path": null,
+            "exclude_buffer_controls": false,
+            "exposure_path": null,
+            "mode": "none"
+          },
+          "interference_diagnostics": {},
+          "monitoring": {
+            "alpha_spending": null,
+            "information_fractions": [],
+            "look_dates": [],
+            "lower_bound": null,
+            "mode": "fixed_horizon",
+            "upper_bound": null,
+            "warn_on_unplanned_peeking": true
+          }
+        },
+        "metric_mde": {
+          "orders": 0.06715866631188112
+        },
+        "metric_roles": {
+          "orders": "primary"
+        },
+        "objective_score": 789.6841333688119,
+        "score_components": {
+          "control_pool_penalty": -3.5999999999999996,
+          "mde_component": 0.06715866631188112,
+          "mde_penalty": -6.715866631188113,
+          "objective_metric_count": 1.0,
+          "objective_weight_sum": 1.0,
+          "priority": 800.0,
+          "total": 789.6841333688119
+        },
+        "start_date": "2027-04-22",
+        "test_framework": {
+          "alpha": null,
+          "default_margin": 0.0,
+          "effect_scale": "relative_lift",
+          "kind": "superiority",
+          "label": null,
+          "margins": {},
+          "notes": null,
+          "posterior_probability_threshold": null
+        },
+        "test_name": "lifecycle_q2",
+        "treatment_markets": [
+          "dma_002",
+          "dma_033",
+          "dma_038",
+          "dma_039",
+          "dma_043",
+          "dma_046",
+          "dma_053",
+          "dma_060",
+          "dma_086",
+          "dma_088"
+        ],
+        "warnings": []
       }
     ],
     "operations_q3_prep": [
@@ -1754,6 +1759,7 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -2057,20 +2063,20 @@
           }
         },
         "metric_mde": {
-          "revenue": 0.014614331571636082
+          "revenue": 0.07272286513705038
         },
         "metric_roles": {
           "revenue": "primary"
         },
-        "objective_score": 594.9385668428364,
+        "objective_score": 589.127713486295,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.014614331571636082,
-          "mde_penalty": -1.461433157163608,
+          "mde_component": 0.07272286513705038,
+          "mde_penalty": -7.272286513705038,
           "objective_metric_count": 1.0,
           "objective_weight_sum": 1.0,
           "priority": 600.0,
-          "total": 594.9385668428364
+          "total": 589.127713486295
         },
         "start_date": "2027-06-05",
         "test_framework": {
@@ -2103,355 +2109,7 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
-            "status": "executed",
-            "strata_values": {},
-            "unit_type": "market"
-          },
-          "fixed_control_markets": [],
-          "forbidden_treatment_markets": [],
-          "kind": "fixed_treatment_count",
-          "matching_columns": [],
-          "matching_metrics": [],
-          "max_enumerated_assignments": 10000,
-          "max_markets_per_supergeo": null,
-          "max_pair_distance": null,
-          "min_supergeo_volume": null,
-          "monte_carlo_samples": 5000,
-          "required_treatment_markets": [],
-          "rerandomization": {},
-          "seed": 0,
-          "shared_control_markets": [],
-          "strata": [],
-          "supergeo_group_columns": [],
-          "supergeo_volume_column": null,
-          "treatment_count": null
-        },
-        "balance_diagnostics": {
-          "control_market_count": 24,
-          "control_mean": 705.5198919753087,
-          "metric": "revenue",
-          "ok": false,
-          "pre_period_trend_difference": 0.10814065085085711,
-          "standardized_mean_difference": 0.4340617656366229,
-          "treatment_market_count": 10,
-          "treatment_mean": 996.8728771929825,
-          "variance_ratio": 0.9764100683545329,
-          "warnings": [
-            "large_standardized_mean_difference"
-          ]
-        },
-        "calibration": {
-          "effect_shapes": [
-            "constant"
-          ],
-          "injected_lifts": [],
-          "placebo_windows": 0,
-          "seed": 0,
-          "target_false_positive_rate": 0.05
-        },
-        "candidate_id": "operations_q3_prep:0004",
-        "control_markets": [
-          "dma_001",
-          "dma_005",
-          "dma_022",
-          "dma_028",
-          "dma_030",
-          "dma_031",
-          "dma_032",
-          "dma_035",
-          "dma_039",
-          "dma_045",
-          "dma_046",
-          "dma_048",
-          "dma_052",
-          "dma_067",
-          "dma_068",
-          "dma_070",
-          "dma_072",
-          "dma_073",
-          "dma_079",
-          "dma_082",
-          "dma_083",
-          "dma_087",
-          "dma_092",
-          "dma_093"
-        ],
-        "duration_days": 21,
-        "end_date": "2027-06-18",
-        "market_profile": {
-          "control": {
-            "count": 24,
-            "market_size_max": 1209.9072727272728,
-            "market_size_median": 229.5831818181818,
-            "market_size_min": 80.0,
-            "markets": [
-              {
-                "geo_id": "dma_001",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_005",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_022",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_028",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_030",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_031",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_032",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_035",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_039",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_045",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_046",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_048",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_052",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_067",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_068",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_070",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_072",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_073",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_079",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_082",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_083",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_087",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_092",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_093",
-                "region": "Midwest"
-              }
-            ],
-            "region_counts": {
-              "Midwest": 7,
-              "Northeast": 5,
-              "South": 8,
-              "West": 4
-            },
-            "total_volume": 188343.0,
-            "volume_column": "orders"
-          },
-          "treatment": {
-            "count": 10,
-            "market_size_max": 823.1872727272727,
-            "market_size_median": 456.05886363636364,
-            "market_size_min": 80.0,
-            "markets": [
-              {
-                "geo_id": "dma_002",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_034",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_036",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_037",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_042",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_044",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_049",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_051",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_080",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_084",
-                "region": "South"
-              }
-            ],
-            "region_counts": {
-              "Midwest": 1,
-              "Northeast": 2,
-              "South": 4,
-              "West": 3
-            },
-            "total_volume": 107661.0,
-            "volume_column": "orders"
-          }
-        },
-        "metadata": {
-          "domain": "operations",
-          "required": false,
-          "tags": []
-        },
-        "method_readiness": {
-          "assignment_policy_execution": {
-            "assignment_metadata": {
-              "exact": false,
-              "policy_kind": "fixed_treatment_count"
-            },
-            "status": "executed",
-            "unit_type": "market",
-            "warnings": []
-          },
-          "estimator_suite": {
-            "backend_overrides": {},
-            "estimator_params": {},
-            "estimators": [
-              "did",
-              "ratio_delta",
-              "synthetic_did",
-              "block_bootstrap",
-              "synthetic_control"
-            ],
-            "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
-          },
-          "inference": {
-            "bootstrap_samples": 1000,
-            "confidence": 0.95,
-            "family_id": null,
-            "methods": [
-              "estimator_default"
-            ],
-            "multiplicity": "none",
-            "randomization_samples": 5000
-          },
-          "interference": {
-            "adjacency_path": null,
-            "buffer_radius": null,
-            "distance_path": null,
-            "exclude_buffer_controls": false,
-            "exposure_path": null,
-            "mode": "none"
-          },
-          "interference_diagnostics": {},
-          "monitoring": {
-            "alpha_spending": null,
-            "information_fractions": [],
-            "look_dates": [],
-            "lower_bound": null,
-            "mode": "fixed_horizon",
-            "upper_bound": null,
-            "warn_on_unplanned_peeking": true
-          }
-        },
-        "metric_mde": {
-          "revenue": 0.014952971568885424
-        },
-        "metric_roles": {
-          "revenue": "primary"
-        },
-        "objective_score": 594.9047028431114,
-        "score_components": {
-          "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.014952971568885424,
-          "mde_penalty": -1.4952971568885425,
-          "objective_metric_count": 1.0,
-          "objective_weight_sum": 1.0,
-          "priority": 600.0,
-          "total": 594.9047028431114
-        },
-        "start_date": "2027-05-29",
-        "test_framework": {
-          "alpha": null,
-          "default_margin": 0.0,
-          "effect_scale": "relative_lift",
-          "kind": "superiority",
-          "label": null,
-          "margins": {},
-          "notes": null,
-          "posterior_probability_threshold": null
-        },
-        "test_name": "operations_q3_prep",
-        "treatment_markets": [
-          "dma_002",
-          "dma_034",
-          "dma_036",
-          "dma_037",
-          "dma_042",
-          "dma_044",
-          "dma_049",
-          "dma_051",
-          "dma_080",
-          "dma_084"
-        ],
-        "warnings": []
-      },
-      {
-        "assignment_policy": {
-          "allow_unpaired_markets": true,
-          "execution": {
-            "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -2755,20 +2413,20 @@
           }
         },
         "metric_mde": {
-          "revenue": 0.015057505996876185
+          "revenue": 0.07339959612453281
         },
         "metric_roles": {
           "revenue": "primary"
         },
-        "objective_score": 594.8942494003123,
+        "objective_score": 589.0600403875467,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.015057505996876185,
-          "mde_penalty": -1.5057505996876184,
+          "mde_component": 0.07339959612453281,
+          "mde_penalty": -7.339959612453281,
           "objective_metric_count": 1.0,
           "objective_weight_sum": 1.0,
           "priority": 600.0,
-          "total": 594.8942494003123
+          "total": 589.0600403875467
         },
         "start_date": "2027-05-15",
         "test_framework": {
@@ -2801,6 +2459,357 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
+            "matching_window": null,
+            "status": "executed",
+            "strata_values": {},
+            "unit_type": "market"
+          },
+          "fixed_control_markets": [],
+          "forbidden_treatment_markets": [],
+          "kind": "fixed_treatment_count",
+          "matching_columns": [],
+          "matching_metrics": [],
+          "max_enumerated_assignments": 10000,
+          "max_markets_per_supergeo": null,
+          "max_pair_distance": null,
+          "min_supergeo_volume": null,
+          "monte_carlo_samples": 5000,
+          "required_treatment_markets": [],
+          "rerandomization": {},
+          "seed": 0,
+          "shared_control_markets": [],
+          "strata": [],
+          "supergeo_group_columns": [],
+          "supergeo_volume_column": null,
+          "treatment_count": null
+        },
+        "balance_diagnostics": {
+          "control_market_count": 24,
+          "control_mean": 705.5198919753087,
+          "metric": "revenue",
+          "ok": false,
+          "pre_period_trend_difference": 0.10814065085085711,
+          "standardized_mean_difference": 0.4340617656366229,
+          "treatment_market_count": 10,
+          "treatment_mean": 996.8728771929825,
+          "variance_ratio": 0.9764100683545329,
+          "warnings": [
+            "large_standardized_mean_difference"
+          ]
+        },
+        "calibration": {
+          "effect_shapes": [
+            "constant"
+          ],
+          "injected_lifts": [],
+          "placebo_windows": 0,
+          "seed": 0,
+          "target_false_positive_rate": 0.05
+        },
+        "candidate_id": "operations_q3_prep:0004",
+        "control_markets": [
+          "dma_001",
+          "dma_005",
+          "dma_022",
+          "dma_028",
+          "dma_030",
+          "dma_031",
+          "dma_032",
+          "dma_035",
+          "dma_039",
+          "dma_045",
+          "dma_046",
+          "dma_048",
+          "dma_052",
+          "dma_067",
+          "dma_068",
+          "dma_070",
+          "dma_072",
+          "dma_073",
+          "dma_079",
+          "dma_082",
+          "dma_083",
+          "dma_087",
+          "dma_092",
+          "dma_093"
+        ],
+        "duration_days": 21,
+        "end_date": "2027-06-18",
+        "market_profile": {
+          "control": {
+            "count": 24,
+            "market_size_max": 1209.9072727272728,
+            "market_size_median": 229.5831818181818,
+            "market_size_min": 80.0,
+            "markets": [
+              {
+                "geo_id": "dma_001",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_005",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_022",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_028",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_030",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_031",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_032",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_035",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_039",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_045",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_046",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_048",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_052",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_067",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_068",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_070",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_072",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_073",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_079",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_082",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_083",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_087",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_092",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_093",
+                "region": "Midwest"
+              }
+            ],
+            "region_counts": {
+              "Midwest": 7,
+              "Northeast": 5,
+              "South": 8,
+              "West": 4
+            },
+            "total_volume": 188343.0,
+            "volume_column": "orders"
+          },
+          "treatment": {
+            "count": 10,
+            "market_size_max": 823.1872727272727,
+            "market_size_median": 456.05886363636364,
+            "market_size_min": 80.0,
+            "markets": [
+              {
+                "geo_id": "dma_002",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_034",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_036",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_037",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_042",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_044",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_049",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_051",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_080",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_084",
+                "region": "South"
+              }
+            ],
+            "region_counts": {
+              "Midwest": 1,
+              "Northeast": 2,
+              "South": 4,
+              "West": 3
+            },
+            "total_volume": 107661.0,
+            "volume_column": "orders"
+          }
+        },
+        "metadata": {
+          "domain": "operations",
+          "required": false,
+          "tags": []
+        },
+        "method_readiness": {
+          "assignment_policy_execution": {
+            "assignment_metadata": {
+              "exact": false,
+              "policy_kind": "fixed_treatment_count"
+            },
+            "status": "executed",
+            "unit_type": "market",
+            "warnings": []
+          },
+          "estimator_suite": {
+            "backend_overrides": {},
+            "estimator_params": {},
+            "estimators": [
+              "did",
+              "ratio_delta",
+              "synthetic_did",
+              "block_bootstrap",
+              "synthetic_control"
+            ],
+            "include_experimental": false,
+            "optional_backend_policy": "warn_and_fallback"
+          },
+          "inference": {
+            "bootstrap_samples": 1000,
+            "confidence": 0.95,
+            "family_id": null,
+            "methods": [
+              "estimator_default"
+            ],
+            "multiplicity": "none",
+            "randomization_samples": 5000
+          },
+          "interference": {
+            "adjacency_path": null,
+            "buffer_radius": null,
+            "distance_path": null,
+            "exclude_buffer_controls": false,
+            "exposure_path": null,
+            "mode": "none"
+          },
+          "interference_diagnostics": {},
+          "monitoring": {
+            "alpha_spending": null,
+            "information_fractions": [],
+            "look_dates": [],
+            "lower_bound": null,
+            "mode": "fixed_horizon",
+            "upper_bound": null,
+            "warn_on_unplanned_peeking": true
+          }
+        },
+        "metric_mde": {
+          "revenue": 0.07390546311193025
+        },
+        "metric_roles": {
+          "revenue": "primary"
+        },
+        "objective_score": 589.009453688807,
+        "score_components": {
+          "control_pool_penalty": -3.5999999999999996,
+          "mde_component": 0.07390546311193025,
+          "mde_penalty": -7.390546311193025,
+          "objective_metric_count": 1.0,
+          "objective_weight_sum": 1.0,
+          "priority": 600.0,
+          "total": 589.009453688807
+        },
+        "start_date": "2027-05-29",
+        "test_framework": {
+          "alpha": null,
+          "default_margin": 0.0,
+          "effect_scale": "relative_lift",
+          "kind": "superiority",
+          "label": null,
+          "margins": {},
+          "notes": null,
+          "posterior_probability_threshold": null
+        },
+        "test_name": "operations_q3_prep",
+        "treatment_markets": [
+          "dma_002",
+          "dma_034",
+          "dma_036",
+          "dma_037",
+          "dma_042",
+          "dma_044",
+          "dma_049",
+          "dma_051",
+          "dma_080",
+          "dma_084"
+        ],
+        "warnings": []
+      },
+      {
+        "assignment_policy": {
+          "allow_unpaired_markets": true,
+          "execution": {
+            "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -3104,20 +3113,20 @@
           }
         },
         "metric_mde": {
-          "revenue": 0.015627420093015886
+          "revenue": 0.0777641288822351
         },
         "metric_roles": {
           "revenue": "primary"
         },
-        "objective_score": 594.8372579906984,
+        "objective_score": 588.6235871117765,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.015627420093015886,
-          "mde_penalty": -1.5627420093015887,
+          "mde_component": 0.0777641288822351,
+          "mde_penalty": -7.77641288822351,
           "objective_metric_count": 1.0,
           "objective_weight_sum": 1.0,
           "priority": 600.0,
-          "total": 594.8372579906984
+          "total": 588.6235871117765
         },
         "start_date": "2027-06-05",
         "test_framework": {
@@ -3150,6 +3159,7 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -3453,20 +3463,20 @@
           }
         },
         "metric_mde": {
-          "revenue": 0.015822993582809336
+          "revenue": 0.07873732867949677
         },
         "metric_roles": {
           "revenue": "primary"
         },
-        "objective_score": 594.8177006417191,
+        "objective_score": 588.5262671320503,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.015822993582809336,
-          "mde_penalty": -1.5822993582809337,
+          "mde_component": 0.07873732867949677,
+          "mde_penalty": -7.873732867949677,
           "objective_metric_count": 1.0,
           "objective_weight_sum": 1.0,
           "priority": 600.0,
-          "total": 594.8177006417191
+          "total": 588.5262671320503
         },
         "start_date": "2027-06-05",
         "test_framework": {
@@ -3501,6 +3511,7 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -3804,22 +3815,22 @@
           }
         },
         "metric_mde": {
-          "conversion_rate": 0.23414733615343047,
-          "orders": 0.01635643774962032
+          "conversion_rate": 0.9654141989175988,
+          "orders": 0.06743932050052458
         },
         "metric_roles": {
           "conversion_rate": "primary",
           "orders": "primary"
         },
-        "objective_score": 983.8748113048474,
+        "objective_score": 944.7573240290939,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.1252518869515254,
-          "mde_penalty": -12.52518869515254,
+          "mde_component": 0.5164267597090617,
+          "mde_penalty": -51.64267597090617,
           "objective_metric_count": 2.0,
           "objective_weight_sum": 2.0,
           "priority": 1000.0,
-          "total": 983.8748113048474
+          "total": 944.7573240290939
         },
         "start_date": "2027-04-22",
         "test_framework": {
@@ -3852,6 +3863,7 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -4155,22 +4167,22 @@
           }
         },
         "metric_mde": {
-          "conversion_rate": 0.2503869139342675,
-          "orders": 0.01257195859496226
+          "conversion_rate": 1.0399349571244003,
+          "orders": 0.052215265634265755
         },
         "metric_roles": {
           "conversion_rate": "primary",
           "orders": "primary"
         },
-        "objective_score": 983.2520563735385,
+        "objective_score": 941.7924888620666,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.13147943626461486,
-          "mde_penalty": -13.147943626461487,
+          "mde_component": 0.5460751113793331,
+          "mde_penalty": -54.60751113793331,
           "objective_metric_count": 2.0,
           "objective_weight_sum": 2.0,
           "priority": 1000.0,
-          "total": 983.2520563735385
+          "total": 941.7924888620666
         },
         "start_date": "2027-04-29",
         "test_framework": {
@@ -4203,6 +4215,7 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -4506,22 +4519,22 @@
           }
         },
         "metric_mde": {
-          "conversion_rate": 0.2525713097200559,
-          "orders": 0.014494669387302194
+          "conversion_rate": 1.202479954312739,
+          "orders": 0.06900842934987311
         },
         "metric_roles": {
           "conversion_rate": "primary",
           "orders": "primary"
         },
-        "objective_score": 983.0467010446321,
+        "objective_score": 932.8255808168693,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.13353298955367907,
-          "mde_penalty": -13.353298955367906,
+          "mde_component": 0.635744191831306,
+          "mde_penalty": -63.5744191831306,
           "objective_metric_count": 2.0,
           "objective_weight_sum": 2.0,
           "priority": 1000.0,
-          "total": 983.0467010446321
+          "total": 932.8255808168693
         },
         "start_date": "2027-04-22",
         "test_framework": {
@@ -4554,6 +4567,359 @@
           "allow_unpaired_markets": true,
           "execution": {
             "matched_pairs": [],
+            "matching_window": null,
+            "status": "executed",
+            "strata_values": {},
+            "unit_type": "market"
+          },
+          "fixed_control_markets": [],
+          "forbidden_treatment_markets": [],
+          "kind": "fixed_treatment_count",
+          "matching_columns": [],
+          "matching_metrics": [],
+          "max_enumerated_assignments": 10000,
+          "max_markets_per_supergeo": null,
+          "max_pair_distance": null,
+          "min_supergeo_volume": null,
+          "monte_carlo_samples": 5000,
+          "required_treatment_markets": [],
+          "rerandomization": {},
+          "seed": 0,
+          "shared_control_markets": [],
+          "strata": [],
+          "supergeo_group_columns": [],
+          "supergeo_volume_column": null,
+          "treatment_count": null
+        },
+        "balance_diagnostics": {
+          "control_market_count": 24,
+          "control_mean": 10.866334033613446,
+          "metric": "orders",
+          "ok": false,
+          "pre_period_trend_difference": -0.0003240977953578017,
+          "standardized_mean_difference": -0.47335922980414813,
+          "treatment_market_count": 10,
+          "treatment_mean": 6.674579831932772,
+          "variance_ratio": 0.9578687154948274,
+          "warnings": [
+            "large_standardized_mean_difference"
+          ]
+        },
+        "calibration": {
+          "effect_shapes": [
+            "constant"
+          ],
+          "injected_lifts": [],
+          "placebo_windows": 0,
+          "seed": 0,
+          "target_false_positive_rate": 0.05
+        },
+        "candidate_id": "pricing_q2:0002",
+        "control_markets": [
+          "dma_010",
+          "dma_020",
+          "dma_028",
+          "dma_029",
+          "dma_032",
+          "dma_039",
+          "dma_040",
+          "dma_051",
+          "dma_053",
+          "dma_059",
+          "dma_060",
+          "dma_061",
+          "dma_064",
+          "dma_067",
+          "dma_072",
+          "dma_075",
+          "dma_077",
+          "dma_079",
+          "dma_081",
+          "dma_083",
+          "dma_087",
+          "dma_092",
+          "dma_094",
+          "dma_098"
+        ],
+        "duration_days": 28,
+        "end_date": "2027-05-19",
+        "market_profile": {
+          "control": {
+            "count": 24,
+            "market_size_max": 900.8554545454546,
+            "market_size_median": 212.83659090909092,
+            "market_size_min": 80.0,
+            "markets": [
+              {
+                "geo_id": "dma_010",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_020",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_028",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_029",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_032",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_039",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_040",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_051",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_053",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_059",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_060",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_061",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_064",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_067",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_072",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_075",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_077",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_079",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_081",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_083",
+                "region": "Northeast"
+              },
+              {
+                "geo_id": "dma_087",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_092",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_094",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_098",
+                "region": "West"
+              }
+            ],
+            "region_counts": {
+              "Midwest": 2,
+              "Northeast": 5,
+              "South": 10,
+              "West": 7
+            },
+            "total_volume": 190415.0,
+            "volume_column": "orders"
+          },
+          "treatment": {
+            "count": 10,
+            "market_size_max": 759.9,
+            "market_size_median": 97.02386363636364,
+            "market_size_min": 80.0,
+            "markets": [
+              {
+                "geo_id": "dma_015",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_021",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_030",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_035",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_038",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_058",
+                "region": "Midwest"
+              },
+              {
+                "geo_id": "dma_084",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_091",
+                "region": "West"
+              },
+              {
+                "geo_id": "dma_096",
+                "region": "South"
+              },
+              {
+                "geo_id": "dma_100",
+                "region": "Northeast"
+              }
+            ],
+            "region_counts": {
+              "Midwest": 4,
+              "Northeast": 1,
+              "South": 3,
+              "West": 2
+            },
+            "total_volume": 48600.0,
+            "volume_column": "orders"
+          }
+        },
+        "metadata": {
+          "domain": "pricing",
+          "required": false,
+          "tags": []
+        },
+        "method_readiness": {
+          "assignment_policy_execution": {
+            "assignment_metadata": {
+              "exact": false,
+              "policy_kind": "fixed_treatment_count"
+            },
+            "status": "executed",
+            "unit_type": "market",
+            "warnings": []
+          },
+          "estimator_suite": {
+            "backend_overrides": {},
+            "estimator_params": {},
+            "estimators": [
+              "did",
+              "ratio_delta",
+              "synthetic_did",
+              "block_bootstrap",
+              "synthetic_control"
+            ],
+            "include_experimental": false,
+            "optional_backend_policy": "warn_and_fallback"
+          },
+          "inference": {
+            "bootstrap_samples": 1000,
+            "confidence": 0.95,
+            "family_id": null,
+            "methods": [
+              "estimator_default"
+            ],
+            "multiplicity": "none",
+            "randomization_samples": 5000
+          },
+          "interference": {
+            "adjacency_path": null,
+            "buffer_radius": null,
+            "distance_path": null,
+            "exclude_buffer_controls": false,
+            "exposure_path": null,
+            "mode": "none"
+          },
+          "interference_diagnostics": {},
+          "monitoring": {
+            "alpha_spending": null,
+            "information_fractions": [],
+            "look_dates": [],
+            "lower_bound": null,
+            "mode": "fixed_horizon",
+            "upper_bound": null,
+            "warn_on_unplanned_peeking": true
+          }
+        },
+        "metric_mde": {
+          "conversion_rate": 1.3014910558257253,
+          "orders": 0.08168466770668135
+        },
+        "metric_roles": {
+          "conversion_rate": "primary",
+          "orders": "primary"
+        },
+        "objective_score": 927.2412138233797,
+        "score_components": {
+          "control_pool_penalty": -3.5999999999999996,
+          "mde_component": 0.6915878617662033,
+          "mde_penalty": -69.15878617662034,
+          "objective_metric_count": 2.0,
+          "objective_weight_sum": 2.0,
+          "priority": 1000.0,
+          "total": 927.2412138233797
+        },
+        "start_date": "2027-04-22",
+        "test_framework": {
+          "alpha": null,
+          "default_margin": 0.0,
+          "effect_scale": "relative_lift",
+          "kind": "superiority",
+          "label": null,
+          "margins": {},
+          "notes": null,
+          "posterior_probability_threshold": null
+        },
+        "test_name": "pricing_q2",
+        "treatment_markets": [
+          "dma_015",
+          "dma_021",
+          "dma_030",
+          "dma_035",
+          "dma_038",
+          "dma_058",
+          "dma_084",
+          "dma_091",
+          "dma_096",
+          "dma_100"
+        ],
+        "warnings": []
+      },
+      {
+        "assignment_policy": {
+          "allow_unpaired_markets": true,
+          "execution": {
+            "matched_pairs": [],
+            "matching_window": null,
             "status": "executed",
             "strata_values": {},
             "unit_type": "market"
@@ -4857,22 +5223,22 @@
           }
         },
         "metric_mde": {
-          "conversion_rate": 0.31567450364255545,
-          "orders": 0.016499594115364127
+          "conversion_rate": 1.3299603236326392,
+          "orders": 0.06951402560633872
         },
         "metric_roles": {
           "conversion_rate": "primary",
           "orders": "primary"
         },
-        "objective_score": 979.791295112104,
+        "objective_score": 926.426282538051,
         "score_components": {
           "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.16608704887895978,
-          "mde_penalty": -16.60870488789598,
+          "mde_component": 0.6997371746194889,
+          "mde_penalty": -69.9737174619489,
           "objective_metric_count": 2.0,
           "objective_weight_sum": 2.0,
           "priority": 1000.0,
-          "total": 979.791295112104
+          "total": 926.426282538051
         },
         "start_date": "2027-05-13",
         "test_framework": {
@@ -4899,357 +5265,6 @@
           "dma_062"
         ],
         "warnings": []
-      },
-      {
-        "assignment_policy": {
-          "allow_unpaired_markets": true,
-          "execution": {
-            "matched_pairs": [],
-            "status": "executed",
-            "strata_values": {},
-            "unit_type": "market"
-          },
-          "fixed_control_markets": [],
-          "forbidden_treatment_markets": [],
-          "kind": "fixed_treatment_count",
-          "matching_columns": [],
-          "matching_metrics": [],
-          "max_enumerated_assignments": 10000,
-          "max_markets_per_supergeo": null,
-          "max_pair_distance": null,
-          "min_supergeo_volume": null,
-          "monte_carlo_samples": 5000,
-          "required_treatment_markets": [],
-          "rerandomization": {},
-          "seed": 0,
-          "shared_control_markets": [],
-          "strata": [],
-          "supergeo_group_columns": [],
-          "supergeo_volume_column": null,
-          "treatment_count": null
-        },
-        "balance_diagnostics": {
-          "control_market_count": 24,
-          "control_mean": 12.901827632461435,
-          "metric": "orders",
-          "ok": false,
-          "pre_period_trend_difference": 0.0004336502888297464,
-          "standardized_mean_difference": 0.019506414621080995,
-          "treatment_market_count": 10,
-          "treatment_mean": 13.249899396378272,
-          "variance_ratio": 3.7054631243038254,
-          "warnings": [
-            "large_variance_ratio"
-          ]
-        },
-        "calibration": {
-          "effect_shapes": [
-            "constant"
-          ],
-          "injected_lifts": [],
-          "placebo_windows": 0,
-          "seed": 0,
-          "target_false_positive_rate": 0.05
-        },
-        "candidate_id": "pricing_q2:0006",
-        "control_markets": [
-          "dma_002",
-          "dma_006",
-          "dma_007",
-          "dma_010",
-          "dma_019",
-          "dma_021",
-          "dma_023",
-          "dma_026",
-          "dma_027",
-          "dma_031",
-          "dma_048",
-          "dma_052",
-          "dma_053",
-          "dma_059",
-          "dma_062",
-          "dma_065",
-          "dma_066",
-          "dma_073",
-          "dma_074",
-          "dma_080",
-          "dma_081",
-          "dma_083",
-          "dma_091",
-          "dma_098"
-        ],
-        "duration_days": 28,
-        "end_date": "2027-06-09",
-        "market_profile": {
-          "control": {
-            "count": 24,
-            "market_size_max": 1209.9072727272728,
-            "market_size_median": 232.66409090909093,
-            "market_size_min": 80.0,
-            "markets": [
-              {
-                "geo_id": "dma_002",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_006",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_007",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_010",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_019",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_021",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_023",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_026",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_027",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_031",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_048",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_052",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_053",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_059",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_062",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_065",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_066",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_073",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_074",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_080",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_081",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_083",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_091",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_098",
-                "region": "West"
-              }
-            ],
-            "region_counts": {
-              "Midwest": 2,
-              "Northeast": 7,
-              "South": 8,
-              "West": 7
-            },
-            "total_volume": 225896.0,
-            "volume_column": "orders"
-          },
-          "treatment": {
-            "count": 10,
-            "market_size_max": 1878.8063636363636,
-            "market_size_median": 197.82613636363635,
-            "market_size_min": 80.0,
-            "markets": [
-              {
-                "geo_id": "dma_013",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_017",
-                "region": "West"
-              },
-              {
-                "geo_id": "dma_018",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_033",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_035",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_039",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_051",
-                "region": "Northeast"
-              },
-              {
-                "geo_id": "dma_056",
-                "region": "South"
-              },
-              {
-                "geo_id": "dma_082",
-                "region": "Midwest"
-              },
-              {
-                "geo_id": "dma_094",
-                "region": "South"
-              }
-            ],
-            "region_counts": {
-              "Midwest": 2,
-              "Northeast": 1,
-              "South": 5,
-              "West": 2
-            },
-            "total_volume": 96526.0,
-            "volume_column": "orders"
-          }
-        },
-        "metadata": {
-          "domain": "pricing",
-          "required": false,
-          "tags": []
-        },
-        "method_readiness": {
-          "assignment_policy_execution": {
-            "assignment_metadata": {
-              "exact": false,
-              "policy_kind": "fixed_treatment_count"
-            },
-            "status": "executed",
-            "unit_type": "market",
-            "warnings": []
-          },
-          "estimator_suite": {
-            "backend_overrides": {},
-            "estimator_params": {},
-            "estimators": [
-              "did",
-              "ratio_delta",
-              "synthetic_did",
-              "block_bootstrap",
-              "synthetic_control"
-            ],
-            "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
-          },
-          "inference": {
-            "bootstrap_samples": 1000,
-            "confidence": 0.95,
-            "family_id": null,
-            "methods": [
-              "estimator_default"
-            ],
-            "multiplicity": "none",
-            "randomization_samples": 5000
-          },
-          "interference": {
-            "adjacency_path": null,
-            "buffer_radius": null,
-            "distance_path": null,
-            "exclude_buffer_controls": false,
-            "exposure_path": null,
-            "mode": "none"
-          },
-          "interference_diagnostics": {},
-          "monitoring": {
-            "alpha_spending": null,
-            "information_fractions": [],
-            "look_dates": [],
-            "lower_bound": null,
-            "mode": "fixed_horizon",
-            "upper_bound": null,
-            "warn_on_unplanned_peeking": true
-          }
-        },
-        "metric_mde": {
-          "conversion_rate": 0.3191467952494495,
-          "orders": 0.015245528465235017
-        },
-        "metric_roles": {
-          "conversion_rate": "primary",
-          "orders": "primary"
-        },
-        "objective_score": 979.6803838142657,
-        "score_components": {
-          "control_pool_penalty": -3.5999999999999996,
-          "mde_component": 0.16719616185734226,
-          "mde_penalty": -16.719616185734225,
-          "objective_metric_count": 2.0,
-          "objective_weight_sum": 2.0,
-          "priority": 1000.0,
-          "total": 979.6803838142657
-        },
-        "start_date": "2027-05-13",
-        "test_framework": {
-          "alpha": null,
-          "default_margin": 0.0,
-          "effect_scale": "relative_lift",
-          "kind": "superiority",
-          "label": null,
-          "margins": {},
-          "notes": null,
-          "posterior_probability_threshold": null
-        },
-        "test_name": "pricing_q2",
-        "treatment_markets": [
-          "dma_013",
-          "dma_017",
-          "dma_018",
-          "dma_033",
-          "dma_035",
-          "dma_039",
-          "dma_051",
-          "dma_056",
-          "dma_082",
-          "dma_094"
-        ],
-        "warnings": []
       }
     ]
   },
@@ -5258,11 +5273,11 @@
     "candidate_bonus_count": 0,
     "candidate_count": 24,
     "evaluated_combinations": 729,
-    "objective": 2376.933,
+    "objective": 2329.882,
     "pairwise_penalty_count": 0,
     "portfolio_objective": {
       "artifact_version": "fieldtrial.portfolio.objective.v1",
-      "base_score": 2376.933651383217,
+      "base_score": 2329.88129697722,
       "candidate_ids": [
         "pricing_q2:0003",
         "lifecycle_q2:0006",
@@ -5270,6 +5285,12 @@
       ],
       "covariance_penalty": 0.0,
       "learning_value": 0.0,
+      "learning_value_semantics": {
+        "calibrated_evsi": false,
+        "calibrated_value_of_information": false,
+        "scale": "0_to_100_within_candidate_set_before_objective_weight",
+        "score_type": "set_relative_precision_scarcity_heuristic"
+      },
       "learning_values": {
         "lifecycle_q2:0006": 0.0,
         "operations_q3_prep:0006": 0.0,
@@ -5277,7 +5298,7 @@
       },
       "overlap_penalty": 0.0,
       "pairwise_penalties": {},
-      "total_score": 2376.933651383217,
+      "total_score": 2329.88129697722,
       "warnings": []
     },
     "selected_count": 3,
@@ -5288,12 +5309,12 @@
   "roadmap_name": "Synthetic Shared-Control Roadmap",
   "score_components": {
     "control_pool_penalty": -10.799999999999999,
-    "mde_component": 0.1226634861678307,
-    "mde_penalty": -12.26634861678307,
+    "mde_component": 0.5931870302277995,
+    "mde_penalty": -59.31870302277994,
     "objective_metric_count": 4.0,
     "objective_weight_sum": 4.0,
     "priority": 2400.0,
-    "total": 2376.933651383217
+    "total": 2329.88129697722
   },
   "selected_candidates": [
     {
@@ -5301,6 +5322,7 @@
         "allow_unpaired_markets": true,
         "execution": {
           "matched_pairs": [],
+          "matching_window": null,
           "status": "executed",
           "strata_values": {},
           "unit_type": "market"
@@ -5602,22 +5624,22 @@
         }
       },
       "metric_mde": {
-        "conversion_rate": 0.16921908446781408,
-        "orders": 0.01435298568671138
+        "conversion_rate": 0.8115462196368606,
+        "orders": 0.0688345012099867
       },
       "metric_roles": {
         "conversion_rate": "primary",
         "orders": "primary"
       },
-      "objective_score": 987.2213964922737,
+      "objective_score": 952.3809639576576,
       "score_components": {
         "control_pool_penalty": -3.5999999999999996,
-        "mde_component": 0.09178603507726274,
-        "mde_penalty": -9.178603507726274,
+        "mde_component": 0.44019036042342363,
+        "mde_penalty": -44.019036042342364,
         "objective_metric_count": 2.0,
         "objective_weight_sum": 2.0,
         "priority": 1000.0,
-        "total": 987.2213964922737
+        "total": 952.3809639576576
       },
       "start_date": "2027-04-29",
       "test_framework": {
@@ -5650,6 +5672,7 @@
         "allow_unpaired_markets": true,
         "execution": {
           "matched_pairs": [],
+          "matching_window": null,
           "status": "executed",
           "strata_values": {},
           "unit_type": "market"
@@ -5951,20 +5974,20 @@
         }
       },
       "metric_mde": {
-        "orders": 0.015238367465451708
+        "orders": 0.07465244960676971
       },
       "metric_roles": {
         "orders": "primary"
       },
-      "objective_score": 794.8761632534548,
+      "objective_score": 788.934755039323,
       "score_components": {
         "control_pool_penalty": -3.5999999999999996,
-        "mde_component": 0.015238367465451708,
-        "mde_penalty": -1.5238367465451708,
+        "mde_component": 0.07465244960676971,
+        "mde_penalty": -7.465244960676971,
         "objective_metric_count": 1.0,
         "objective_weight_sum": 1.0,
         "priority": 800.0,
-        "total": 794.8761632534548
+        "total": 788.934755039323
       },
       "start_date": "2027-05-20",
       "test_framework": {
@@ -5997,6 +6020,7 @@
         "allow_unpaired_markets": true,
         "execution": {
           "matched_pairs": [],
+          "matching_window": null,
           "status": "executed",
           "strata_values": {},
           "unit_type": "market"
@@ -6301,20 +6325,20 @@
         }
       },
       "metric_mde": {
-        "revenue": 0.01563908362511625
+        "revenue": 0.0783442201976061
       },
       "metric_roles": {
         "revenue": "primary"
       },
-      "objective_score": 594.8360916374884,
+      "objective_score": 588.5655779802394,
       "score_components": {
         "control_pool_penalty": -3.5999999999999996,
-        "mde_component": 0.01563908362511625,
-        "mde_penalty": -1.5639083625116248,
+        "mde_component": 0.0783442201976061,
+        "mde_penalty": -7.83442201976061,
         "objective_metric_count": 1.0,
         "objective_weight_sum": 1.0,
         "priority": 600.0,
-        "total": 594.8360916374884
+        "total": 588.5655779802394
       },
       "start_date": "2027-06-12",
       "test_framework": {

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import math
 from collections.abc import Callable, Iterable
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
@@ -46,7 +46,7 @@ def _jsonable(value: Any) -> Any:
     if isinstance(value, np.integer):
         return int(value)
     if isinstance(value, np.floating):
-        return None if np.isnan(value) else float(value)
+        return float(value) if np.isfinite(value) else None
     if isinstance(value, np.ndarray):
         return [_jsonable(v) for v in value.tolist()]
     if isinstance(value, (pd.Timestamp, datetime, date)):
@@ -57,7 +57,9 @@ def _jsonable(value: Any) -> Any:
         return {str(k): _jsonable(v) for k, v in value.items()}
     if isinstance(value, (list, tuple, set)):
         return [_jsonable(v) for v in value]
-    if isinstance(value, float) and math.isnan(value):
+    if isinstance(value, float) and not math.isfinite(value):
+        # +/-inf survives json.dumps as an Invalid JSON token that browsers
+        # reject; represent unbounded values as null like NaN.
         return None
     return value
 
@@ -264,7 +266,8 @@ class EstimatorResult:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> EstimatorResult:
-        payload = dict(data)
+        known_fields = {item.name for item in fields(cls)}
+        payload = {key: value for key, value in data.items() if key in known_fields}
         interval = payload.get("interval")
         if interval is not None:
             payload["interval"] = tuple(interval)

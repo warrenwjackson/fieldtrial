@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from datetime import date
+from types import SimpleNamespace
 
 import pandas as pd
 import pytest
 
 from fieldtrial.design.candidates import CandidateDesign
+from fieldtrial.estimators.base import EstimatorResult
+from fieldtrial.methods import InferenceResult
 from fieldtrial.portfolio import (
     EvidenceRecord,
     EvidenceStore,
@@ -149,6 +152,161 @@ def test_decision_engine_supports_equivalence_claims():
     assert decision.state == "ship_scale"
     assert metric.passed is True
     assert metric.conclusion == "passed"
+
+
+def test_non_inferiority_and_equivalence_intervals_stay_decisive_with_p_value_vs_zero():
+    # Regression: a p-value testing H0: effect = 0 (expected to be large under a
+    # true-null pass) used to override clean interval evidence and flip the
+    # decision to no_go/inconclusive.
+    guardrail = evaluate_portfolio_decision(
+        [
+            MetricDecisionInput(
+                test_id="launch",
+                metric="latency",
+                role="guardrail",
+                framework="non_inferiority",
+                estimate=0.002,
+                margin=0.02,
+                interval=(-0.005, 0.01),
+                p_value=0.6,
+            )
+        ],
+        multiplicity="none",
+    )
+    metric = guardrail.metric_decisions[0]
+    assert metric.passed is True
+    assert metric.conclusion == "passed"
+    assert metric.blocks_decision is False
+    assert guardrail.state != "no_go"
+
+    equivalence = evaluate_portfolio_decision(
+        [
+            MetricDecisionInput(
+                test_id="neutrality",
+                metric="complaints",
+                role="success",
+                framework="equivalence",
+                estimate=0.002,
+                margin=0.02,
+                interval=(-0.01, 0.012),
+                p_value=0.8,
+            )
+        ],
+        multiplicity="none",
+    )
+    assert equivalence.metric_decisions[0].passed is True
+    assert equivalence.state == "ship_scale"
+
+
+def test_default_multiplicity_family_pools_same_role_success_metrics():
+    # Regression: the default family key included the metric name, so every
+    # metric was a singleton family and Holm adjusted nothing.
+    decision = evaluate_portfolio_decision(
+        [
+            MetricDecisionInput(
+                test_id="launch",
+                metric=f"metric_{index}",
+                role="success",
+                framework="superiority",
+                estimate=0.08,
+                margin=0.02,
+                p_value=0.04,
+            )
+            for index in range(5)
+        ],
+        multiplicity="holm",
+    )
+
+    assert decision.state != "ship_scale"
+    assert all(
+        item.adjusted_p_value == pytest.approx(0.2) for item in decision.metric_decisions
+    )
+    assert "Adjusted confirmatory p-values with holm." in decision.warnings
+
+
+def test_multiplicity_warning_is_honest_when_no_family_pools_p_values():
+    decision = evaluate_portfolio_decision(
+        [
+            MetricDecisionInput(
+                test_id="launch",
+                metric="orders",
+                role="success",
+                framework="superiority",
+                estimate=0.08,
+                margin=0.02,
+                p_value=0.01,
+            )
+        ],
+        multiplicity="holm",
+    )
+
+    assert "Adjusted confirmatory p-values with holm." not in decision.warnings
+    assert any("had no effect" in warning for warning in decision.warnings)
+    assert decision.metric_decisions[0].adjusted_p_value == pytest.approx(0.01)
+
+
+def test_inconclusive_deterioration_check_is_not_reported_as_no_deterioration():
+    # Regression: claim_passed=None was collapsed to falsy, labeling an
+    # inconclusive harm check "no_deterioration_detected".
+    decision = evaluate_portfolio_decision(
+        [
+            MetricDecisionInput(
+                test_id="launch",
+                metric="churn",
+                role="deterioration",
+                framework="inferiority",
+                estimate=-0.05,
+                margin=0.02,
+                p_value=0.2,
+            )
+        ],
+        multiplicity="none",
+    )
+
+    metric = decision.metric_decisions[0]
+    assert metric.passed is None
+    assert metric.conclusion == "inconclusive"
+    assert metric.blocks_decision is False
+
+
+def test_from_estimator_result_prefers_top_level_fields_over_none_payload():
+    # Regression: dict.get fallbacks never fired because the primary inference
+    # payload always contains the keys (with value None), dropping the
+    # result's own standard error and interval.
+    result = EstimatorResult(
+        "synthetic_control",
+        "att",
+        "orders",
+        0.10,
+        standard_error=0.02,
+        p_value=0.03,
+        interval=(0.06, 0.14),
+        inference_results=[
+            InferenceResult(
+                method="conformal_counterfactual_test_inversion",
+                method_family="conformal",
+                p_value=0.04,
+                standard_error=None,
+                interval=None,
+            )
+        ],
+    )
+    design_like = SimpleNamespace(
+        experiment_id="sc-test",
+        treatment_geos=("t1",),
+        control_geos=("c1", "c2"),
+        start_date=date(2027, 1, 1),
+        end_date=date(2027, 1, 14),
+    )
+
+    estimate = PortfolioEstimate.from_estimator_result(result, design_like)
+
+    assert estimate.standard_error == pytest.approx(0.02)
+    assert estimate.interval == pytest.approx((0.06, 0.14))
+    assert estimate.p_value == pytest.approx(0.04)
+    variance, source = estimate.resolved_variance()
+    assert source == "standard_error"
+    assert variance == pytest.approx(0.0004)
 
 
 def test_evidence_store_and_empirical_bayes_pooling_shrink_noisy_estimates():

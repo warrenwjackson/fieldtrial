@@ -120,9 +120,12 @@ class PortfolioEstimate:
             test_id=test_id or getattr(design, "experiment_id", getattr(result, "test_id", "")),
             metric=result.metric,
             estimate=estimate_value,
-            standard_error=primary.get("standard_error", getattr(result, "standard_error", None)),
-            p_value=primary.get("p_value", getattr(result, "p_value", None)),
-            interval=primary.get("interval", getattr(result, "interval", None)),
+            standard_error=_first_non_none(
+                primary.get("standard_error"),
+                getattr(result, "standard_error", None),
+            ),
+            p_value=_first_non_none(primary.get("p_value"), getattr(result, "p_value", None)),
+            interval=_first_non_none(primary.get("interval"), getattr(result, "interval", None)),
             treatment_markets=getattr(design, "treatment_geos", ()),
             control_markets=getattr(design, "control_geos", ()),
             start_date=getattr(design, "start_date", None),
@@ -373,6 +376,10 @@ def _pair_draw_covariance(
     if covariance is None:
         return None
     return covariance, int(len(aligned))
+
+
+def _first_non_none(*values: Any) -> Any:
+    return next((value for value in values if value is not None), None)
 
 
 def _primary_inference_payload(result: Any) -> dict[str, Any]:

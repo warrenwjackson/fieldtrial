@@ -107,10 +107,10 @@ def test_analysis_report_renders_visual_sections(tmp_path):
     out = tmp_path / "analysis.html"
     render_analysis_report(payload, out)
     html = out.read_text()
-    assert "Metric Time Series" in html
+    assert "Observed Trends" in html
     assert "Daily Treatment-Control Delta" in html
     assert "Metric Lift Comparison" in html
-    assert "Headline rows use the median" in html
+    assert "headline median of independent evidence-family representatives" in html
     assert "non inferiority" in html
 
     embedded = _embedded_json(html)
@@ -171,9 +171,9 @@ def test_analysis_report_executive_readout_uses_interval_tracks():
     assert "Metric Lift Comparison" in html
     assert "headline median of independent evidence-family representatives" in html
     assert "direction agreement" in html
-    assert "Method rows underneath" in html
+    assert "Evidence by Method" in html
     assert "interval-band" in html
-    assert "20.00%" in html
+    assert "+20.00%" in html
 
 
 def test_analysis_report_surfaces_fit_diagnostics():
@@ -371,7 +371,7 @@ def test_analysis_report_clips_outlier_intervals_without_expanding_shared_axis()
     assert clipped["high_clipped"] is True
 
     html = render_analysis_report(payload)
-    assert "Wide intervals are clipped" in html
+    assert "clipped for readability" in html
     assert "interval-clip" in html
 
 
@@ -575,6 +575,128 @@ def test_compact_analysis_summary_omits_diagnostics_and_artifacts():
     assert "artifacts" not in json.dumps(summary)
 
 
+def test_analysis_report_renders_verdict_cards_and_impact():
+    payload = normalize_analysis_payload(
+        {
+            "design": {
+                "experiment_id": "x",
+                "name": "Pricing Lift",
+                "start_date": "2027-05-01",
+                "end_date": "2027-05-28",
+                "treatment_geos": ["m1", "m2"],
+                "control_geos": ["c1", "c2"],
+                "primary_metrics": ["orders"],
+                "test_framework": {
+                    "kind": "superiority",
+                    "effect_scale": "relative_lift",
+                    "default_margin": 0.0,
+                    "alpha": 0.05,
+                },
+            },
+            "results": [
+                EstimatorResult(
+                    "did",
+                    "att",
+                    "orders",
+                    2.0,
+                    relative_lift=0.10,
+                    interval=(1.0, 3.0),
+                    p_value=0.01,
+                    diagnostics={
+                        "relative_lift_interval": [0.05, 0.15],
+                        "n_post_periods": 28,
+                        "observed": {
+                            "metric_kind": "count",
+                            "treatment_post_total": 1100.0,
+                            "treatment_post": 9.8,
+                        },
+                    },
+                ).to_dict()
+            ],
+        }
+    )
+
+    verdict = payload["verdicts"][0]
+    assert verdict["metric"] == "orders"
+    assert verdict["lift"] == pytest.approx(0.10)
+    assert verdict["tone"] == "good"
+    assert "Orders rose an estimated +10.0%" in verdict["sentences"]["headline"]
+
+    impact = payload["impacts"]["orders"]
+    assert impact["metric_kind"] == "count"
+    assert impact["units"] == pytest.approx(100.0)
+
+    html = render_analysis_report(payload)
+    assert "Verdict" in html
+    assert "Impact Quantification" in html
+    assert "incremental units" in html
+
+
+def test_analysis_report_renders_counterfactual_panels():
+    counterfactual = [
+        {"date": f"2027-04-{day:02d}", "period": "pre", "observed": 10.0 + day * 0.01,
+         "counterfactual": 10.0, "gap": day * 0.01}
+        for day in range(1, 15)
+    ] + [
+        {"date": f"2027-05-{day:02d}", "period": "post", "observed": 11.0,
+         "counterfactual": 10.0, "gap": 1.0}
+        for day in range(1, 15)
+    ]
+    payload = normalize_analysis_payload(
+        {
+            "design": {"treatment_geos": ["m1", "m2"], "control_geos": ["c1"]},
+            "results": [
+                EstimatorResult(
+                    "synthetic_control",
+                    "synthetic_control_cumulative_att",
+                    "orders",
+                    14.0,
+                    relative_lift=0.1,
+                    interval=(4.0, 24.0),
+                    diagnostics={"observed": {"metric_kind": "count"}},
+                    artifacts={"counterfactual": counterfactual},
+                ).to_dict()
+            ],
+        }
+    )
+
+    panels = payload["counterfactual_panels"]
+    assert len(panels) == 1
+    chart = panels[0]["primary"]
+    assert chart["estimator_name"] == "synthetic_control"
+    assert chart["cumulative_effect"] == pytest.approx(14.0)
+    assert chart["total_units"] == pytest.approx(28.0)
+    assert chart["cumulative_chart"]["endpoint"]["interval"] is not None
+
+    html = render_analysis_report(payload)
+    assert "Effect vs Counterfactual" in html
+    assert "Cumulative incremental effect" in html
+
+
+def test_analysis_report_renders_validity_scorecard():
+    html = render_analysis_report(
+        [
+            EstimatorResult(
+                "synthetic_control",
+                "synthetic_control_cumulative_att",
+                "orders",
+                4.0,
+                relative_lift=0.04,
+                diagnostics={
+                    "pre_period_rmse_ratio": 0.42,
+                    "donor_weight_concentration": 0.7,
+                    "parallel_trends": {"status": "ok"},
+                },
+            ).to_dict()
+        ]
+    )
+
+    assert "Validity Scorecard" in html
+    assert "Pre-period fit" in html
+    assert "Donor diversity" in html
+    assert "Do not trust blindly" in html
+
+
 def test_decision_summary_uses_adjusted_decision_p_value_and_uncertainty():
     payload = normalize_analysis_payload(
         {
@@ -685,3 +807,119 @@ def test_planning_report_renders_portfolio_calendar_with_market_volume():
     assert rows[0]["market"] == "m1"
     assert rows[0]["label"] == "Main Market"
     assert rows[0]["height_px"] > rows[1]["height_px"]
+    # sqrt-volume row heights keep every market label legible.
+    assert sum(1 for row in rows if row["label_visible"]) == len(rows)
+
+
+def test_planning_report_renders_mde_frontier_and_solver_audit():
+    payload = {
+        "roadmap_name": "Plan",
+        "selected_candidates": [
+            {
+                "candidate_id": "pricing_q2:0001",
+                "test_name": "pricing_q2",
+                "start_date": "2027-04-08",
+                "end_date": "2027-04-28",
+                "duration_days": 21,
+                "treatment_markets": ["m1", "m2"],
+                "control_markets": ["c1"],
+                "metric_mde": {"orders": 0.05},
+                "objective_score": 12.5,
+                "score_components": {"priority": 20.0, "mde_penalty": -7.5},
+            }
+        ],
+        "candidate_alternatives": {
+            "pricing_q2": [
+                {
+                    "candidate_id": "pricing_q2:0002",
+                    "test_name": "pricing_q2",
+                    "start_date": "2027-04-08",
+                    "end_date": "2027-05-05",
+                    "duration_days": 28,
+                    "treatment_markets": ["m3"],
+                    "control_markets": ["c1"],
+                    "metric_mde": {"orders": 0.04},
+                    "objective_score": 11.0,
+                    "score_components": {"priority": 20.0, "mde_penalty": -9.0},
+                }
+            ]
+        },
+        "diagnostics": {
+            "status": "BRUTE_FORCE_OPTIMAL",
+            "candidate_count": 2,
+            "evaluated_combinations": 2,
+            "timed_out": False,
+            "time_limit_seconds": 15,
+        },
+        "score_decomposition": {"priority": 20.0, "mde_penalty": -7.5, "total": 12.5},
+    }
+
+    html = render_planning_report(payload)
+
+    assert "MDE Tradeoff Frontier" in html
+    assert "Solver Audit" in html
+    assert "score breakdown" in html
+    assert "Raw solver diagnostics JSON" in html
+
+    embedded = _embedded_json(html)
+    frontier = embedded["mde_frontier"]
+    points = {point["candidate_id"]: point for point in frontier["points"]}
+    selected = points["pricing_q2:0001"]
+    alternative = points["pricing_q2:0002"]
+
+    assert frontier["point_count"] == 2
+    assert frontier["selected_count"] == 1
+    assert selected["selected"] is True
+    assert alternative["selected"] is False
+    # Longer duration plots further right; lower MDE plots lower on the chart.
+    assert alternative["x"] > selected["x"]
+    assert alternative["y"] > selected["y"]
+
+    solver = embedded["solver_summary"]
+    assert solver["status"] == "BRUTE_FORCE_OPTIMAL"
+    assert solver["tone"] == "good"
+    assert {"label": "Tests selected", "value": "1"} in solver["stats"]
+
+    bars = embedded["candidate_rows"][0]["score_component_bars"]
+    assert bars[0]["key"] == "priority"
+    assert bars[0]["width_percent"] == 100.0
+    assert bars[1] == {
+        "key": "mde_penalty",
+        "label": "mde penalty",
+        "value": -7.5,
+        "value_label": "-7.50",
+        "width_percent": 37.5,
+        "negative": True,
+    }
+
+
+def test_planning_report_tolerates_none_mde_and_score_component_values():
+    payload = {
+        "roadmap_name": "Plan",
+        "selected_candidates": [
+            {
+                "candidate_id": "a1",
+                "test_name": "a",
+                "start_date": "2027-01-01",
+                "end_date": "2027-01-21",
+                "duration_days": 21,
+                "treatment_markets": ["m1"],
+                "control_markets": ["c1"],
+                "metric_mde": {"orders": 0.1, "revenue": None},
+                "objective_score": 10,
+                "score_components": {"priority": 10.0, "learning_bonus": None},
+            }
+        ],
+    }
+
+    html = render_planning_report(payload)
+    embedded = _embedded_json(html)
+    row = embedded["candidate_rows"][0]
+
+    assert "MDE Tradeoff Frontier" in html
+    assert row["best_mde"] == pytest.approx(0.1)
+    assert row["worst_mde"] == pytest.approx(0.1)
+    assert [bar["key"] for bar in row["score_component_bars"]] == ["priority"]
+    assert [mde_row["metric"] for mde_row in embedded["mde_rows"]] == ["orders"]
+    # A single candidate still renders a frontier point.
+    assert embedded["mde_frontier"]["point_count"] == 1

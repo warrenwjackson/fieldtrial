@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import math
+from datetime import date
 from types import SimpleNamespace
 
 import numpy as np
+import pandas as pd
 import pytest
 from scipy import stats
 
+from fieldtrial.data.panel import GeoPanel
 from fieldtrial.design import AssignmentPolicy
-from fieldtrial.estimators.base import EstimatorResult
+from fieldtrial.estimators.base import CompletedDesign, EstimatorResult
 from fieldtrial.inference import (
     adjust_p_values,
     apply_configured_multiplicity,
@@ -31,7 +34,13 @@ from fieldtrial.inference import (
     welch_difference_in_means,
 )
 from fieldtrial.inference.intervals import long_run_variance
+from fieldtrial.inference.orchestration import (
+    _null_value_from_framework,
+    _run_market_bootstrap,
+    _run_randomization_inference,
+)
 from fieldtrial.methods import InferenceResult
+from fieldtrial.metrics import CountMetric
 
 
 def test_randomization_test_enumerates_fixed_treatment_count_from_treatment_lists() -> None:
@@ -407,3 +416,104 @@ def test_bounded_confidence_sequence_and_e_values_have_clear_anytime_semantics()
     )
     assert cs_result.confidence_sequence["semantics"].startswith("Simultaneous confidence sequence")
     assert cs_result.p_value is not None
+
+
+def _neutral_effect_panel_and_design() -> tuple[GeoPanel, CompletedDesign]:
+    deltas = {
+        "t1": 0.3,
+        "t2": -0.2,
+        "t3": 0.1,
+        "t4": -0.3,
+        "c1": 0.2,
+        "c2": -0.1,
+        "c3": 0.0,
+        "c4": 0.15,
+    }
+    rows = []
+    for geo, delta in deltas.items():
+        rows.append({"geo_id": geo, "date": pd.Timestamp("2027-04-01"), "orders": 100.0})
+        rows.append({"geo_id": geo, "date": pd.Timestamp("2027-05-01"), "orders": 100.0 + delta})
+    panel = GeoPanel.from_dataframe(pd.DataFrame(rows), require_complete_grid=False)
+    design = CompletedDesign(
+        experiment_id="ni-null-regression",
+        treatment_geos=["t1", "t2", "t3", "t4"],
+        control_geos=["c1", "c2", "c3", "c4"],
+        start_date=date(2027, 5, 1),
+        end_date=date(2027, 5, 1),
+        pre_period_start=date(2027, 4, 1),
+        pre_period_end=date(2027, 4, 1),
+    )
+    return panel, design
+
+
+def _framework_spec(
+    kind: str,
+    *,
+    effect_scale: str = "estimate",
+    margins: dict[str, float] | None = None,
+    default_margin: float = 0.0,
+) -> SimpleNamespace:
+    return SimpleNamespace(
+        inference=SimpleNamespace(
+            confidence=0.95,
+            randomization_samples=500,
+            bootstrap_samples=200,
+        ),
+        assignment_policy=None,
+        test_framework=SimpleNamespace(
+            kind=kind,
+            effect_scale=effect_scale,
+            margins=margins or {},
+            default_margin=default_margin,
+        ),
+    )
+
+
+def test_non_inferiority_margin_shifts_configured_inference_null() -> None:
+    # Regression: non-inferiority frameworks silently ran as superiority-vs-zero
+    # because the configured margin was never threaded into inference calls.
+    panel, design = _neutral_effect_panel_and_design()
+    metric = CountMetric("orders")
+    ni_spec = _framework_spec("non_inferiority", default_margin=5.0)
+    superiority_spec = _framework_spec("superiority", default_margin=5.0)
+
+    ni = _run_randomization_inference(panel, design, metric, ni_spec)
+    superiority = _run_randomization_inference(panel, design, metric, superiority_spec)
+
+    assert ni.null_distribution["null_value"] == pytest.approx(-5.0)
+    assert superiority.null_distribution["null_value"] == 0.0
+    assert ni.p_value <= 0.05
+    assert superiority.p_value > 0.2
+
+    ni_boot = _run_market_bootstrap(panel, design, metric, ni_spec)
+    superiority_boot = _run_market_bootstrap(panel, design, metric, superiority_spec)
+
+    assert ni_boot.p_value < 0.05
+    assert superiority_boot.p_value > 0.2
+
+
+def test_null_value_from_framework_handles_margins_scales_and_kinds() -> None:
+    estimate_scale = _framework_spec("non_inferiority", default_margin=5.0)
+    assert _null_value_from_framework(estimate_scale, "orders") == pytest.approx(-5.0)
+
+    per_metric = _framework_spec(
+        "non_inferiority",
+        margins={"orders": 3.0},
+        default_margin=5.0,
+    )
+    assert _null_value_from_framework(per_metric, "orders") == pytest.approx(-3.0)
+    assert _null_value_from_framework(per_metric, "revenue") == pytest.approx(-5.0)
+
+    relative = _framework_spec(
+        "non_inferiority",
+        effect_scale="relative_lift",
+        default_margin=0.05,
+    )
+    assert _null_value_from_framework(relative, "orders", baseline=200.0) == pytest.approx(-10.0)
+    assert _null_value_from_framework(relative, "orders") == 0.0
+
+    inferiority = _framework_spec("inferiority", default_margin=2.0)
+    assert _null_value_from_framework(inferiority, "orders") == pytest.approx(2.0)
+
+    superiority = _framework_spec("superiority", default_margin=5.0)
+    assert _null_value_from_framework(superiority, "orders") == 0.0

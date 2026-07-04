@@ -297,7 +297,12 @@ def _apply_treatment(
         _apply_ratio_lift(out, mask, injection)
         return out
 
-    target_metric = injection.metric if injection.metric in out.columns else "orders"
+    if injection.metric not in out.columns:
+        raise ValueError(
+            f"TreatmentInjection.metric {injection.metric!r} is not a generated column; "
+            f"available: {sorted(out.columns)}"
+        )
+    target_metric = injection.metric
     if injection.mode == "relative":
         multiplier = 1.0 + injection.lift
         _set_scaled_column(out, mask, target_metric, multiplier)
@@ -403,20 +408,16 @@ def _apply_ratio_lift(
 
 
 def _ratio_columns(frame: pd.DataFrame, injection: TreatmentInjection) -> tuple[str, str]:
-    if injection.denominator is not None:
-        numerator = injection.metric if injection.metric in frame.columns else "orders"
-        denominator = injection.denominator
-    elif injection.metric in {"conversion_rate", "order_rate"} and {"orders", "sessions"}.issubset(
-        frame.columns
-    ):
-        numerator = "orders"
-        denominator = "sessions"
-    elif injection.metric in frame.columns and "sessions" in frame.columns:
+    if injection.metric in frame.columns:
         numerator = injection.metric
-        denominator = "sessions"
-    else:
+    elif injection.metric in {"conversion_rate", "order_rate"}:
         numerator = "orders"
-        denominator = "sessions"
+    else:
+        raise ValueError(
+            f"TreatmentInjection.metric {injection.metric!r} is not a generated column "
+            f"or recognized ratio metric; available: {sorted(frame.columns)}"
+        )
+    denominator = injection.denominator if injection.denominator is not None else "sessions"
 
     missing = [column for column in [numerator, denominator] if column not in frame.columns]
     if missing:

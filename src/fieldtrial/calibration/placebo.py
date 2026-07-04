@@ -262,9 +262,11 @@ def placebo_backtest(
     estimate_array = np.asarray(estimates, dtype=float)
     attempted_windows = len(estimates) + len(errors)
     significant_placebos = int(np.sum(np.asarray(p_values, dtype=float) < alpha))
-    false_positive_rate = (
-        float(significant_placebos / attempted_windows) if attempted_windows > 0 else None
-    )
+    # Rate only the windows that produced a p-value: dividing by attempted
+    # windows (including errored/unscoreable ones) dilutes the false-positive
+    # rate toward zero, and zero scored windows must read as unscored (None),
+    # not perfectly calibrated (0.0).
+    false_positive_rate = float(significant_placebos / len(p_values)) if p_values else None
     coverage = float(np.mean(covered)) if covered else None
     warnings = [] if not errors else [f"{len(errors)} placebo window(s) failed."]
     target_coverage = 1.0 - alpha
@@ -435,9 +437,9 @@ def placebo_in_space_backtest(
     estimate_array = np.asarray(estimates, dtype=float)
     attempted_markets = len(estimates) + len(errors)
     significant_placebos = int(np.sum(np.asarray(p_values, dtype=float) < alpha))
-    false_positive_rate = (
-        float(significant_placebos / attempted_markets) if attempted_markets > 0 else None
-    )
+    # Rate only the markets that produced a p-value; see placebo_backtest for
+    # why attempted counts dilute the false-positive rate.
+    false_positive_rate = float(significant_placebos / len(p_values)) if p_values else None
     coverage = float(np.mean(covered)) if covered else None
     warnings = [] if not errors else [f"{len(errors)} placebo market(s) failed."]
     target_coverage = 1.0 - alpha

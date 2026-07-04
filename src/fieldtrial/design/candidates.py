@@ -169,7 +169,7 @@ class CandidateGenerator:
                 spec.effective_assignment_policy(defaults).rerandomization,
             ):
                 continue
-            metric_mde = self._score_mde(spec, treatment, controls, start)
+            metric_mde = self._score_mde(spec, treatment, controls, start, duration_days=duration)
             score, score_components = self._candidate_score(
                 spec,
                 metric_mde,
@@ -312,7 +312,7 @@ class CandidateGenerator:
             pairs = construct_matched_pairs(
                 self.panel,
                 markets,
-                n_pairs=policy_spec.treatment_count,
+                n_pairs=policy_spec.treatment_count or default_treatment_count,
                 end=matching_end,
                 metric_columns=policy_spec.matching_metrics,
                 exact_match_columns=policy_spec.matching_columns or policy_spec.strata,
@@ -404,6 +404,11 @@ class CandidateGenerator:
             assignments = context.policy.enumerate(
                 max_assignments=max(context.policy.n_feasible_assignments, 1)
             )
+            if not assignments:
+                raise ValueError(
+                    "assignment policy has no feasible assignments given its "
+                    "required/forbidden/fixed-control constraints"
+                )
             return assignments[int(rng.integers(0, len(assignments)))]
         return context.policy.sample(1, seed=int(rng.integers(0, np.iinfo(np.int32).max)))[0]
 
@@ -593,23 +598,42 @@ class CandidateGenerator:
         }
 
     def _score_mde(
-        self, spec: ExperimentSpec, treatment: list[str], controls: list[str], start: date
+        self,
+        spec: ExperimentSpec,
+        treatment: list[str],
+        controls: list[str],
+        start: date,
+        *,
+        duration_days: int,
     ) -> dict[str, float]:
         pre = self.panel.df[self.panel.df[self.panel.time_col] < pd.Timestamp(start)]
         if pre.empty:
             pre = self.panel.df
+        pre_period_days = int(pre[self.panel.time_col].nunique())
         catalog = MetricCatalog.from_configs(spec.metrics)
         power = spec.effective_power(self.roadmap.defaults)
         out: dict[str, float] = {}
         for metric_name in spec.metrics:
             metric = catalog.get(metric_name)
             try:
-                if isinstance(metric, RatioMetric):
+                if power.method == "estimator_replay":
+                    value = self._replay_metric_mde(
+                        pre,
+                        metric,
+                        spec=spec,
+                        treatment=treatment,
+                        controls=controls,
+                        duration_days=duration_days,
+                        power=power,
+                    )
+                elif isinstance(metric, RatioMetric):
                     value = ratio_delta_mde(
                         pre,
                         metric,
                         treatment_geos=treatment,
                         control_geos=controls,
+                        test_length_days=duration_days,
+                        pre_period_days=pre_period_days,
                         geo_col=self.panel.geo_col,
                         alpha=power.alpha,
                         power=power.target_power,
@@ -620,6 +644,7 @@ class CandidateGenerator:
                         metric,
                         treatment=treatment,
                         controls=controls,
+                        test_length_days=duration_days,
                         alpha=power.alpha,
                         power=power.target_power,
                     )
@@ -635,6 +660,52 @@ class CandidateGenerator:
             out[metric_name] = float(value)
         return out
 
+    def _replay_metric_mde(
+        self,
+        frame: pd.DataFrame,
+        metric: MetricSpec,
+        *,
+        spec: ExperimentSpec,
+        treatment: list[str],
+        controls: list[str],
+        duration_days: int,
+        power: Any,
+    ) -> float:
+        # Imported lazily: the estimator registry pulls in the inference stack,
+        # which the analytic planning path does not need.
+        from fieldtrial.estimators.ensemble import instantiate_estimator
+        from fieldtrial.power.replay import estimator_replay_power
+
+        suite = spec.effective_estimator_suite(self.roadmap.defaults)
+        estimator_name = power.replay_estimator or suite.estimators[0]
+        estimator = instantiate_estimator(
+            estimator_name,
+            backend=suite.backend_overrides.get(estimator_name),
+            params=suite.estimator_params.get(estimator_name),
+        )
+        result = estimator_replay_power(
+            frame,
+            metric,
+            estimator,
+            treatment_geos=treatment,
+            control_geos=controls,
+            duration_days=duration_days,
+            lift_grid=power.lift_grid,
+            alpha=power.alpha,
+            target_power=power.target_power,
+            n_windows=power.placebo_windows,
+            geo_col=self.panel.geo_col,
+            time_col=self.panel.time_col,
+        )
+        if result.evaluated_windows == 0:
+            raise ValueError(
+                "estimator replay evaluated no historical windows: "
+                + "; ".join(result.errors or ["unknown reason"])
+            )
+        # When no grid lift reaches the power target the true MDE lies beyond
+        # the grid; the largest grid lift is returned as a lower bound.
+        return result.mde
+
     def _additive_metric_mde(
         self,
         frame: pd.DataFrame,
@@ -642,6 +713,7 @@ class CandidateGenerator:
         *,
         treatment: list[str],
         controls: list[str],
+        test_length_days: int,
         alpha: float,
         power: float,
     ) -> float:
@@ -656,7 +728,13 @@ class CandidateGenerator:
         if not np.isfinite(control_baseline) or control_baseline <= 0:
             raise ValueError("relative MDE requires a positive control baseline")
         scaled_control = c * (treatment_baseline / control_baseline)
-        return approximate_count_mde(t, scaled_control, alpha=alpha, power=power)
+        return approximate_count_mde(
+            t,
+            scaled_control,
+            test_length_days=test_length_days,
+            alpha=alpha,
+            power=power,
+        )
 
     def _metric_daily_total(
         self,
@@ -881,7 +959,10 @@ def _standardized_mean_difference(
     c_var = float(np.var(control, ddof=1)) if len(control) > 1 else 0.0
     pooled = np.sqrt((t_var + c_var) / 2.0)
     if not np.isfinite(pooled) or pooled <= 0:
-        return 0.0 if np.isclose(np.mean(treatment), np.mean(control)) else None
+        diff = float(np.mean(treatment) - np.mean(control))
+        if np.isclose(diff, 0.0):
+            return 0.0
+        return float(np.copysign(np.inf, diff))
     return float((np.mean(treatment) - np.mean(control)) / pooled)
 
 

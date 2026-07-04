@@ -303,6 +303,15 @@ class PowerSpec(BaseModel):
     alpha: float = Field(default=0.05, gt=0, lt=1)
     lift_grid: list[float] = Field(default_factory=lambda: [0.01, 0.03, 0.05, 0.08, 0.1])
     placebo_windows: int = Field(default=20, ge=1)
+    # "analytic" solves the noncentral-t MDE from pre-period noise;
+    # "estimator_replay" replays the planned estimator over historical windows
+    # of the candidate duration with lifts injected from lift_grid, using
+    # placebo_windows replay windows. Replay is markedly slower but reflects
+    # the variance of the estimator that will actually analyze the test.
+    method: Literal["analytic", "estimator_replay"] = "analytic"
+    # Estimator name for replay power; defaults to the first estimator in the
+    # effective estimator suite.
+    replay_estimator: str | None = None
 
 
 class RoadmapDefaults(BaseModel):

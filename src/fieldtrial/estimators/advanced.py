@@ -250,10 +250,19 @@ class SyntheticDIDEstimator(BaseEstimator):
             confidence=self.confidence,
         )
         naive_pre_residual_scale = float(np.std(pre_gaps, ddof=1)) if len(pre_gaps) >= 2 else None
-        interval = conformal.interval
+        # The conformal inversion returns a cumulative-effect interval, but the
+        # reported SDID estimate is the per-post-period average; convert so the
+        # estimate lies inside its own interval.
+        n_post = max(int(post_gaps.size), 1)
+        interval = (
+            None
+            if conformal.interval is None
+            else (conformal.interval[0] / n_post, conformal.interval[1] / n_post)
+        )
         p_value = conformal.p_value
         inference_results = [conformal]
         diagnostics["conformal"] = conformal.diagnostics
+        diagnostics["interval_scale"] = "post_period_average"
         diagnostics["naive_pre_residual_scale"] = naive_pre_residual_scale
         diagnostics["standard_error_policy"] = (
             "not_reported; native synthetic DiD uses conformal/placebo inference because "

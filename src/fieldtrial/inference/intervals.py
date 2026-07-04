@@ -270,15 +270,17 @@ def empirical_quantile_interval(
         upper_error = float(np.quantile(centered, alpha / 2.0))
         interval = (float(estimate - lower_error), float(estimate - upper_error))
 
+    # Compare draws and estimate in the same null-centered frame; shifting the
+    # draws toward the null while shifting the estimate away from it would
+    # displace the one-sided comparison by 2 * null_value.
     centered_estimate = float(estimate) - float(null_value)
-    centered_draws_for_p = centered + float(null_value)
     tolerance = 1e-12
     if alternative == "greater":
-        count = int(np.sum(centered_draws_for_p >= centered_estimate - tolerance))
+        count = int(np.sum(centered >= centered_estimate - tolerance))
     elif alternative == "less":
-        count = int(np.sum(centered_draws_for_p <= centered_estimate + tolerance))
+        count = int(np.sum(centered <= centered_estimate + tolerance))
     else:
-        count = int(np.sum(np.abs(centered_draws_for_p - null_value) >= abs(centered_estimate)))
+        count = int(np.sum(np.abs(centered) >= abs(centered_estimate) - tolerance))
     p_value = (count + 1) / (draw_array.size + 1) if add_one else count / draw_array.size
     return IntervalEstimate(
         interval=interval,

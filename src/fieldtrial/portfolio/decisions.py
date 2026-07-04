@@ -224,13 +224,13 @@ def evaluate_portfolio_decision(
         raise ValueError("At least one metric decision input is required")
     decision_test_id = test_id or inputs[0].test_id
     method = _normalize_multiplicity(multiplicity)
-    adjusted = _adjust_by_decision_family(inputs, method)
+    adjusted, family_sizes = _adjust_by_decision_family(inputs, method)
     evaluated = tuple(
         _evaluate_metric(item, adjusted_value, default_alpha=default_alpha)
         for item, adjusted_value in zip(inputs, adjusted, strict=True)
     )
     state = _combined_state(evaluated, state_on_inconclusive=state_on_inconclusive)
-    warnings = _decision_warnings(inputs, evaluated, method)
+    warnings = _decision_warnings(inputs, evaluated, method, family_sizes)
     return PortfolioDecision(
         test_id=decision_test_id,
         state=state,
@@ -352,12 +352,17 @@ def _framework_result(
         threshold = -item.margin
         if interval is not None:
             effect_ok = interval[0] > threshold
-            branch_evidence_ok = evidence_ok if evidence_ok is not None else effect_ok
+            branch_evidence_ok = False if posterior_ok is False else effect_ok
             reasons.append(
                 "Interval excludes unacceptable harm."
                 if effect_ok
                 else "Interval allows unacceptable harm."
             )
+            if item.p_value is not None or item.adjusted_p_value is not None:
+                reasons.append(
+                    "The supplied p-value tests a zero-effect null, not the "
+                    "non-inferiority margin; the interval is the decisive evidence."
+                )
             return _claim_result(effect_ok, branch_evidence_ok, business_ok, reasons)
         else:
             reasons.append(
@@ -368,12 +373,17 @@ def _framework_result(
     if item.framework == "equivalence":
         if interval is not None:
             effect_ok = interval[0] >= -item.margin and interval[1] <= item.margin
-            branch_evidence_ok = evidence_ok if evidence_ok is not None else effect_ok
+            branch_evidence_ok = False if posterior_ok is False else effect_ok
             reasons.append(
                 "Interval is inside equivalence margins."
                 if effect_ok
                 else "Interval extends outside equivalence margins."
             )
+            if item.p_value is not None or item.adjusted_p_value is not None:
+                reasons.append(
+                    "The supplied p-value tests a zero-effect null, not the "
+                    "equivalence margins; the interval is the decisive evidence."
+                )
             return _claim_result(effect_ok, branch_evidence_ok, business_ok, reasons)
         else:
             reasons.append(
@@ -389,7 +399,10 @@ def _framework_result(
             else "No material deterioration detected."
         )
         claim_passed, _, claim_reasons = _claim_result(effect_ok, evidence_ok, True, reasons)
-        conclusion = "deterioration_detected" if claim_passed else "no_deterioration_detected"
+        if claim_passed is None:
+            conclusion = "inconclusive"
+        else:
+            conclusion = "deterioration_detected" if claim_passed else "no_deterioration_detected"
         return claim_passed, conclusion, claim_reasons
 
     if item.framework == "two_sided":
@@ -448,7 +461,7 @@ def _combined_state(
 def _adjust_by_decision_family(
     inputs: Sequence[MetricDecisionInput],
     method: str,
-) -> list[float | None]:
+) -> tuple[list[float | None], dict[str, int]]:
     adjusted: list[float | None] = [item.adjusted_p_value for item in inputs]
     families: dict[str, list[int]] = defaultdict(list)
     for index, item in enumerate(inputs):
@@ -456,14 +469,15 @@ def _adjust_by_decision_family(
             continue
         if item.role not in CONFIRMATORY_ROLES or item.framework == "descriptive":
             continue
-        family = item.family_id or f"{item.role}:{item.framework}:{item.metric}"
+        family = item.family_id or f"{item.role}:{item.framework}"
         families[family].append(index)
     for indices in families.values():
         family_p = [inputs[index].p_value for index in indices]
         family_adjusted = adjust_p_values(family_p, method=method)
         for index, value in zip(indices, family_adjusted, strict=True):
             adjusted[index] = value
-    return adjusted
+    family_sizes = {family: len(indices) for family, indices in families.items()}
+    return adjusted, family_sizes
 
 
 def _risk_summary(decisions: Sequence[MetricDecision]) -> dict[str, Any]:
@@ -518,10 +532,16 @@ def _decision_warnings(
     inputs: Sequence[MetricDecisionInput],
     decisions: Sequence[MetricDecision],
     method: str,
+    family_sizes: Mapping[str, int],
 ) -> list[str]:
     warnings: list[str] = []
-    if method != "none":
+    if method != "none" and any(size > 1 for size in family_sizes.values()):
         warnings.append(f"Adjusted confirmatory p-values with {method}.")
+    elif method != "none" and family_sizes:
+        warnings.append(
+            f"Multiplicity adjustment with {method} had no effect because every "
+            "correction family contained a single p-value."
+        )
     for item in inputs:
         if item.role == "guardrail" and item.framework == "superiority":
             warnings.append(

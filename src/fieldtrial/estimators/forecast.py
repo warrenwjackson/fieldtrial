@@ -249,13 +249,22 @@ class ForecastCounterfactualEstimator(BaseEstimator):
         data: pd.DataFrame,
         *,
         origin: pd.Timestamp | None = None,
+        trend_scale: float | None = None,
     ) -> pd.DataFrame:
         dates = pd.to_datetime(data["date"]).dt.normalize()
         origin = origin or dates.min()
         trend = (dates - origin).dt.days.astype(float)
         features = pd.DataFrame({"trend": trend.to_numpy()}, index=data.index)
         if self.include_quadratic_trend:
-            scale = max(float(np.max(np.abs(trend))), 1.0)
+            # The normalization scale must be frozen at fit time: rescaling by
+            # the frame being transformed makes the quadratic feature mean
+            # something different at prediction time and corrupts the forecast
+            # on trending data.
+            scale = (
+                float(trend_scale)
+                if trend_scale is not None
+                else max(float(np.max(np.abs(trend))), 1.0)
+            )
             features["trend_squared"] = (trend.to_numpy() / scale) ** 2
         if self.include_weekday:
             weekday = pd.get_dummies(dates.dt.weekday, prefix="weekday", dtype=float)
@@ -266,7 +275,10 @@ class ForecastCounterfactualEstimator(BaseEstimator):
 
     def _fit_model(self, data: pd.DataFrame) -> dict[str, Any]:
         origin = pd.to_datetime(data["date"]).dt.normalize().min()
-        features = self._feature_frame(data, origin=origin)
+        dates = pd.to_datetime(data["date"]).dt.normalize()
+        trend = (dates - origin).dt.days.astype(float)
+        trend_scale = max(float(np.max(np.abs(trend))), 1.0)
+        features = self._feature_frame(data, origin=origin, trend_scale=trend_scale)
         model = Ridge(alpha=self.ridge_alpha, fit_intercept=True)
         model.fit(features.to_numpy(dtype=float), data["observed"].to_numpy(dtype=float))
         coefficients = {
@@ -281,10 +293,13 @@ class ForecastCounterfactualEstimator(BaseEstimator):
             "feature_columns": list(features.columns),
             "coefficients": coefficients,
             "origin": origin,
+            "trend_scale": trend_scale,
         }
 
     def _predict(self, fit: dict[str, Any], data: pd.DataFrame) -> np.ndarray:
-        features = self._feature_frame(data, origin=fit["origin"])
+        features = self._feature_frame(
+            data, origin=fit["origin"], trend_scale=fit.get("trend_scale")
+        )
         features = features.reindex(columns=fit["feature_columns"], fill_value=0.0)
         return fit["model"].predict(features.to_numpy(dtype=float))
 

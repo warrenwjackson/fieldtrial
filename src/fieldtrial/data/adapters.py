@@ -156,7 +156,7 @@ class CallablePanelAdapter:
     fetcher: Callable[..., Any]
     geo_col: str = "geo_id"
     time_col: str = "date"
-    frequency: str | None = "D"
+    frequency: str | pd.Timedelta | None = None
     extra_kwargs: Mapping[str, Any] | None = None
     kwargs: Mapping[str, Any] = field(default_factory=dict)
 
@@ -217,7 +217,7 @@ class SQLQueryPanelAdapter:
     geo_col: str = "geo_id"
     time_col: str = "date"
     params: Mapping[str, Any] | Sequence[Any] | None = None
-    frequency: str | None = "D"
+    frequency: str | pd.Timedelta | None = None
 
     def fetch(
         self,
@@ -228,13 +228,7 @@ class SQLQueryPanelAdapter:
         metrics: Iterable[str] | None = None,
         columns: Iterable[str] | None = None,
     ) -> pd.DataFrame:
-        params = dict(self.params or {}) if isinstance(self.params, Mapping) else self.params
-        if isinstance(params, dict):
-            if start is not None:
-                params.setdefault("start", start)
-            if end is not None:
-                params.setdefault("end", end)
-        frame = read_sql_query(self.connection, self.query, params=params)
+        frame = read_sql_query(self.connection, self.query, params=self.params)
         return _filter_panel_frame(
             frame,
             geo_col=self.geo_col,

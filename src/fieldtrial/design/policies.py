@@ -119,7 +119,7 @@ class AssignmentPolicy:
     @property
     def n_feasible_assignments(self) -> int:
         if self.kind == "matched_pairs" and self.pairs:
-            return 2 ** len(self.pairs)
+            return self._n_feasible_pair_assignments()
         if self.kind == "stratified" and self.strata:
             by_stratum: dict[str, list[str]] = {}
             for market in self.markets:
@@ -147,6 +147,28 @@ class AssignmentPolicy:
             if market not in required and market not in unavailable
         ]
         return int(comb(len(optional), self.treatment_count - len(required)))
+
+    def _n_feasible_pair_assignments(self) -> int:
+        """Count matched-pair assignments that satisfy the policy constraints."""
+
+        if self.treatment_count != len(self.pairs):
+            return 0
+        required = set(self.required_treatment_markets)
+        unavailable = set(self.forbidden_treatment_markets).union(self.fixed_control_markets)
+        paired = {market for pair in self.pairs for market in pair}
+        if required.difference(paired):
+            return 0
+        total = 1
+        for pair in self.pairs:
+            required_in_pair = [market for market in pair if market in required]
+            if len(required_in_pair) > 1:
+                return 0
+            candidates = required_in_pair or list(pair)
+            options = [market for market in candidates if market not in unavailable]
+            total *= len(options)
+            if total == 0:
+                return 0
+        return int(total)
 
     def enumerate_assignments(self) -> list[dict[str, str]]:
         """Return feasible assignments as unit-role mappings for inference engines."""
@@ -328,28 +350,43 @@ class AssignmentPolicy:
         return self._assignment(tuple(sorted(treatment)), exact=False)
 
     def _stratum_treatment_counts(self, by_stratum: dict[str, list[str]]) -> dict[str, int]:
+        unavailable = set(self.forbidden_treatment_markets).union(self.fixed_control_markets)
+        required = set(self.required_treatment_markets)
+        ordered = sorted(by_stratum.items())
+        capacity = {
+            stratum: sum(1 for market in markets if market not in unavailable)
+            for stratum, markets in ordered
+        }
+        floor = {
+            stratum: sum(1 for market in markets if market in required)
+            for stratum, markets in ordered
+        }
         counts: dict[str, int] = {}
         total = sum(len(markets) for markets in by_stratum.values())
         remaining = self.treatment_count
-        ordered = sorted(by_stratum.items())
         for index, (stratum, markets) in enumerate(ordered):
             if index == len(ordered) - 1:
-                count = min(remaining, len(markets))
+                count = min(remaining, capacity[stratum])
             else:
                 count = int(round(self.treatment_count * len(markets) / total))
-                count = min(max(count, 0), len(markets), remaining)
+                count = min(max(count, floor[stratum]), capacity[stratum], remaining)
             counts[stratum] = count
             remaining -= count
         if remaining > 0:
-            for stratum, markets in ordered:
+            for stratum, _ in ordered:
                 if remaining <= 0:
                     break
-                capacity = len(markets) - counts[stratum]
-                if capacity <= 0:
+                spare = capacity[stratum] - counts[stratum]
+                if spare <= 0:
                     continue
-                add = min(capacity, remaining)
+                add = min(spare, remaining)
                 counts[stratum] += add
                 remaining -= add
+        if remaining > 0:
+            raise ValueError(
+                "stratified policy cannot place treatment_count markets "
+                "given eligibility constraints"
+            )
         return counts
 
     def _assignment(self, treatment: tuple[str, ...], *, exact: bool) -> FeasibleAssignment:
@@ -409,5 +446,8 @@ def _smd(treatment: np.ndarray, control: np.ndarray) -> float | None:
     c_var = float(np.var(control, ddof=1)) if len(control) > 1 else 0.0
     pooled = np.sqrt((t_var + c_var) / 2.0)
     if not np.isfinite(pooled) or pooled <= 0:
-        return 0.0 if np.isclose(np.mean(treatment), np.mean(control)) else None
+        diff = float(np.mean(treatment) - np.mean(control))
+        if np.isclose(diff, 0.0):
+            return 0.0
+        return float(np.copysign(np.inf, diff))
     return float((np.mean(treatment) - np.mean(control)) / pooled)

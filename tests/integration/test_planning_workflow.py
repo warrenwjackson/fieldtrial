@@ -160,7 +160,13 @@ def test_candidate_mde_supports_composite_metrics_without_fallback_values():
     )
     generator = CandidateGenerator(panel, roadmap)
 
-    mde = generator._score_mde(roadmap.tests[0], ["t"], ["c"], pd.Timestamp("2027-01-08").date())
+    mde = generator._score_mde(
+        roadmap.tests[0],
+        ["t"],
+        ["c"],
+        pd.Timestamp("2027-01-08").date(),
+        duration_days=7,
+    )
 
     assert set(mde) == {"utility"}
     assert mde["utility"] >= 0
@@ -211,7 +217,95 @@ def test_candidate_mde_errors_instead_of_using_failure_fallback():
             ["t"],
             ["c"],
             pd.Timestamp("2027-01-08").date(),
+            duration_days=7,
         )
+
+
+def test_candidate_mde_reflects_test_duration_not_pre_history_length():
+    # Audit C6 regression: MDE previously used n = pre-history length, so 14- and
+    # 56-day candidates got identical MDEs and later starts spuriously shrank them.
+    panel = GeoPanel.from_dataframe(
+        generate_synthetic_us_panel(n_markets=12, start="2026-06-01", end="2027-07-31", seed=7),
+        require_complete_grid=False,
+    )
+    roadmap = RoadmapSpec.model_validate(
+        {
+            "roadmap_name": "duration",
+            "tests": [
+                {
+                    "name": "duration",
+                    "earliest_start": "2026-07-01",
+                    "latest_end": "2027-07-31",
+                    "candidate_durations": [14, 56],
+                    "primary_metrics": ["orders"],
+                    "metrics": {"orders": {"type": "count", "column": "orders"}},
+                }
+            ],
+        }
+    )
+    generator = CandidateGenerator(panel, roadmap)
+    spec = roadmap.tests[0]
+    geos = sorted(panel.df[panel.geo_col].unique())
+    treatment, controls = geos[:3], geos[3:9]
+    early_start = pd.Timestamp("2026-07-01").date()
+    late_start = pd.Timestamp("2027-06-01").date()
+
+    short = generator._score_mde(spec, treatment, controls, early_start, duration_days=14)
+    long = generator._score_mde(spec, treatment, controls, early_start, duration_days=56)
+
+    # Same design and pre-period: 4x the duration must halve the MDE (SE ~ 1/sqrt(duration)).
+    assert long["orders"] < short["orders"]
+    assert long["orders"] == pytest.approx(short["orders"] / 2.0, rel=1e-6)
+
+    late = generator._score_mde(spec, treatment, controls, late_start, duration_days=14)
+
+    # ~12x the pre-history: previously this shrank the MDE by ~sqrt(30/365) (~3.5x
+    # understatement); now it only re-estimates the same daily noise with more df.
+    assert late["orders"] == pytest.approx(short["orders"], rel=0.35)
+    assert late["orders"] > 0.5 * short["orders"]
+
+
+def test_candidate_mde_estimator_replay_option():
+    panel = GeoPanel.from_dataframe(
+        generate_synthetic_us_panel(n_markets=8, start="2026-10-01", end="2027-03-31", seed=3),
+        require_complete_grid=False,
+    )
+    roadmap = RoadmapSpec.model_validate(
+        {
+            "roadmap_name": "replay",
+            "defaults": {
+                "power": {
+                    "method": "estimator_replay",
+                    "lift_grid": [0.02, 0.3],
+                    "placebo_windows": 3,
+                }
+            },
+            "tests": [
+                {
+                    "name": "replay",
+                    "earliest_start": "2027-03-01",
+                    "latest_end": "2027-03-31",
+                    "candidate_durations": [14],
+                    "primary_metrics": ["orders"],
+                    "metrics": {"orders": {"type": "count", "column": "orders"}},
+                }
+            ],
+        }
+    )
+    generator = CandidateGenerator(panel, roadmap)
+    geos = sorted(panel.df[panel.geo_col].unique())
+
+    mde = generator._score_mde(
+        roadmap.tests[0],
+        geos[:2],
+        geos[2:6],
+        pd.Timestamp("2027-03-01").date(),
+        duration_days=14,
+    )
+
+    # Replay MDE is a grid lift: the smallest one the planned estimator detects
+    # with target power over historical windows of the candidate duration.
+    assert mde["orders"] in {0.02, 0.3}
 
 
 def test_candidate_control_selection_is_volume_stratified():

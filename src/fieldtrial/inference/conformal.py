@@ -308,7 +308,11 @@ def _moving_block_conformal_p_value(
         scores.append(_block_score(residuals[indexes], alternative=alternative))
     score_array = np.asarray(scores, dtype=float)
     count = int(np.sum(score_array >= observed_score - 1e-12))
-    return float((count + 1) / (score_array.size + 1))
+    # The observed block is one of the n circular blocks, so count >= 1 already
+    # guarantees p >= 1/n (Chernozhukov-Wuthrich-Zhu); adding a +1/(n+1) Monte
+    # Carlo correction on top double-corrects and makes 95% rejection
+    # impossible whenever n_pre + n_post < 39.
+    return float(count) / float(score_array.size)
 
 
 def _block_score(values: np.ndarray, *, alternative: str) -> float:

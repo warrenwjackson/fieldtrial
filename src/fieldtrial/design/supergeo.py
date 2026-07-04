@@ -63,6 +63,7 @@ def build_supergeos(
     supergeos: list[Supergeo] = []
     sequence = 1
     for _, group in groups:
+        group_start = len(supergeos)
         ordered = group.sort_values([volume_col, "geo_id"], ascending=[True, True])
         bucket: list[dict[str, Any]] = []
         bucket_volume = 0.0
@@ -80,7 +81,7 @@ def build_supergeos(
                 bucket = []
                 bucket_volume = 0.0
         if bucket:
-            if supergeos and bucket_volume < threshold:
+            if len(supergeos) > group_start and bucket_volume < threshold:
                 previous = supergeos[-1]
                 merged_rows = [{"geo_id": market, volume_col: 0.0} for market in previous.markets]
                 merged_rows.extend(bucket)

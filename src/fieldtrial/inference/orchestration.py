@@ -310,10 +310,16 @@ def _max_t_payload(result: EstimatorResult) -> dict[str, Any] | None:
             if draws is None:
                 continue
             observed = _finite_number((inference.null_distribution or {}).get("observed_statistic"))
+            # Bootstrap-t null approximation: the draws are centered at the
+            # observed estimate to form the null spread, but the observed
+            # statistic must be studentized against the hypothesis null (0) -
+            # studentizing it against itself makes the observed t exactly 0 and
+            # every Westfall-Young adjusted p-value ~1.
             payload = _studentized_null_payload(
                 draws,
                 observed=observed,
-                center=observed,
+                draw_center=observed,
+                null_center=0.0,
                 source=inference.method,
             )
             if payload is not None:
@@ -325,21 +331,26 @@ def _studentized_null_payload(
     draws: Any,
     *,
     observed: float | None,
-    center: float | None,
+    center: float | None = None,
+    draw_center: float | None = None,
+    null_center: float | None = None,
     source: str,
 ) -> dict[str, Any] | None:
-    if observed is None or center is None:
+    if center is not None:
+        draw_center = center if draw_center is None else draw_center
+        null_center = center if null_center is None else null_center
+    if observed is None or draw_center is None or null_center is None:
         return None
     array = np.asarray(draws, dtype=float)
     if array.ndim != 1 or array.size < 2 or not np.all(np.isfinite(array)):
         return None
-    scale = float(np.std(array - center, ddof=1))
+    scale = float(np.std(array - draw_center, ddof=1))
     if scale <= 0 or not np.isfinite(scale):
         return None
     return {
         "source": source,
-        "observed_statistic": float((observed - center) / scale),
-        "null_statistics": (array - center) / scale,
+        "observed_statistic": float((observed - null_center) / scale),
+        "null_statistics": (array - draw_center) / scale,
     }
 
 
@@ -555,6 +566,11 @@ def _run_randomization_inference(
         control_units=design.control_geos,
         policy=policy,
         alternative=_alternative_from_framework(spec),
+        null_value=_null_value_from_framework(
+            spec,
+            metric,
+            baseline=_effect_frame_baseline(effects),
+        ),
         n_permutations=n_permutations,
         seed=_assignment_seed(spec),
         max_exact_assignments=_max_exact_assignments(spec),
@@ -600,6 +616,11 @@ def _run_market_bootstrap(
         seed=_assignment_seed(spec),
         confidence=float(spec.inference.confidence),
         alternative=_alternative_from_framework(spec),
+        null_value=_null_value_from_framework(
+            spec,
+            metric,
+            baseline=_effect_frame_baseline(effects),
+        ),
         method="market_bootstrap",
     )
 
@@ -617,6 +638,11 @@ def _run_jackknife(
         unit_col="geo_id",
         confidence=float(spec.inference.confidence),
         alternative=_alternative_from_framework(spec),
+        null_value=_null_value_from_framework(
+            spec,
+            metric,
+            baseline=_effect_frame_baseline(effects),
+        ),
     )
 
 
@@ -639,11 +665,17 @@ def _run_conformal(result: EstimatorResult, spec: Any) -> InferenceResult:
         dtype=float,
     )
     fallback_warning: str | None = None
+    null_value = _null_value_from_framework(
+        spec,
+        result.metric,
+        baseline=_finite_number(np.sum(np.asarray(post_counterfactual, dtype=float))),
+    )
     try:
         inference = conformal_counterfactual_test_inversion(
             post_gaps,
             pre_residuals=pre_residuals,
             confidence=float(spec.inference.confidence),
+            null_value=null_value,
             alternative=_alternative_from_framework(spec),
         )
     except Exception as exc:
@@ -656,6 +688,7 @@ def _run_conformal(result: EstimatorResult, spec: Any) -> InferenceResult:
             pre_observed=pre_observed,
             pre_counterfactual=pre_counterfactual,
             confidence=float(spec.inference.confidence),
+            null_value=null_value,
             alternative=_alternative_from_framework(spec),
         )
     return replace(
@@ -714,7 +747,12 @@ def _run_few_cluster_wild_bootstrap(
     se_observed = _welch_se(treatment, control)
     if se_observed is None or se_observed <= 0:
         raise ValueError("few_cluster_robust requires nonzero arm-level market variation")
-    t_observed = observed / se_observed
+    null_value = _null_value_from_framework(
+        spec,
+        metric,
+        baseline=_effect_frame_baseline(effects),
+    )
+    t_observed = (observed - null_value) / se_observed
     draws = np.empty(n_resamples, dtype=float)
     for index in range(n_resamples):
         t_weights = rng.choice([-1.0, 1.0], size=treatment_centered.size)
@@ -793,6 +831,7 @@ def _run_few_cluster_wild_bootstrap(
             "degrees_of_freedom": df,
             "n_resamples": n_resamples,
             "observed_statistic": observed,
+            "null_value": null_value,
             "studentized_statistic": t_observed,
             "studentized_source_statistic": statistic,
             "bootstrap_t_critical_value": bootstrap_critical,
@@ -835,12 +874,17 @@ def _run_monitoring_if_requested(
             warnings=observations["warnings"],
         )
     lower, upper, bound_diagnostics, bound_warnings = _monitoring_bounds(observations, spec)
+    framework_null = _null_value_from_framework(
+        spec,
+        metric,
+        baseline=observations.get("pre_treatment_mean"),
+    )
     inference = bounded_mean_confidence_sequence(
         values,
         lower_bound=lower,
         upper_bound=upper,
         alpha=1.0 - float(spec.inference.confidence),
-        null_value=0.0 if lower <= 0.0 <= upper else None,
+        null_value=framework_null if lower <= framework_null <= upper else None,
         alternative=_alternative_from_framework(spec),
         look_indexes=observations["look_indexes"],
     )
@@ -979,6 +1023,7 @@ def _market_effect_frame(panel: Any, design: CompletedDesign, metric: Any) -> pd
             {
                 "geo_id": geo,
                 "effect": effect,
+                "pre": float(grouped.loc[geo, "pre"]),
                 "treated": geo in design.treatment_geos,
                 "metric": info.name,
                 "metric_kind": info.kind,
@@ -1052,6 +1097,7 @@ def _monitoring_effect_observations(
         "bound_values": np.asarray([row["value"] for row in pre_rows], dtype=float),
         "pre_outcome_min": float(pre[OUTCOME_COL].min()),
         "pre_outcome_max": float(pre[OUTCOME_COL].max()),
+        "pre_treatment_mean": float(pre_treatment.mean()),
         "diagnostics": {
             "n_post_dates": len(rows),
             "n_pre_bound_observations": len(pre_rows),
@@ -1176,14 +1222,31 @@ def _assignment_policy_from_completed_spec(
             "and candidate_constrained assignment policies. Stratified, matched_pairs, and "
             "supergeo policies require explicit market-level assignment metadata."
         )
+    # Roadmap-level constraint lists may reference markets the completed design never
+    # used (e.g. forbidden markets correctly excluded at design time); those constraints
+    # are vacuous over the design universe, so drop them instead of crashing.
+    universe = {str(geo) for geo in design.all_geos}
+
+    def in_universe(markets: Any) -> tuple[str, ...]:
+        return tuple(market for market in map(str, markets) if market in universe)
+
+    missing_required = sorted(
+        set(map(str, policy_spec.required_treatment_markets)).difference(universe)
+    )
+    if missing_required:
+        raise ValueError(
+            "Completed design does not contain required treatment markets "
+            f"{missing_required} declared by its assignment policy; the spec and the "
+            "realized design disagree."
+        )
     return AssignmentPolicy(
         markets=tuple(design.all_geos),
         treatment_count=int(policy_spec.treatment_count or len(design.treatment_geos)),
         kind=policy_spec.kind,
-        required_treatment_markets=tuple(policy_spec.required_treatment_markets),
-        forbidden_treatment_markets=tuple(policy_spec.forbidden_treatment_markets),
-        fixed_control_markets=tuple(policy_spec.fixed_control_markets),
-        shared_control_markets=tuple(policy_spec.shared_control_markets),
+        required_treatment_markets=tuple(map(str, policy_spec.required_treatment_markets)),
+        forbidden_treatment_markets=in_universe(policy_spec.forbidden_treatment_markets),
+        fixed_control_markets=in_universe(policy_spec.fixed_control_markets),
+        shared_control_markets=in_universe(policy_spec.shared_control_markets),
         seed=policy_spec.seed,
     )
 
@@ -1207,6 +1270,53 @@ def _alternative_from_framework(spec: Any) -> str:
     if kind == "inferiority":
         return "less"
     return "two-sided"
+
+
+def _null_value_from_framework(spec: Any, metric: Any, *, baseline: float | None = None) -> float:
+    """Return the framework-implied null value on the statistic's estimate scale.
+
+    Non-inferiority pairs with alternative='greater' and tests H0: effect <= -margin;
+    inferiority pairs with alternative='less' and tests H0: effect >= margin. Margins
+    declared on the relative-lift scale are converted with ``baseline`` (the relative
+    lift denominator on the statistic's scale); without a finite nonzero baseline the
+    margin cannot be converted and the null stays at zero.
+    """
+
+    framework = getattr(spec, "test_framework", None)
+    if framework is None:
+        return 0.0
+    kind = str(getattr(framework, "kind", "two_sided"))
+    if kind == "non_inferiority":
+        sign = -1.0
+    elif kind == "inferiority":
+        sign = 1.0
+    else:
+        return 0.0
+    margins = getattr(framework, "margins", None) or {}
+    metric_name = str(getattr(metric, "name", metric))
+    raw = margins.get(metric_name)
+    if raw is None:
+        raw = getattr(framework, "default_margin", 0.0)
+    margin = abs(_finite_number(raw) or 0.0)
+    if margin == 0.0:
+        return 0.0
+    if str(getattr(framework, "effect_scale", "estimate")) == "relative_lift":
+        baseline_value = _finite_number(baseline)
+        if baseline_value is None or baseline_value == 0.0:
+            return 0.0
+        margin *= abs(baseline_value)
+    return sign * margin
+
+
+def _effect_frame_baseline(effects: pd.DataFrame) -> float | None:
+    """Treatment-arm pre-period mean, the relative-lift denominator for market effects."""
+
+    if "pre" not in effects.columns:
+        return None
+    treated = effects.loc[effects["treated"].astype(bool), "pre"].to_numpy(dtype=float)
+    if treated.size == 0:
+        return None
+    return _finite_number(np.mean(treated))
 
 
 def _counterfactual_series(

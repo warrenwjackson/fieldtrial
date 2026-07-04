@@ -89,7 +89,12 @@ def test_planning_calendar_payload_builds_weekly_market_volume_grid():
     assert payload["legend"][2]["state"] == "treatment"
     assert payload["rows"][0]["market"] == "big"
     assert rows["big"]["height_px"] > rows["shared"]["height_px"] > rows["small"]["height_px"]
-    assert rows["small"]["label_visible"] is False
+    # sqrt-volume scaling plus the 14px row floor keeps every label legible;
+    # short rows are flagged compact so the template can shrink the font.
+    assert all(row["height_px"] >= 14.0 for row in payload["rows"])
+    assert rows["small"]["label_visible"] is True
+    assert rows["small"]["label_compact"] is True
+    assert rows["big"]["label_compact"] is False
     assert rows["big"]["label"] == "Big Market"
 
     pre_week = weeks.index("2027-03-29")

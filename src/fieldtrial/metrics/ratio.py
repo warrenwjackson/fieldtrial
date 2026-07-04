@@ -199,7 +199,8 @@ def _ratio_variance(
     ratio: float,
     cluster_col: str | None,
 ) -> tuple[float, int]:
-    if cluster_col and cluster_col in df.columns:
+    if cluster_col is not None:
+        require_columns(df, [cluster_col], context="ratio variance clustering")
         grouped = df.assign(_lin=df[numerator] - ratio * df[denominator]).groupby(cluster_col)
         residual = grouped["_lin"].sum().to_numpy(dtype=float)
         den = grouped[denominator].sum().to_numpy(dtype=float)

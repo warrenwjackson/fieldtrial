@@ -141,6 +141,21 @@ class EstimandSpec:
             and self.denominator_handling == other.denominator_handling
         )
 
+    def relative_lift_comparable_with(self, other: EstimandSpec) -> bool:
+        """Whether relative-lift readouts share a scale for pooling.
+
+        Relative lift normalizes away ``outcome_scale`` and
+        ``time_aggregation``: a per-period-average effect over its per-period
+        baseline and a cumulative effect over its cumulative baseline are both
+        percent lift versus counterfactual over the test window. Differences in
+        ``denominator_handling`` (linearized vs ratio-of-sums vs unit-time
+        model) are estimation mechanics for the same declared metric, so they
+        are reported as heterogeneity rather than blocking the pooled headline.
+        Only the target population must match.
+        """
+
+        return self.target_population == other.target_population
+
     def to_dict(self) -> dict[str, Any]:
         return _jsonable(asdict(self))
 
@@ -571,7 +586,7 @@ DEFAULT_METHOD_REGISTRY = MethodRegistry(
                 "Common post-period shocks cannot be removed without control-series regressors.",
                 "Gaussian predictive simulation understates heavy-tailed shocks.",
             ],
-            required_panel_shape=_shape(min_pre_periods=2, min_controls=1),
+            required_panel_shape=_shape(min_pre_periods=8, min_controls=1),
             artifacts=["forecast_path", "predictive_draw_summary", "state_space_summary"],
             default_in_suite=False,
             notes=(
@@ -821,7 +836,7 @@ def default_inference_from_estimate(
             interval_type = "bootstrap_percentile"
         elif family == "scm":
             interval_type = "placebo_or_prefit_prediction"
-        elif family == "bsts":
+        elif family in {"bsts", "state_space_forecast"}:
             interval_type = "state_space_predictive_interval"
         else:
             interval_type = "reported_interval"
@@ -893,6 +908,7 @@ def family_consensus(results: list[Any]) -> dict[str, Any]:
             "agreement_direction": None,
             "families": [],
             "estimands_compatible": None,
+            "relative_lifts_comparable": None,
             "note": (
                 "No finite relative_lift values were available; raw estimates were not pooled "
                 "because estimator units can differ."
@@ -903,6 +919,16 @@ def family_consensus(results: list[Any]) -> dict[str, Any]:
     for row in rows:
         family = row["metadata"].independent_family or row["metadata"].family
         grouped.setdefault(str(family), []).append(row)
+
+    def _metadata_union(family_rows: list[dict[str, Any]], attribute: str) -> list[str]:
+        seen: set[str] = set()
+        out: list[str] = []
+        for row in sorted(family_rows, key=lambda item: item["estimator_name"]):
+            for entry in getattr(row["metadata"], attribute) or []:
+                if entry not in seen:
+                    seen.add(entry)
+                    out.append(entry)
+        return out
 
     family_summaries: list[dict[str, Any]] = []
     representative_lifts: list[float] = []
@@ -929,8 +955,8 @@ def family_consensus(results: list[Any]) -> dict[str, Any]:
                         if row["metadata"].implementation_status
                     }
                 ),
-                "assumptions": metadata.assumptions,
-                "failure_modes": metadata.failure_modes,
+                "assumptions": _metadata_union(family_rows, "assumptions"),
+                "failure_modes": _metadata_union(family_rows, "failure_modes"),
             }
         )
 
@@ -939,20 +965,31 @@ def family_consensus(results: list[Any]) -> dict[str, Any]:
     nonzero = signs[signs != 0]
     agreement = None
     if len(nonzero) > 0:
-        agreement = float(np.mean(nonzero == np.sign(np.median(representative_array))))
+        median_sign = np.sign(np.median(representative_array))
+        if median_sign == 0:
+            # Even split: tie-break toward positive so the readout is the honest
+            # share matching the majority sign (0.5), never an impossible 0.0.
+            median_sign = 1.0
+        agreement = float(np.mean(nonzero == median_sign))
 
     estimands = [row["estimand"] for row in rows]
     first_estimand = estimands[0]
     compatible = all(first_estimand.compatible_with(item) for item in estimands[1:])
+    lift_comparable = all(
+        first_estimand.relative_lift_comparable_with(item) for item in estimands[1:]
+    )
+    denominator_handling_mixed = (
+        len({str(item.denominator_handling) for item in estimands}) > 1
+    )
     duplicate_family_count = int(sum(max(len(items) - 1, 0) for items in grouped.values()))
-    headline_values = representative_array if compatible else np.asarray([], dtype=float)
+    headline_values = representative_array if lift_comparable else np.asarray([], dtype=float)
     pooled_note = (
         "Consensus is family-aware: duplicate estimators inside the same independent "
         "evidence family contribute one representative relative_lift to the headline."
-        if compatible
+        if lift_comparable
         else (
-            "Estimands were incompatible, so headline relative-lift pooling was suppressed. "
-            "Use the family rows and raw estimator outputs instead."
+            "Relative lifts target different populations, so headline relative-lift "
+            "pooling was suppressed. Use the family rows and raw estimator outputs instead."
         )
     )
 
@@ -966,9 +1003,11 @@ def family_consensus(results: list[Any]) -> dict[str, Any]:
         "mean_relative_lift": float(np.mean(headline_values)) if headline_values.size else None,
         "min_relative_lift": float(np.min(headline_values)) if headline_values.size else None,
         "max_relative_lift": float(np.max(headline_values)) if headline_values.size else None,
-        "agreement_direction": agreement if compatible else None,
+        "agreement_direction": agreement if lift_comparable else None,
         "families": family_summaries,
         "estimands_compatible": bool(compatible),
-        "pooled_scale": "relative_lift" if compatible else None,
+        "relative_lifts_comparable": bool(lift_comparable),
+        "denominator_handling_mixed": bool(denominator_handling_mixed),
+        "pooled_scale": "relative_lift" if lift_comparable else None,
         "note": pooled_note,
     }
