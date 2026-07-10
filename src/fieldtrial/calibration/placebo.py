@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 from fieldtrial.estimators.base import (
     CompletedDesign,
@@ -270,11 +271,6 @@ def placebo_backtest(
     coverage = float(np.mean(covered)) if covered else None
     warnings = [] if not errors else [f"{len(errors)} placebo window(s) failed."]
     target_coverage = 1.0 - alpha
-    if coverage is not None and coverage < target_coverage:
-        warnings.append(
-            f"Empirical placebo interval coverage {coverage:.3f} is below target "
-            f"{target_coverage:.3f}."
-        )
     status, status_reason, status_warnings = _placebo_status(
         false_positive_rate=false_positive_rate,
         coverage=coverage,
@@ -285,6 +281,8 @@ def placebo_backtest(
         estimates_count=len(estimates),
         p_value_count=len(p_values),
         interval_count=len(covered),
+        false_positive_count=significant_placebos,
+        coverage_success_count=int(np.sum(covered)),
     )
     warnings.extend(status_warnings)
     warnings = _unique_strings(warnings)
@@ -310,7 +308,10 @@ def placebo_backtest(
             "alpha": alpha,
             "p_value_count": len(p_values),
             "significant_placebo_count": significant_placebos,
+            "false_positive_rate_interval": _binomial_interval(significant_placebos, len(p_values)),
             "interval_count": len(covered),
+            "coverage_success_count": int(np.sum(covered)),
+            "coverage_interval": _binomial_interval(int(np.sum(covered)), len(covered)),
             "coverage_target": target_coverage,
             "estimate_mean": float(np.mean(estimate_array)),
             "estimate_std": (
@@ -443,11 +444,6 @@ def placebo_in_space_backtest(
     coverage = float(np.mean(covered)) if covered else None
     warnings = [] if not errors else [f"{len(errors)} placebo market(s) failed."]
     target_coverage = 1.0 - alpha
-    if coverage is not None and coverage < target_coverage:
-        warnings.append(
-            f"Empirical placebo interval coverage {coverage:.3f} is below target "
-            f"{target_coverage:.3f}."
-        )
     status, status_reason, status_warnings = _placebo_status(
         false_positive_rate=false_positive_rate,
         coverage=coverage,
@@ -458,6 +454,8 @@ def placebo_in_space_backtest(
         estimates_count=len(estimates),
         p_value_count=len(p_values),
         interval_count=len(covered),
+        false_positive_count=significant_placebos,
+        coverage_success_count=int(np.sum(covered)),
     )
     warnings.extend(status_warnings)
     warnings = _unique_strings(warnings)
@@ -482,7 +480,10 @@ def placebo_in_space_backtest(
             "alpha": alpha,
             "p_value_count": len(p_values),
             "significant_placebo_count": significant_placebos,
+            "false_positive_rate_interval": _binomial_interval(significant_placebos, len(p_values)),
             "interval_count": len(covered),
+            "coverage_success_count": int(np.sum(covered)),
+            "coverage_interval": _binomial_interval(int(np.sum(covered)), len(covered)),
             "coverage_target": target_coverage,
             "estimate_mean": float(np.mean(estimate_array)),
             "estimate_std": (
@@ -538,17 +539,24 @@ def _placebo_status(
     estimates_count: int,
     p_value_count: int,
     interval_count: int,
+    false_positive_count: int,
+    coverage_success_count: int,
 ) -> tuple[str, str, list[str]]:
     failures: list[str] = []
     warnings: list[str] = []
-    if false_positive_rate is not None and false_positive_rate > alpha:
+    fpr_interval = _binomial_interval(false_positive_count, p_value_count)
+    coverage_interval = _binomial_interval(coverage_success_count, interval_count)
+    if fpr_interval is not None and fpr_interval[0] > alpha:
         failures.append(
-            f"Placebo false-positive rate {false_positive_rate:.3f} exceeds target {alpha:.3f}."
+            f"Placebo false-positive rate {false_positive_rate:.3f} is above target "
+            f"{alpha:.3f} even after binomial uncertainty ({fpr_interval[0]:.3f} to "
+            f"{fpr_interval[1]:.3f})."
         )
-    if coverage is not None and coverage < target_coverage:
+    if coverage_interval is not None and coverage_interval[1] < target_coverage:
         failures.append(
             f"Empirical placebo interval coverage {coverage:.3f} is below target "
-            f"{target_coverage:.3f}."
+            f"{target_coverage:.3f} even after binomial uncertainty "
+            f"({coverage_interval[0]:.3f} to {coverage_interval[1]:.3f})."
         )
     if failures:
         return "fail", " ".join(failures), failures
@@ -557,6 +565,24 @@ def _placebo_status(
         warnings.append(f"{len(errors)} placebo replay(s) failed but at least one was evaluated.")
     if warning_count:
         warnings.append(f"{warning_count} evaluated placebo replay(s) returned estimator warnings.")
+    if fpr_interval is not None and not (fpr_interval[1] <= alpha or fpr_interval[0] > alpha):
+        warnings.append(
+            "Placebo false-positive calibration is inconclusive at the current replay count: "
+            f"the 95% binomial interval {fpr_interval[0]:.3f} to {fpr_interval[1]:.3f} "
+            f"contains the {alpha:.3f} target."
+        )
+    if coverage_interval is not None and not (
+        coverage_interval[0] >= target_coverage or coverage_interval[1] < target_coverage
+    ):
+        warnings.append(
+            "Placebo interval-coverage calibration is inconclusive at the current replay count: "
+            f"the 95% binomial interval {coverage_interval[0]:.3f} to "
+            f"{coverage_interval[1]:.3f} contains the {target_coverage:.3f} target."
+        )
+    if max(p_value_count, interval_count) < 20 and max(p_value_count, interval_count) > 0:
+        warnings.append(
+            "Fewer than 20 scored placebo replays are available; treat calibration as preliminary."
+        )
     if p_value_count == 0 and interval_count == 0:
         warnings.append(
             "Placebo replays produced neither finite p-values nor intervals; false-positive "
@@ -579,6 +605,19 @@ def _placebo_status(
         f"Evaluated {estimates_count} placebo replay(s) without calibration failures.",
         [],
     )
+
+
+def _binomial_interval(
+    successes: int,
+    trials: int,
+    *,
+    confidence: float = 0.95,
+) -> tuple[float, float] | None:
+    if trials <= 0:
+        return None
+    result = stats.binomtest(int(successes), int(trials))
+    interval = result.proportion_ci(confidence_level=confidence, method="exact")
+    return float(interval.low), float(interval.high)
 
 
 def _unique_strings(values: list[str]) -> list[str]:

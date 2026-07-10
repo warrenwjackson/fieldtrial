@@ -1,4 +1,4 @@
-from fieldtrial.metrics.base import MetricSpec
+from fieldtrial.metrics.base import MetricFormat, MetricSpec
 from fieldtrial.metrics.catalog import MetricCatalog
 from fieldtrial.metrics.composite import CompositeMetric
 from fieldtrial.metrics.count import ContinuousMetric, CountMetric
@@ -9,6 +9,7 @@ __all__ = [
     "ContinuousMetric",
     "CountMetric",
     "MetricCatalog",
+    "MetricFormat",
     "MetricSpec",
     "RatioDeltaResult",
     "RatioMetric",

@@ -19,13 +19,15 @@ test_framework:
   alpha: 0.05
 estimator_suite:
   estimators: ["did", "ratio_delta", "block_bootstrap"]
+  primary_estimator: "did"
 inference:
   methods: ["estimator_default", "confidence_sequence"]
+  primary_method: "estimator_default"
   confidence: 0.95
+  multiplicity: "holm"
 monitoring:
   mode: "planned_looks"
   look_dates: ["2027-08-07", "2027-08-14", "2027-08-21", "2027-08-28"]
   information_fractions: [0.25, 0.5, 0.75, 1.0]
   alpha_spending: "obrien_fleming"
   warn_on_unplanned_peeking: true
-

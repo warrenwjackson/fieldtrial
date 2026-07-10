@@ -10,10 +10,10 @@ import pytest
 from fieldtrial.data.panel import GeoPanel
 from fieldtrial.estimators import (
     AugmentedSyntheticControlEstimator,
-    BayesianTimeSeriesEstimator,
     GeneralizedSyntheticControlEstimator,
     MatrixCompletionEstimator,
     PairedIROASEstimator,
+    StateSpaceForecastEstimator,
     SyntheticControlEstimator,
     SyntheticDIDEstimator,
     TimeBasedRegressionEstimator,
@@ -262,13 +262,14 @@ def test_bayesian_state_space_recovers_directional_known_effect():
         pre_period_end=date(2027, 4, 28),
     )
 
-    result = BayesianTimeSeriesEstimator(draws=500, seed=4).fit(
+    result = StateSpaceForecastEstimator(draws=500, seed=4).fit(
         panel,
         design,
         CountMetric("orders"),
     )
 
     assert result.estimate > 0
+    assert result.estimator_name == "state_space_forecast"
     assert abs(result.estimate - effect_per_period * len(post_dates)) < 35.0
     assert result.diagnostics["backend"] == "native_state_space"
     assert result.diagnostics["relative_lift_interval"][0] < result.relative_lift

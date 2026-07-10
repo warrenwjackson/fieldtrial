@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -180,6 +181,7 @@ class SyntheticDIDEstimator(BaseEstimator):
                 outcome_scale="absolute_ratio_effect" if info.is_ratio else "absolute_effect",
                 target_population="treated_markets",
                 time_aggregation="post_period_average",
+                population_aggregation="per_treated_market_average",
                 causal_quantity="ATT",
                 denominator_handling="unit_time_ratio_model" if info.is_ratio else None,
                 effect_unit="ratio_points" if info.is_ratio else "outcome_units",
@@ -260,8 +262,37 @@ class SyntheticDIDEstimator(BaseEstimator):
             else (conformal.interval[0] / n_post, conformal.interval[1] / n_post)
         )
         p_value = conformal.p_value
-        inference_results = [conformal]
-        diagnostics["conformal"] = conformal.diagnostics
+        scale = 1.0 / n_post
+        scaled_null_distribution = dict(conformal.null_distribution or {})
+        for key in ("observed_statistic", "null_value"):
+            if scaled_null_distribution.get(key) is not None:
+                scaled_null_distribution[key] = float(scaled_null_distribution[key]) * scale
+        scaled_artifacts = dict(conformal.artifacts or {})
+        if isinstance(scaled_artifacts.get("grid"), list):
+            scaled_artifacts["grid"] = [float(value) * scale for value in scaled_artifacts["grid"]]
+        scaled_diagnostics = dict(conformal.diagnostics or {})
+        for key in ("effect_grid_min", "effect_grid_max", "hodges_lehmann_grid_effect"):
+            if scaled_diagnostics.get(key) is not None:
+                scaled_diagnostics[key] = float(scaled_diagnostics[key]) * scale
+        scaled_conformal = replace(
+            conformal,
+            interval=interval,
+            point_estimate=estimate,
+            primary_eligible=True,
+            null_distribution=scaled_null_distribution,
+            artifacts=scaled_artifacts,
+            diagnostics={
+                **scaled_diagnostics,
+                "original_cumulative_interval": conformal.interval,
+                "original_cumulative_point_estimate": conformal.point_estimate,
+                "original_cumulative_null_distribution": conformal.null_distribution,
+                "original_cumulative_effect_grid": conformal.artifacts.get("grid"),
+                "reported_scale": "post_period_average",
+                "n_post_periods": n_post,
+            },
+        )
+        inference_results = [scaled_conformal]
+        diagnostics["conformal"] = scaled_conformal.diagnostics
         diagnostics["interval_scale"] = "post_period_average"
         diagnostics["naive_pre_residual_scale"] = naive_pre_residual_scale
         diagnostics["standard_error_policy"] = (
@@ -280,9 +311,7 @@ class SyntheticDIDEstimator(BaseEstimator):
     def _collapsed_form(y: np.ndarray, *, n0: int, t0: int) -> np.ndarray:
         controls = y[:n0, :]
         treated = y[n0:, :]
-        control_rows = np.column_stack(
-            [controls[:, :t0], controls[:, t0:].mean(axis=1)]
-        )
+        control_rows = np.column_stack([controls[:, :t0], controls[:, t0:].mean(axis=1)])
         treated_row = np.concatenate([treated[:, :t0].mean(axis=0), [treated[:, t0:].mean()]])
         return np.vstack([control_rows, treated_row])
 
@@ -358,15 +387,11 @@ class SyntheticDIDEstimator(BaseEstimator):
                 )
             keep_controls = finite_rows[:n0].all(axis=1)
             dropped_control_geos = [
-                geo
-                for geo, keep in zip(control_geos, keep_controls, strict=True)
-                if not bool(keep)
+                geo for geo, keep in zip(control_geos, keep_controls, strict=True) if not bool(keep)
             ]
             if dropped_control_geos:
                 kept_control_geos = [
-                    geo
-                    for geo, keep in zip(control_geos, keep_controls, strict=True)
-                    if bool(keep)
+                    geo for geo, keep in zip(control_geos, keep_controls, strict=True) if bool(keep)
                 ]
                 if not kept_control_geos:
                     raise ValueError(

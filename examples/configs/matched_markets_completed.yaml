@@ -20,9 +20,12 @@ assignment_policy:
   treatment_count: 4
 estimator_suite:
   estimators: ["did", "ratio_delta", "tbr", "block_bootstrap"]
+  primary_estimator: "tbr"
 inference:
   methods: ["estimator_default", "randomization_inference", "market_bootstrap"]
+  primary_method: "estimator_default"
   confidence: 0.95
+  multiplicity: "holm"
 calibration:
   placebo_windows: 20
   injected_lifts: [0.0, 0.03, 0.06]
@@ -30,4 +33,3 @@ portfolio_decision:
   metric_roles:
     orders: "success"
     revenue: "secondary"
-

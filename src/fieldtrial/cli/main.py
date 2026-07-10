@@ -350,6 +350,10 @@ def _analysis_design_payload(spec: CompletedExperimentSpec) -> dict[str, Any]:
         "treatment_geos": spec.treatment_geos,
         "control_geos": spec.control_geos,
         "primary_metrics": spec.primary_metrics,
+        "metrics": {name: config.model_dump(mode="json") for name, config in spec.metrics.items()},
+        "estimator_suite": spec.estimator_suite.model_dump(mode="json"),
+        "inference": spec.inference.model_dump(mode="json"),
+        "calibration": spec.calibration.model_dump(mode="json"),
         "test_framework": spec.test_framework.model_dump(mode="json"),
     }
 

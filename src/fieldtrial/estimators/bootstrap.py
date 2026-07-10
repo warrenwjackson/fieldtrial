@@ -20,7 +20,7 @@ from fieldtrial.estimators.base import (
 )
 from fieldtrial.estimators.ratio_delta import aggregate_did_statistic, ratio_did_statistic
 from fieldtrial.inference.intervals import bca_interval
-from fieldtrial.methods import InferenceResult, get_method_metadata
+from fieldtrial.methods import EstimandSpec, InferenceResult, get_method_metadata
 
 
 class BlockBootstrapEstimator(BaseEstimator):
@@ -120,6 +120,17 @@ class BlockBootstrapEstimator(BaseEstimator):
         return EstimatorResult(
             estimator_name=self.name,
             estimand="bootstrap_ratio_did" if info.is_ratio else "bootstrap_aggregate_did",
+            estimand_spec=EstimandSpec(
+                label="bootstrap_ratio_did" if info.is_ratio else "bootstrap_aggregate_did",
+                metric=info.name,
+                outcome_scale="absolute_ratio_effect" if info.is_ratio else "absolute_effect",
+                target_population="treated_markets",
+                time_aggregation="post_period_average",
+                population_aggregation="per_treated_market_average",
+                causal_quantity="ATT",
+                denominator_handling="ratio_of_sums" if info.is_ratio else None,
+                effect_unit="ratio_points" if info.is_ratio else "outcome_units",
+            ),
             metric=info.name,
             estimate=estimate,
             relative_lift=relative_lift,

@@ -82,10 +82,16 @@ def test_scpi_pkg_adapter_recovers_known_synthetic_control_effect():
     assert result.method_metadata.backend == "scpi_pkg"
     assert result.method_metadata.backend_version
     assert abs(result.estimate - true_effect) < 1.0
-    assert result.interval is not None
-    assert result.interval[0] < true_effect < result.interval[1]
+    # SCPI returns simultaneous period-wise prediction bounds. Their cumulative
+    # envelope is useful sensitivity evidence, but it is not a nominal CI for
+    # the cumulative ATT and therefore must not populate the decision interval.
+    assert result.interval is None
     assert sum(result.artifacts["weights"].values()) == pytest.approx(1.0)
-    assert result.inference_results[0].method == "scpi_pkg_prediction_interval"
+    inference = result.inference_results[0]
+    assert inference.method == "scpi_pkg_prediction_interval"
+    assert inference.interval[0] < true_effect < inference.interval[1]
+    assert inference.interval_kind == "uncertainty_envelope"
+    assert inference.primary_eligible is False
 
 
 def test_pyfixest_did_matches_statsmodels_reference_on_parallel_trends_dgp():

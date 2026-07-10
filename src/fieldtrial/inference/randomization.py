@@ -159,6 +159,13 @@ def randomization_test(
         assignment_iter = (_coerce_assignment(item, units=unit_labels) for item in assignments)
         assignment_source = "explicit_assignments"
     elif policy is not None:
+        policy_feasible = _policy_observed_feasibility(policy, observed, unit_labels)
+        if policy_feasible is False:
+            raise ValueError(
+                "The observed treatment assignment is not feasible under the supplied "
+                "assignment policy. Randomization inference must use the mechanism that "
+                "actually generated the experiment."
+            )
         (
             assignment_iter,
             assignment_source,
@@ -212,15 +219,25 @@ def randomization_test(
         warnings.append(f"{skipped} feasible assignments failed or produced non-finite statistics.")
 
     assignment_matrix = np.vstack(evaluated_assignments)
-    if exact and assignment_source == "explicit_assignments" and not _contains_assignment(
-        assignment_matrix,
-        observed,
-    ):
+    contains_observed = _contains_assignment(assignment_matrix, observed)
+    if exact and assignment_source == "explicit_assignments" and not contains_observed:
         null_statistics.append(observed_statistic)
         assignment_matrix = np.vstack([assignment_matrix, observed])
+        contains_observed = True
         warnings.append(
             "The exact explicit assignment set did not include the observed assignment; "
             "it was added before computing the p-value."
+        )
+    elif exact and policy is not None and not contains_observed:
+        raise ValueError(
+            "The supplied policy's exact assignment set omitted the observed assignment; "
+            "the policy does not represent the realized assignment mechanism."
+        )
+    elif not exact and not contains_observed:
+        warnings.append(
+            "The observed assignment was not drawn in the Monte Carlo sample. The plus-one "
+            "randomization correction remains valid; the observed assignment is retained "
+            "separately in the artifact."
         )
     null_array = np.asarray(null_statistics, dtype=float)
     if can_invert_difference_in_means:
@@ -325,6 +342,7 @@ def randomization_test(
             "exact": bool(exact),
             "seed": seed,
             "skipped_assignments": int(skipped),
+            "observed_assignment_in_evaluated_set": contains_observed,
         },
         artifacts=artifacts,
         warnings=warnings,
@@ -592,7 +610,18 @@ def _invert_difference_in_means_interval(
         if touches_upper:
             upper += half_width
         half_width *= 2.0
-    interval = None if accepted.size == 0 else (float(accepted[0]), float(accepted[-1]))
+    touched_lower = bool(accepted.size > 0 and np.isclose(accepted[0], grid[0]))
+    touched_upper = bool(accepted.size > 0 and np.isclose(accepted[-1], grid[-1]))
+    if accepted.size == 0:
+        interval = None
+    else:
+        interval_lower = float(accepted[0])
+        interval_upper = float(accepted[-1])
+        if alternative == "greater" or touched_upper:
+            interval_upper = float("inf")
+        if alternative == "less" or touched_lower:
+            interval_lower = float("-inf")
+        interval = (interval_lower, interval_upper)
     max_index = int(np.argmax(p_values))
     artifact = {
         "grid": grid.tolist(),
@@ -601,12 +630,28 @@ def _invert_difference_in_means_interval(
         "accepted_grid_count": int(accepted.size),
         "hodges_lehmann_grid_estimate": float(grid[max_index]),
         "max_p_value": float(p_values[max_index]),
-        "touched_boundary": bool(
-            accepted.size > 0
-            and (np.isclose(accepted[0], grid[0]) or np.isclose(accepted[-1], grid[-1]))
-        ),
+        "touched_boundary": touched_lower or touched_upper,
+        "lower_unbounded": bool(interval is not None and np.isneginf(interval[0])),
+        "upper_unbounded": bool(interval is not None and np.isposinf(interval[1])),
     }
     return interval, artifact
+
+
+def _policy_observed_feasibility(
+    policy: Any,
+    observed_assignment: np.ndarray,
+    units: tuple[str, ...],
+) -> bool | None:
+    treatment_units = [
+        unit for unit, treated in zip(units, observed_assignment, strict=True) if bool(treated)
+    ]
+    checker = getattr(policy, "is_feasible_assignment", None)
+    if callable(checker):
+        return bool(checker(treatment_units))
+    treatment_count = getattr(policy, "treatment_count", getattr(policy, "n_treatment", None))
+    if treatment_count is not None and int(treatment_count) != len(treatment_units):
+        return False
+    return None
 
 
 def _assignment_matrix_statistics(

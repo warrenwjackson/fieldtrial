@@ -49,7 +49,7 @@
     section { margin: 34px 0; }
     .section-sub { margin: 0 0 14px; color: var(--muted); max-width: 940px; }
 
-    nav.topnav { position: sticky; top: 0; z-index: 30; display: flex; gap: 4px; align-items: center; flex-wrap: wrap; padding: 8px 28px; background: rgba(255,255,255,.92); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); font-size: 12.5px; }
+    nav.topnav { position: sticky; top: 0; z-index: 30; display: flex; gap: 4px; align-items: center; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; padding: 8px 28px; background: rgba(255,255,255,.92); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); font-size: 12.5px; }
     nav.topnav .nav-title { font-weight: 800; margin-right: 10px; white-space: nowrap; }
     nav.topnav a { color: var(--muted); padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
     nav.topnav a:hover { background: var(--soft); color: var(--ink); }
@@ -117,8 +117,10 @@
     .calendar-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 8px 0 12px; }
     .calendar-legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
     .calendar-swatch { width: 13px; height: 13px; border: 1px solid rgba(22, 33, 46, 0.18); border-radius: 3px; }
-    .calendar-shell { border: 1px solid var(--line); border-radius: 10px; background: #fff; overflow: hidden; }
+    .calendar-shell { position: relative; border: 1px solid var(--line); border-radius: 10px; background: #fff; overflow: hidden; }
+    .calendar-shell::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 28px; pointer-events: none; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.9)); }
     .calendar-scroll { overflow-x: auto; }
+    .calendar-scroll-hint { display: none; color: var(--muted); font-size: 11.5px; margin: 6px 0 0; }
     .calendar-week-row,
     .calendar-market-row {
       display: grid;
@@ -167,6 +169,7 @@
       position: relative;
     }
     .calendar-cell:hover { outline: 2px solid var(--ink); outline-offset: -2px; z-index: 2; }
+    .calendar-cell.multi-state::after { content: ""; position: absolute; inset: 0; border: 1px dashed rgba(22,33,46,.28); }
     .state-unused { background: #ffffff; }
     .state-pre-period { background: var(--cal-pre); }
     .state-treatment { background: var(--cal-treatment); }
@@ -180,6 +183,8 @@
       .market-list { columns: 1; }
       .score-row { grid-template-columns: 1fr; gap: 4px; }
       .score-value { text-align: left; }
+      nav.topnav { padding: 7px 14px; }
+      .calendar-scroll-hint { display: block; }
     }
     @media print {
       nav.topnav { display: none; }
@@ -233,7 +238,7 @@
     {% if report.portfolio_calendar and report.portfolio_calendar.rows %}
     <section id="calendar">
       <h2>Portfolio Test Calendar</h2>
-      <p class="section-sub">Each row is a market and each column is a calendar week. Colors show what every market is doing week by week across all recommended tests, including pre-periods and post-test cooldowns. Taller rows are higher-volume markets (square-root scale). Hover any cell for the exact tests and dates.</p>
+      <p class="section-sub">Each row is a market and each column is a calendar week. Colors show what every market is doing week by week across all recommended tests, including pre-periods and post-test cooldowns. {% if report.portfolio_calendar.summary.volume_basis %}Taller rows are higher-volume markets (square-root scale).{% else %}Rows have equal height because no market-volume field was supplied.{% endif %} Split-color cells contain more than one state in the same week. Hover any cell for exact tests and dates.</p>
       <div class="calendar-legend">
         {% for item in report.portfolio_calendar.legend %}
         <span title="{{ item.description }}"><span class="calendar-swatch {{ item.class }}"></span>{{ item.label }}</span>
@@ -251,16 +256,17 @@
           </div>
           {% for row in report.portfolio_calendar.rows %}
           <div class="calendar-market-row{% if row.label_compact %} compact{% endif %}" style="--row-height: {{ '%.2f'|format(row.height_px) }}px;">
-            <div class="calendar-market-label{% if not row.label_visible %} hidden-text{% endif %}" title="{{ row.label }} | {{ row.market }} | volume {{ row.volume_label }}">
+            <div class="calendar-market-label{% if not row.label_visible %} hidden-text{% endif %}" title="{{ row.label }} | {{ row.market }}{% if report.portfolio_calendar.summary.volume_basis %} | volume {{ row.volume_label }}{% endif %}">
               <code>{{ row.market }}</code><span>{{ row.label }}</span>
             </div>
             {% for cell in row.cells %}
-            <div class="calendar-cell {{ cell.state_class }}" title="{{ cell.tooltip }}" aria-label="{{ cell.tooltip }}"></div>
+            <div class="calendar-cell {{ cell.state_classes | join(' ') if cell.state_classes else cell.state_class }}{% if cell.multi_state %} multi-state{% endif %}"{% if cell.background_style %} style="{{ cell.background_style }}"{% endif %} title="{{ cell.tooltip }}" aria-label="{{ cell.tooltip }}"></div>
             {% endfor %}
           </div>
           {% endfor %}
         </div>
       </div>
+      <p class="calendar-scroll-hint">Scroll horizontally to inspect the full year &rarr;</p>
       {% if report.portfolio_calendar.summary %}
       {% set cal_summary = report.portfolio_calendar.summary %}
       <p class="chart-note">
@@ -274,7 +280,7 @@
 
     <section id="recommended">
       <h2>Recommended Tests</h2>
-      <p class="section-sub">The optimizer's picks, one row per test. Best MDE is the smallest relative effect the most sensitive metric can detect &mdash; lower means a more sensitive design. The objective score is the configured priority adjusted by MDE and control-pool penalties.</p>
+      <p class="section-sub">The optimizer's picks, one row per test. Limiting primary MDE is the largest MDE among the decision's primary metrics &mdash; it shows the least sensitive primary outcome instead of hiding it behind an easier metric. The objective score is the configured priority adjusted by MDE and control-pool penalties.</p>
       {% if report.selected_candidate_rows %}
       <div class="table-wrap">
         <table>
@@ -285,7 +291,7 @@
               <th class="num">Duration</th>
               <th class="num">Treatment</th>
               <th class="num">Control</th>
-              <th class="num">Best MDE</th>
+              <th class="num">Limiting primary MDE</th>
               <th class="num">Objective score</th>
             </tr>
           </thead>
@@ -297,7 +303,7 @@
               <td class="num">{% if candidate.duration_days is not none %}{{ candidate.duration_days }} days{% else %}<span class="dash">&mdash;</span>{% endif %}</td>
               <td class="num">{{ candidate.treatment_count }}</td>
               <td class="num">{{ candidate.control_count }}</td>
-              <td class="num">{% if candidate.best_mde is not none %}<span class="pill good">{{ "%.2f%%"|format(candidate.best_mde * 100) }}</span>{% else %}<span class="dash">&mdash;</span>{% endif %}</td>
+              <td class="num">{% if candidate.decision_mde is not none %}<span class="pill good">{{ "%.2f%%"|format(candidate.decision_mde * 100) }}</span>{% if candidate.limiting_metrics %}<br><span class="muted">{{ candidate.limiting_metrics | join(", ") | replace("_", " ") }}</span>{% endif %}{% else %}<span class="dash">&mdash;</span>{% endif %}</td>
               <td class="num">{{ "%.2f"|format(candidate.objective_score) }}</td>
             </tr>
           {% endfor %}
@@ -406,14 +412,14 @@
     {% if report.mde_frontier %}
     <section id="frontier">
       <h2>MDE Tradeoff Frontier</h2>
-      <p class="section-sub">Each dot is a candidate design plotted by test duration and its best (most sensitive) minimum detectable effect. Lower is more sensitive. The filled blue dots are the optimizer's picks; hollow gray dots are the alternatives it passed over. Hover a dot for details.</p>
+      <p class="section-sub">Each dot is a candidate design plotted by duration and its limiting primary-metric MDE. Lower is more sensitive across every primary outcome. Filled blue dots are the optimizer's picks; hollow gray dots are alternatives. Hover a dot for the limiting metric.</p>
       {% set frontier = report.mde_frontier %}
       <div class="chart-card">
         <div class="chart-title-row">
-          <h3>Duration vs Best MDE</h3>
+          <h3>Duration vs Limiting Primary MDE</h3>
           <span class="muted" style="font-size: 12.5px;">{{ frontier.point_count }} candidate design{% if frontier.point_count != 1 %}s{% endif %} &middot; {{ frontier.selected_count }} selected</span>
         </div>
-        <svg viewBox="0 0 {{ '%.0f'|format(frontier.width) }} {{ '%.0f'|format(frontier.height) }}" role="img" aria-label="Candidate designs: test duration versus best minimum detectable effect">
+        <svg viewBox="0 0 {{ '%.0f'|format(frontier.width) }} {{ '%.0f'|format(frontier.height) }}" role="img" aria-label="Candidate designs: test duration versus limiting primary minimum detectable effect">
           <line x1="{{ '%.2f'|format(frontier.plot_left) }}" y1="{{ '%.2f'|format(frontier.plot_bottom) }}" x2="{{ '%.2f'|format(frontier.plot_right) }}" y2="{{ '%.2f'|format(frontier.plot_bottom) }}" stroke="#cbd5e1"/>
           <line x1="{{ '%.2f'|format(frontier.plot_left) }}" y1="{{ '%.2f'|format(frontier.plot_top) }}" x2="{{ '%.2f'|format(frontier.plot_left) }}" y2="{{ '%.2f'|format(frontier.plot_bottom) }}" stroke="#cbd5e1"/>
           {% for point in frontier.points %}
@@ -428,7 +434,7 @@
           {% endfor %}
           <text x="8" y="{{ '%.2f'|format(frontier.plot_top + 4) }}" class="axis-label">{{ frontier.y_max_label }}</text>
           <text x="8" y="{{ '%.2f'|format(frontier.plot_bottom) }}" class="axis-label">{{ frontier.y_min_label }}</text>
-          <text x="8" y="14" class="axis-label">best MDE</text>
+          <text x="8" y="14" class="axis-label">limiting primary MDE</text>
           <text x="{{ '%.2f'|format(frontier.plot_left) }}" y="{{ '%.2f'|format(frontier.height - 24) }}" class="axis-label">{{ frontier.x_min_label }} days</text>
           <text x="{{ '%.2f'|format(frontier.plot_right) }}" y="{{ '%.2f'|format(frontier.height - 24) }}" text-anchor="end" class="axis-label">{{ frontier.x_max_label }} days</text>
           <text x="{{ '%.2f'|format((frontier.plot_left + frontier.plot_right) / 2) }}" y="{{ '%.2f'|format(frontier.height - 6) }}" text-anchor="middle" class="axis-label">test duration (days)</text>

@@ -114,6 +114,7 @@ def _candidate_rows(
 
 def _candidate_summary(candidate: dict[str, Any], *, status: str, selected: bool) -> dict[str, Any]:
     metric_mde = candidate.get("metric_mde") or {}
+    metric_roles = candidate.get("metric_roles") or {}
     mde_values = [
         value
         for value in (_finite_float(item) for item in metric_mde.values())
@@ -122,6 +123,23 @@ def _candidate_summary(candidate: dict[str, Any], *, status: str, selected: bool
     profile = candidate.get("market_profile") or {}
     treatment = profile.get("treatment") or {}
     control = profile.get("control") or {}
+    primary_mdes = {
+        metric: value
+        for metric, raw_value in metric_mde.items()
+        if (value := _finite_float(raw_value)) is not None
+        and str(metric_roles.get(metric, "primary")) in {"primary", "success"}
+    }
+    decision_mdes = primary_mdes or {
+        metric: value
+        for metric, raw_value in metric_mde.items()
+        if (value := _finite_float(raw_value)) is not None
+    }
+    limiting_mde = max(decision_mdes.values()) if decision_mdes else None
+    limiting_metrics = sorted(
+        metric
+        for metric, value in decision_mdes.items()
+        if limiting_mde is not None and abs(value - limiting_mde) <= 1e-12
+    )
     return {
         "candidate_id": candidate.get("candidate_id"),
         "test_name": candidate.get("test_name"),
@@ -137,7 +155,7 @@ def _candidate_summary(candidate: dict[str, Any], *, status: str, selected: bool
         "objective_score": float(candidate.get("objective_score") or 0.0),
         "score_components": candidate.get("score_components") or {},
         "metric_mde": metric_mde,
-        "metric_roles": candidate.get("metric_roles") or {},
+        "metric_roles": metric_roles,
         "test_framework": candidate.get("test_framework") or candidate.get("decision") or {},
         "assignment_policy": candidate.get("assignment_policy") or {},
         "balance_diagnostics": candidate.get("balance_diagnostics") or {},
@@ -145,6 +163,8 @@ def _candidate_summary(candidate: dict[str, Any], *, status: str, selected: bool
         "method_readiness": candidate.get("method_readiness") or {},
         "best_mde": min(mde_values) if mde_values else None,
         "worst_mde": max(mde_values) if mde_values else None,
+        "decision_mde": limiting_mde,
+        "limiting_metrics": limiting_metrics,
         "market_profile": profile,
         "treatment_region_counts": treatment.get("region_counts") or {},
         "control_region_counts": control.get("region_counts") or {},
@@ -235,7 +255,7 @@ _FRONTIER_BOTTOM = 44.0
 
 
 def _mde_frontier_chart(candidate_rows: list[dict[str, Any]]) -> dict[str, Any] | None:
-    """Scatter of candidate designs: duration vs best (lowest) MDE.
+    """Scatter of candidate designs: duration vs limiting primary-metric MDE.
 
     Geometry is precomputed into a 760-wide SVG viewBox so the template stays
     dumb. Candidates missing a duration or a finite MDE are skipped; a single
@@ -245,7 +265,7 @@ def _mde_frontier_chart(candidate_rows: list[dict[str, Any]]) -> dict[str, Any] 
     points: list[dict[str, Any]] = []
     for row in candidate_rows:
         duration = _finite_float(row.get("duration_days"))
-        mde = _finite_float(row.get("best_mde"))
+        mde = _finite_float(row.get("decision_mde"))
         if duration is None or mde is None:
             continue
         points.append(
@@ -257,6 +277,7 @@ def _mde_frontier_chart(candidate_rows: list[dict[str, Any]]) -> dict[str, Any] 
                 "mde_percent": mde * 100.0,
                 "treatment_count": row.get("treatment_count"),
                 "control_count": row.get("control_count"),
+                "limiting_metrics": row.get("limiting_metrics") or [],
             }
         )
     if not points:
@@ -281,7 +302,8 @@ def _mde_frontier_chart(candidate_rows: list[dict[str, Any]]) -> dict[str, Any] 
                 "tooltip": (
                     f"{point['test_name'] or point['candidate_id'] or 'candidate'}"
                     f" | {point['duration_days']:.0f} days"
-                    f" | best MDE {point['mde_percent']:.2f}%"
+                    f" | limiting primary MDE {point['mde_percent']:.2f}%"
+                    f" ({', '.join(point['limiting_metrics']) or 'metric unavailable'})"
                     f" | {point['treatment_count'] or 0} treatment"
                     f" / {point['control_count'] or 0} control markets"
                 ),
@@ -527,9 +549,7 @@ def normalize_planning_payload(
     selected_candidate_rows = [row for row in candidate_rows if row["selected"]]
     mde_rows = _mde_rows(candidate_rows)
     calendar = (
-        data.get("portfolio_calendar")
-        or data.get("test_calendar")
-        or data.get("market_calendar")
+        data.get("portfolio_calendar") or data.get("test_calendar") or data.get("market_calendar")
     )
 
     if hasattr(assignments, "to_dict") and callable(assignments.to_dict):

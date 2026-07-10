@@ -132,6 +132,7 @@ class TimeBasedRegressionEstimator(BaseEstimator):
                 outcome_scale="absolute_ratio_effect" if info.is_ratio else "cumulative_effect",
                 target_population="treated_markets",
                 time_aggregation="test_window_cumulative",
+                population_aggregation="treated_portfolio_total",
                 causal_quantity="ATT",
                 denominator_handling="daily_ratio_of_sums" if info.is_ratio else None,
                 effect_unit="ratio_points" if info.is_ratio else "outcome_units",

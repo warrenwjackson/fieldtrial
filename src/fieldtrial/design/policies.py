@@ -105,6 +105,34 @@ class AssignmentPolicy:
     def to_dict(self) -> dict[str, Any]:
         return _jsonable(asdict(self))
 
+    def is_feasible_assignment(self, treatment_markets: list[str] | tuple[str, ...]) -> bool:
+        """Whether an observed treatment set belongs to this assignment mechanism."""
+
+        treatment = tuple(sorted(str(market) for market in treatment_markets))
+        if not self._is_feasible_treatment(treatment):
+            return False
+        treatment_set = set(treatment)
+        if self.kind == "matched_pairs" and self.pairs:
+            pair_markets = set(itertools.chain.from_iterable(self.pairs))
+            return treatment_set.issubset(pair_markets) and all(
+                (first in treatment_set) != (second in treatment_set)
+                for first, second in self.pairs
+            )
+        if self.kind == "stratified" and self.strata:
+            by_stratum: dict[str, list[str]] = {}
+            for market in self.markets:
+                by_stratum.setdefault(self.strata.get(market, "unstratified"), []).append(market)
+            try:
+                expected = self._stratum_treatment_counts(by_stratum)
+            except ValueError:
+                return False
+            observed = {
+                stratum: sum(market in treatment_set for market in markets)
+                for stratum, markets in by_stratum.items()
+            }
+            return observed == expected
+        return True
+
     def enumerate(self, *, max_assignments: int = 10000) -> list[FeasibleAssignment]:
         """Enumerate feasible assignments when the policy space is small."""
 

@@ -482,34 +482,122 @@ def cumulative_residual_interval(
     df: float | None = None,
     confidence: float = 0.95,
     alternative: str = "two-sided",
+    n_resamples: int = 4000,
+    seed: int | None = 0,
+    block_length: int | None = None,
 ) -> IntervalEstimate:
-    """t interval for a cumulative forecast effect with residual autocovariance."""
+    """Moving-block predictive interval for a cumulative forecast effect.
+
+    Residual blocks preserve short-run serial dependence and are resampled to
+    the actual post-period horizon. Parameter uncertainty is added to each
+    predictive draw. This avoids the infinite-horizon ``LRV * n_post``
+    approximation that can substantially undercover persistent finite-horizon
+    forecast errors.
+    """
 
     if n_post_periods < 1:
         raise ValueError("n_post_periods must be positive")
+    if alternative not in {"two-sided", "greater", "less"}:
+        raise ValueError("alternative must be 'two-sided', 'greater', or 'less'")
+    if n_resamples < 100:
+        raise ValueError("n_resamples must be at least 100")
     residual_array = _finite_array(residuals)
     lrv = long_run_variance(residual_array)
-    if lrv is None:
+    if lrv is None or residual_array.size < 4:
         return IntervalEstimate(
             interval=None,
             interval_type=None,
             diagnostics={"n_residuals": int(residual_array.size), "reason": "too_few_residuals"},
-            warnings=["Cumulative residual interval requires at least two residuals."],
+            warnings=["Cumulative residual interval requires at least four residuals."],
         )
-    total_variance = max(float(parameter_variance), 0.0) + lrv * float(n_post_periods)
-    if total_variance <= 0:
+    centered = residual_array - float(np.mean(residual_array))
+    innovation_variance = float(np.var(centered, ddof=1))
+    parameter_variance = max(float(parameter_variance), 0.0)
+    if innovation_variance <= 0 and parameter_variance <= 0:
         return IntervalEstimate(
             interval=None,
             interval_type=None,
             diagnostics={
                 "n_residuals": int(residual_array.size),
                 "long_run_variance": lrv,
-                "parameter_variance": float(parameter_variance),
+                "parameter_variance": parameter_variance,
                 "reason": "zero_variance",
             },
             warnings=["Cumulative residual interval suppressed because variance is zero."],
         )
-    se = float(sqrt(total_variance))
+    if block_length is None:
+        denominator = float(np.dot(centered[:-1], centered[:-1]))
+        lag_one = (
+            float(np.dot(centered[1:], centered[:-1]) / denominator) if denominator > 0 else 0.0
+        )
+        persistence = min(max(lag_one, 0.0), 0.95)
+        persistence_factor = (1.0 + 2.0 * persistence / max(1.0 - persistence, 0.05)) ** (2.0 / 3.0)
+        block_length = int(np.ceil(residual_array.size ** (1.0 / 3.0) * persistence_factor))
+    else:
+        lag_one = None
+    max_block = max(2, min(residual_array.size // 2, n_post_periods, residual_array.size - 1))
+    block_length = max(2, min(int(block_length), max_block))
+    cyclic = np.concatenate([centered, centered[: block_length - 1]])
+    blocks = np.vstack(
+        [cyclic[start : start + block_length] for start in range(residual_array.size)]
+    )
+    rng = np.random.default_rng(seed)
+    blocks_per_draw = int(np.ceil(n_post_periods / block_length))
+    starts = rng.integers(0, blocks.shape[0], size=(int(n_resamples), blocks_per_draw))
+    predictive_errors = blocks[starts].reshape(int(n_resamples), -1)[:, :n_post_periods].sum(axis=1)
+    if parameter_variance > 0:
+        predictive_errors += rng.normal(
+            loc=0.0,
+            scale=float(np.sqrt(parameter_variance)),
+            size=int(n_resamples),
+        )
+    # Overlapping moving blocks contain materially less information than the
+    # raw residual count suggests. A fixed-b small-sample correction expands
+    # the centered bootstrap distribution using a conservative count of
+    # effectively independent blocks. This is especially important when a
+    # persistent series makes the selected block nearly as long as the
+    # forecast horizon.
+    effective_blocks = max(int(np.floor(residual_array.size / (2.0 * block_length))), 3)
+    fixed_b_df = float(max(effective_blocks - 1, 2))
+    alpha = confidence_alpha(confidence)
+    tail_probability = 1.0 - (alpha if alternative != "two-sided" else alpha / 2.0)
+    normal_critical = float(stats.norm.ppf(tail_probability))
+    t_critical = float(stats.t.ppf(tail_probability, df=fixed_b_df))
+    fixed_b_inflation = (
+        t_critical / normal_critical if normal_critical > 0 and np.isfinite(t_critical) else 1.0
+    )
+    predictive_error_center = float(np.mean(predictive_errors))
+    predictive_errors = predictive_error_center + fixed_b_inflation * (
+        predictive_errors - predictive_error_center
+    )
+    se = float(np.std(predictive_errors, ddof=1))
+    if alternative == "greater":
+        interval = (
+            float(estimate - np.quantile(predictive_errors, 1.0 - alpha)),
+            float("inf"),
+        )
+        p_value = float(
+            (np.sum(predictive_errors >= float(estimate) - 1e-12) + 1)
+            / (predictive_errors.size + 1)
+        )
+    elif alternative == "less":
+        interval = (
+            float("-inf"),
+            float(estimate - np.quantile(predictive_errors, alpha)),
+        )
+        p_value = float(
+            (np.sum(predictive_errors <= float(estimate) + 1e-12) + 1)
+            / (predictive_errors.size + 1)
+        )
+    else:
+        interval = (
+            float(estimate - np.quantile(predictive_errors, 1.0 - alpha / 2.0)),
+            float(estimate - np.quantile(predictive_errors, alpha / 2.0)),
+        )
+        p_value = float(
+            (np.sum(np.abs(predictive_errors) >= abs(float(estimate)) - 1e-12) + 1)
+            / (predictive_errors.size + 1)
+        )
     df_value = (
         float(df)
         if df is not None and np.isfinite(df) and df > 0
@@ -519,16 +607,25 @@ def cumulative_residual_interval(
         )
     )
     return IntervalEstimate(
-        interval=t_interval(estimate, se, df=df_value, confidence=confidence),
-        interval_type="newey_west_t",
+        interval=interval,
+        interval_type="studentized_moving_block_bootstrap_predictive",
         standard_error=se,
-        p_value=t_p_value(estimate, se, df=df_value, alternative=alternative),
+        p_value=p_value,
         diagnostics={
             "n_residuals": int(residual_array.size),
             "n_post_periods": int(n_post_periods),
             "long_run_variance": lrv,
-            "parameter_variance": float(parameter_variance),
+            "parameter_variance": parameter_variance,
             "degrees_of_freedom": df_value,
+            "block_length": block_length,
+            "lag_one_autocorrelation": lag_one,
+            "n_resamples": int(n_resamples),
+            "seed": seed,
+            "effective_independent_blocks": effective_blocks,
+            "fixed_b_degrees_of_freedom": fixed_b_df,
+            "fixed_b_inflation": fixed_b_inflation,
+            "predictive_error_mean": float(np.mean(predictive_errors)),
+            "predictive_error_standard_deviation": se,
         },
     )
 

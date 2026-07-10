@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import warnings as py_warnings
 from typing import Any
 
 import numpy as np
+from statsmodels.tools.sm_exceptions import ConvergenceWarning
 from statsmodels.tsa.statespace.structural import UnobservedComponents
 
 from fieldtrial.estimators.base import (
@@ -30,7 +32,8 @@ class BayesianTimeSeriesEstimator(BaseEstimator):
     aggregate pre-period series, forecasts the post-period counterfactual, and
     simulates joint predictive draws from the fitted state-space model. This
     produces forecast-consistent predictive uncertainty without requiring PyMC
-    or CausalPy in the base install.
+    or CausalPy in the base install. It is an MLE forecast, not a Bayesian
+    posterior over model parameters.
     """
 
     name = "bayesian_time_series"
@@ -72,7 +75,15 @@ class BayesianTimeSeriesEstimator(BaseEstimator):
 
         y_pre = pre["observed"].astype(float).to_numpy()
         model = UnobservedComponents(y_pre, level=self.level)
-        fitted = model.fit(disp=False)
+        with py_warnings.catch_warnings(record=True) as caught_fit_warnings:
+            py_warnings.simplefilter("always", ConvergenceWarning)
+            fitted = model.fit(disp=False)
+        converged = bool((getattr(fitted, "mle_retvals", {}) or {}).get("converged", True))
+        fit_warning_messages = [
+            str(item.message)
+            for item in caught_fit_warnings
+            if issubclass(item.category, ConvergenceWarning)
+        ]
         forecast = fitted.get_forecast(steps=len(post))
         mean = np.asarray(forecast.predicted_mean, dtype=float)
         se = np.asarray(forecast.se_mean, dtype=float)
@@ -175,11 +186,12 @@ class BayesianTimeSeriesEstimator(BaseEstimator):
         metadata = get_method_metadata(self.name)
         inference = InferenceResult(
             method="state_space_joint_predictive_simulation",
-            method_family="bayesian",
+            method_family="state_space_forecast",
             interval=interval,
             interval_type="state_space_joint_predictive_quantile",
+            interval_kind="prediction_interval",
             p_value=p_value,
-            posterior_probability=predictive_probability,
+            posterior_probability=None,
             confidence=self.confidence,
             standard_error=standard_error,
             assumptions=metadata.assumptions,
@@ -188,17 +200,28 @@ class BayesianTimeSeriesEstimator(BaseEstimator):
                 "backend": "statsmodels_unobserved_components",
                 "level": self.level,
                 "baseline_counterfactual_sum": baseline,
+                "parameter_uncertainty": "not_included_fixed_mle_parameters",
+                "predictive_probability_effect_gt_zero": predictive_probability,
+                "optimizer_converged": converged,
             },
+            warnings=[
+                *fit_warning_messages,
+                (
+                    "State-space predictive draws condition on fitted MLE parameters; model-"
+                    "parameter uncertainty is not included."
+                ),
+            ],
         )
         return EstimatorResult(
             estimator_name=self.name,
-            estimand="bayesian_time_series_cumulative_att",
+            estimand=f"{self.name}_cumulative_att",
             estimand_spec=EstimandSpec(
-                label="bayesian_time_series_cumulative_att",
+                label=f"{self.name}_cumulative_att",
                 metric=info.name,
                 outcome_scale="cumulative_ratio_points" if info.is_ratio else "cumulative_effect",
                 target_population="treated_markets",
                 time_aggregation="test_window_cumulative",
+                population_aggregation="treated_portfolio_total",
                 causal_quantity="ATT",
                 denominator_handling="treated_aggregate_ratio_state_space"
                 if info.is_ratio
@@ -231,6 +254,9 @@ class BayesianTimeSeriesEstimator(BaseEstimator):
                     "llf": float(getattr(fitted, "llf", np.nan)),
                 },
                 "predictive_draws": draw_diagnostics,
+                "optimizer_converged": converged,
+                "optimizer_warnings": fit_warning_messages,
+                "parameter_uncertainty": "not_included_fixed_mle_parameters",
             },
             artifacts={
                 "forecast": forecast_records,
@@ -244,8 +270,11 @@ class BayesianTimeSeriesEstimator(BaseEstimator):
                 "predictive_relative_lift_draws": relative_draws,
             },
             warnings=[
-                "Native bayesian_time_series forecasts the treated aggregate without "
-                "contemporaneous control regressors; it is not CausalImpact/BSTS with controls."
+                *fit_warning_messages,
+                f"Native {self.name} forecasts the treated aggregate without "
+                "contemporaneous control regressors; it is not CausalImpact/BSTS with controls.",
+                "Predictive draws condition on fitted MLE parameters and do not include "
+                "model-parameter posterior uncertainty.",
             ],
             method_metadata=metadata,
             inference_results=[inference],
@@ -313,3 +342,9 @@ class BayesianTimeSeriesEstimator(BaseEstimator):
         covariance = correlation * np.outer(scale, scale)
         covariance += np.eye(horizon) * 1e-12
         return covariance, rho
+
+
+class StateSpaceForecastEstimator(BayesianTimeSeriesEstimator):
+    """Honestly named canonical API for the fixed-MLE state-space forecaster."""
+
+    name = "state_space_forecast"

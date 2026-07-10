@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import date
 from types import SimpleNamespace
 
@@ -9,6 +11,7 @@ import pytest
 from fieldtrial.design.candidates import CandidateDesign
 from fieldtrial.estimators.base import EstimatorResult
 from fieldtrial.methods import InferenceResult
+from fieldtrial.optimize.portfolio import write_manifest
 from fieldtrial.portfolio import (
     EvidenceRecord,
     EvidenceStore,
@@ -26,6 +29,28 @@ from fieldtrial.portfolio import (
     score_candidate_portfolio,
     summarize_roadmap_monitoring,
 )
+
+
+def test_artifact_manifest_records_reproducibility_hashes(tmp_path):
+    source = tmp_path / "source.yaml"
+    artifact = tmp_path / "analysis.json"
+    source.write_text("experiment: demo\n")
+    artifact.write_text('{"ok": true}\n')
+
+    manifest_path = write_manifest(
+        artifact,
+        kind="analysis",
+        inputs={"completed": str(source)},
+    )
+    manifest = json.loads(manifest_path.read_text())
+
+    assert manifest["version"] == "fieldtrial.manifest.v2"
+    assert manifest["artifact_byte_count"] == artifact.stat().st_size
+    assert manifest["artifact_sha256"] == hashlib.sha256(artifact.read_bytes()).hexdigest()
+    assert (
+        manifest["input_files"]["completed"]["sha256"]
+        == hashlib.sha256(source.read_bytes()).hexdigest()
+    )
 
 
 def test_cross_test_covariance_uses_draws_and_overlap_proxy():
@@ -218,9 +243,7 @@ def test_default_multiplicity_family_pools_same_role_success_metrics():
     )
 
     assert decision.state != "ship_scale"
-    assert all(
-        item.adjusted_p_value == pytest.approx(0.2) for item in decision.metric_decisions
-    )
+    assert all(item.adjusted_p_value == pytest.approx(0.2) for item in decision.metric_decisions)
     assert "Adjusted confirmatory p-values with holm." in decision.warnings
 
 

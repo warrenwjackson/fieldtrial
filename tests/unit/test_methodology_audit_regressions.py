@@ -27,9 +27,7 @@ from fieldtrial.metrics.ratio import RatioMetric
 def _daily_panel(geos: list[str], periods: int = 5, **extra_cols: object) -> GeoPanel:
     dates = pd.date_range("2025-01-01", periods=periods, freq="D")
     rows = [
-        {"geo_id": geo, "date": dt, "orders": 10.0, **extra_cols}
-        for geo in geos
-        for dt in dates
+        {"geo_id": geo, "date": dt, "orders": 10.0, **extra_cols} for geo in geos for dt in dates
     ]
     return GeoPanel.from_dataframe(pd.DataFrame(rows))
 
@@ -112,9 +110,7 @@ def test_supergeo_leftover_does_not_merge_across_groups():
         ("b_tiny1", "B", 2.0),
         ("b_tiny2", "B", 1.0),
     ]:
-        rows.extend(
-            {"geo_id": geo, "date": dt, "orders": orders, "region": region} for dt in dates
-        )
+        rows.extend({"geo_id": geo, "date": dt, "orders": orders, "region": region} for dt in dates)
     panel = GeoPanel.from_dataframe(pd.DataFrame(rows))
     supergeos = build_supergeos(
         panel,
@@ -186,11 +182,7 @@ def test_score_balance_ranks_degenerate_separation_worst():
     assert result["ok"]
     # The perfectly separated assignment (a, b) must sort last, not first.
     assert result["best_assignment"]["treatment_markets"] != ("a", "b")
-    separated = next(
-        row
-        for row in result["assignments"]
-        if row["treatment_markets"] == ("a", "b")
-    )
+    separated = next(row for row in result["assignments"] if row["treatment_markets"] == ("a", "b"))
     assert separated["max_abs_smd"] == np.inf
 
 
@@ -298,9 +290,7 @@ def test_monthly_panel_with_missing_month_fails_completeness():
             for dt in pd.date_range("2024-01-01", periods=7, freq="MS")
         ]
     )
-    assert validate_long_panel(
-        complete, geo_col="geo_id", time_col="date", frequency=None
-    ).ok
+    assert validate_long_panel(complete, geo_col="geo_id", time_col="date", frequency=None).ok
 
 
 # --- metrics-data finding 9: from_callable must honor non-daily frequencies ---

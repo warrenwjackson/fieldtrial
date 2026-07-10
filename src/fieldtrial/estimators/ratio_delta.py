@@ -225,6 +225,7 @@ class RatioDeltaEstimator(BaseEstimator):
                 outcome_scale="absolute_ratio_effect" if info.is_ratio else "absolute_effect",
                 target_population="treated_markets",
                 time_aggregation="post_period_average",
+                population_aggregation="per_treated_market_average",
                 causal_quantity="ATT",
                 denominator_handling="ratio_of_sums" if info.is_ratio else None,
                 effect_unit="ratio_points" if info.is_ratio else "outcome_units",

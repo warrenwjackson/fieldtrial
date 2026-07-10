@@ -1,9 +1,23 @@
 {
   "artifact": "examples/artifacts/smoke_analysis.json",
+  "artifact_byte_count": 55607,
+  "artifact_sha256": "2625eb1ae10c382dc11a3e141e54fb3f1bdbd05810ce8ba95a2a00efcd0190f6",
+  "input_files": {
+    "completed": {
+      "byte_count": 1208,
+      "path": "examples/configs/completed_test.yaml",
+      "sha256": "cb7495433f5b2c7d65df8c495eb20f1c0fe4605796bd71aa1d038af00cd0498c"
+    },
+    "panel": {
+      "byte_count": 839991,
+      "path": "examples/data/synthetic_panel_completed.parquet",
+      "sha256": "db6f3a67752fd9944153a8343be62fd1fe5a973f9da13dd021f202cf8cbcffad"
+    }
+  },
   "inputs": {
-    "completed": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/configs/completed_test.yaml",
-    "panel": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/data/synthetic_panel_completed.parquet"
+    "completed": "examples/configs/completed_test.yaml",
+    "panel": "examples/data/synthetic_panel_completed.parquet"
   },
   "kind": "analysis",
-  "version": "fieldtrial.manifest.v1"
+  "version": "fieldtrial.manifest.v2"
 }

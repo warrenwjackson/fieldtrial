@@ -94,6 +94,11 @@ class ForecastCounterfactualEstimator(BaseEstimator):
         estimate = float(gaps.sum())
         baseline = float(post_pred.sum())
         relative_lift = safe_relative(estimate, baseline)
+        parameter_variance = self._cumulative_parameter_variance(
+            fit,
+            post,
+            train_residuals,
+        )
         residual_df = max(
             int(residuals.size - len(fit["feature_columns"]) - 1),
             1,
@@ -102,6 +107,7 @@ class ForecastCounterfactualEstimator(BaseEstimator):
             estimate,
             residuals,
             n_post_periods=len(post),
+            parameter_variance=parameter_variance,
             df=residual_df,
             confidence=self.confidence,
         )
@@ -150,6 +156,7 @@ class ForecastCounterfactualEstimator(BaseEstimator):
                 outcome_scale="cumulative_ratio_points" if info.is_ratio else "cumulative_effect",
                 target_population="treated_markets",
                 time_aggregation="test_window_cumulative",
+                population_aggregation="treated_portfolio_total",
                 causal_quantity="ATT",
                 denominator_handling="treated_aggregate_ratio_forecast" if info.is_ratio else None,
                 effect_unit="ratio_points" if info.is_ratio else "outcome_units",
@@ -169,7 +176,7 @@ class ForecastCounterfactualEstimator(BaseEstimator):
             method_metadata=get_method_metadata(self.name),
             inference_results=[
                 InferenceResult(
-                    method="forecast_residual_newey_west_t",
+                    method="forecast_residual_block_bootstrap",
                     method_family="forecast",
                     interval=interval,
                     interval_type=inference.interval_type,
@@ -181,6 +188,7 @@ class ForecastCounterfactualEstimator(BaseEstimator):
                         "residual_source": validation["strategy"],
                         "residual_std": residual_std,
                         "n_post_periods": len(post),
+                        "cumulative_parameter_variance": parameter_variance,
                         **(inference.diagnostics or {}),
                     },
                     warnings=inference.warnings or [],
@@ -291,6 +299,9 @@ class ForecastCounterfactualEstimator(BaseEstimator):
         return {
             "model": model,
             "feature_columns": list(features.columns),
+            "design_matrix": np.column_stack(
+                [np.ones(len(features), dtype=float), features.to_numpy(dtype=float)]
+            ),
             "coefficients": coefficients,
             "origin": origin,
             "trend_scale": trend_scale,
@@ -302,6 +313,49 @@ class ForecastCounterfactualEstimator(BaseEstimator):
         )
         features = features.reindex(columns=fit["feature_columns"], fill_value=0.0)
         return fit["model"].predict(features.to_numpy(dtype=float))
+
+    def _design_matrix(self, fit: dict[str, Any], data: pd.DataFrame) -> np.ndarray:
+        features = self._feature_frame(
+            data,
+            origin=fit["origin"],
+            trend_scale=fit.get("trend_scale"),
+        ).reindex(columns=fit["feature_columns"], fill_value=0.0)
+        return np.column_stack(
+            [np.ones(len(features), dtype=float), features.to_numpy(dtype=float)]
+        )
+
+    def _cumulative_parameter_variance(
+        self,
+        fit: dict[str, Any],
+        post: pd.DataFrame,
+        residuals: np.ndarray,
+    ) -> float:
+        """HAC sandwich variance of the cumulative fitted counterfactual."""
+
+        train = np.asarray(fit["design_matrix"], dtype=float)
+        residual_array = np.asarray(residuals, dtype=float)
+        if train.shape[0] != residual_array.size or residual_array.size < 4:
+            return 0.0
+        penalty = np.eye(train.shape[1], dtype=float) * float(self.ridge_alpha)
+        penalty[0, 0] = 0.0
+        bread = np.linalg.pinv(train.T @ train + penalty)
+        scores = train * residual_array[:, None]
+        max_lag = max(
+            1,
+            min(
+                residual_array.size - 1,
+                int(np.floor(4.0 * (residual_array.size / 100.0) ** (2.0 / 9.0))),
+            ),
+        )
+        meat = scores.T @ scores
+        for lag in range(1, max_lag + 1):
+            weight = 1.0 - lag / (max_lag + 1.0)
+            cross = scores[lag:].T @ scores[:-lag]
+            meat += weight * (cross + cross.T)
+        covariance = bread @ meat @ bread.T
+        post_sum = self._design_matrix(fit, post).sum(axis=0)
+        variance = float(post_sum @ covariance @ post_sum)
+        return max(variance, 0.0) if np.isfinite(variance) else 0.0
 
     @staticmethod
     def _validation_payload(

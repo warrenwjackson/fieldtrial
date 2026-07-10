@@ -1,7 +1,7 @@
 from fieldtrial.estimators.advanced import SyntheticDIDEstimator
 from fieldtrial.estimators.ascm import AugmentedSyntheticControlEstimator
 from fieldtrial.estimators.base import CompletedDesign, EstimatorResult
-from fieldtrial.estimators.bayesian import BayesianTimeSeriesEstimator
+from fieldtrial.estimators.bayesian import BayesianTimeSeriesEstimator, StateSpaceForecastEstimator
 from fieldtrial.estimators.bootstrap import BlockBootstrapEstimator
 from fieldtrial.estimators.cuped import CUPEDAdjustedEstimator
 from fieldtrial.estimators.did import DifferenceInDifferencesEstimator
@@ -30,6 +30,7 @@ __all__ = [
     "RatioDeltaEstimator",
     "SyntheticDIDEstimator",
     "SyntheticControlEstimator",
+    "StateSpaceForecastEstimator",
     "TBREstimator",
     "TbrEstimator",
     "TimeBasedRegressionEstimator",

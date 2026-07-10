@@ -423,7 +423,9 @@ def test_forecast_counterfactual_recovers_linear_known_effect():
     assert abs(result.estimate - expected) < 1e-6
     assert result.diagnostics["backend"] == "native_ridge_calendar_forecast"
     assert result.artifacts["forecast"]
-    assert result.inference_results[0].interval_type == "newey_west_t"
+    assert (
+        result.inference_results[0].interval_type == "studentized_moving_block_bootstrap_predictive"
+    )
 
 
 def test_cuped_recovers_known_market_level_effect():
@@ -580,6 +582,9 @@ def test_instantiate_estimator_accepts_estimator_params():
     assert estimator.covariate_columns == ("local_signal",)
     assert estimator.select_covariates is False
 
+    state_space = instantiate_estimator("state_space_forecast", params={"draws": 100})
+    assert state_space.name == "state_space_forecast"
+
 
 def test_synthetic_did_emits_fitted_time_weights():
     p, d = deterministic_recovery_panel()
@@ -590,6 +595,10 @@ def test_synthetic_did_emits_fitted_time_weights():
     assert abs(sum(time_weights.values()) - 1.0) < 1e-9
     assert result.diagnostics["implementation_status"] == "native_sdid_algorithm_1"
     assert result.method_metadata.name == "synthetic_did"
+    inference = result.inference_results[0]
+    assert inference.point_estimate == pytest.approx(result.estimate)
+    assert inference.null_distribution["observed_statistic"] == pytest.approx(result.estimate)
+    assert inference.diagnostics["hodges_lehmann_grid_effect"] == pytest.approx(result.estimate)
 
 
 def test_synthetic_did_uses_adaptive_time_regularization_for_wide_pre_periods():

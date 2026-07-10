@@ -36,6 +36,7 @@ from fieldtrial.inference import (
 from fieldtrial.inference.intervals import long_run_variance
 from fieldtrial.inference.orchestration import (
     _null_value_from_framework,
+    _promote_primary_inference,
     _run_market_bootstrap,
     _run_randomization_inference,
 )
@@ -169,6 +170,61 @@ def test_configured_multiplicity_uses_selected_primary_p_value() -> None:
     assert adjusted[0].diagnostics["decision_p_value_source"] == "holm"
     assert adjusted[1].inference_results[-1].p_value == pytest.approx(0.04)
     assert adjusted[1].decision_p_value == pytest.approx(0.04)
+
+
+def test_primary_inference_promotion_requires_the_exact_estimand_and_scale() -> None:
+    exact_spec = {
+        "label": "cumulative_att",
+        "metric": "orders",
+        "outcome_scale": "cumulative_effect",
+        "target_population": "treated_markets",
+        "time_aggregation": "test_window_cumulative",
+        "population_aggregation": "treated_portfolio_total",
+    }
+    result = EstimatorResult(
+        "synthetic_did",
+        "cumulative_att",
+        "orders",
+        20.0,
+        interval=(10.0, 30.0),
+        estimand_spec=exact_spec,
+        inference_results=[
+            InferenceResult(
+                method="synthetic_did_conformal",
+                method_family="conformal",
+                interval=(10.0, 30.0),
+                estimand_spec=exact_spec,
+                point_estimate=20.0,
+                primary_eligible=True,
+            ),
+            InferenceResult(
+                method="market_bootstrap",
+                method_family="bootstrap",
+                interval=(-1.0, 1.0),
+                estimand_spec={
+                    **exact_spec,
+                    "time_aggregation": "post_period_average",
+                    "population_aggregation": "per_treated_market_average",
+                },
+                point_estimate=2.0,
+                primary_eligible=True,
+                diagnostics={"configured_inference_method": "market_bootstrap"},
+            ),
+        ],
+    )
+
+    promoted = _promote_primary_inference(result)
+    assert promoted.interval == pytest.approx((10.0, 30.0))
+    assert promoted.diagnostics["primary_inference_method"] == "synthetic_did_conformal"
+    assert promoted.inference_results[0].diagnostics["selected_as_primary"] is True
+    assert promoted.inference_results[1].diagnostics["selected_as_primary"] is False
+
+    requested_mismatch = _promote_primary_inference(
+        result,
+        preferred_method="market_bootstrap",
+    )
+    assert requested_mismatch.interval == pytest.approx((10.0, 30.0))
+    assert requested_mismatch.diagnostics["primary_inference_status"].startswith("not_promoted")
 
 
 def test_max_t_stepdown_uses_joint_null_draws() -> None:
@@ -311,18 +367,19 @@ def test_bca_interval_exposes_bias_and_acceleration_diagnostics() -> None:
     assert result.diagnostics["acceleration"] == pytest.approx(-0.0304025649)
 
 
-def test_newey_west_cumulative_residual_interval_handles_autocorrelation_and_zero_variance() -> (
+def test_block_bootstrap_cumulative_residual_interval_handles_dependence_and_zero_variance() -> (
     None
 ):
     residuals = [1.0, -0.5, 0.75, -0.25, 0.5]
     assert long_run_variance(residuals, max_lag=1) == pytest.approx(0.0795)
 
     result = cumulative_residual_interval(3.0, residuals, n_post_periods=4, confidence=0.9)
-    assert result.interval_type == "newey_west_t"
-    assert result.standard_error == pytest.approx(0.6542170894)
-    assert result.interval == pytest.approx((1.6053094005, 4.3946905995))
+    assert result.interval_type == "studentized_moving_block_bootstrap_predictive"
+    assert result.standard_error == pytest.approx(1.1617588455)
+    assert result.interval == pytest.approx((1.5848588176, 4.2476965915))
+    assert result.diagnostics["block_length"] == 2
 
-    zero = cumulative_residual_interval(3.0, [0.0, 0.0, 0.0], n_post_periods=2)
+    zero = cumulative_residual_interval(3.0, [0.0, 0.0, 0.0, 0.0], n_post_periods=2)
     assert zero.interval is None
     assert zero.diagnostics["reason"] == "zero_variance"
 

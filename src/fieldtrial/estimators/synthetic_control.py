@@ -261,6 +261,7 @@ class SyntheticControlEstimator(BaseEstimator):
                 outcome_scale="cumulative_ratio_points" if info.is_ratio else "cumulative_effect",
                 target_population="treated_markets",
                 time_aggregation="test_window_cumulative",
+                population_aggregation="per_treated_market_average",
                 causal_quantity="ATT",
                 denominator_handling="unit_time_ratio_model" if info.is_ratio else None,
                 effect_unit="ratio_points" if info.is_ratio else "outcome_units",
@@ -364,6 +365,12 @@ class SyntheticControlEstimator(BaseEstimator):
         )
         failed_sims = self._failed_simulation_summary(getattr(scpi_result, "failed_sims", None))
         warnings = list(interval_payload["warnings"])
+        if interval_payload.get("effect_interval") is not None:
+            warnings.append(
+                "scpi_pkg post-period bounds were returned period by period. Their sum is "
+                "reported as a cumulative prediction envelope, not as a nominal cumulative "
+                "confidence interval; it is supplementary and cannot drive the decision."
+            )
         if failed_sims.get("max_failed_simulation_pct", 0.0) >= 10.0:
             warnings.append(
                 "scpi_pkg reported high failed simulation percentages; inspect "
@@ -435,6 +442,9 @@ class SyntheticControlEstimator(BaseEstimator):
             method_family="scm",
             interval=interval_payload.get("effect_interval"),
             interval_type=interval_payload.get("interval_type"),
+            interval_kind="uncertainty_envelope",
+            point_estimate=estimate,
+            primary_eligible=False,
             confidence=self.confidence if interval_payload.get("effect_interval") else None,
             assumptions=base_metadata.assumptions,
             diagnostics={
@@ -456,6 +466,7 @@ class SyntheticControlEstimator(BaseEstimator):
                 outcome_scale="cumulative_ratio_points" if info.is_ratio else "cumulative_effect",
                 target_population="treated_markets",
                 time_aggregation="test_window_cumulative",
+                population_aggregation="per_treated_market_average",
                 causal_quantity="ATT",
                 denominator_handling="unit_time_ratio_model" if info.is_ratio else None,
                 effect_unit="ratio_points" if info.is_ratio else "outcome_units",
@@ -463,7 +474,7 @@ class SyntheticControlEstimator(BaseEstimator):
             metric=info.name,
             estimate=estimate,
             relative_lift=relative_lift,
-            interval=interval_payload.get("effect_interval"),
+            interval=None,
             p_value=None,
             standard_error=None,
             diagnostics=diagnostics,
@@ -574,7 +585,7 @@ class SyntheticControlEstimator(BaseEstimator):
             counterfactual_lower = np.min(lower_stack, axis=0)
             counterfactual_upper = np.max(upper_stack, axis=0)
             source = "all_methods_conservative_union"
-            interval_type = "scpi_pkg_conservative_prediction_interval_union"
+            interval_type = "scpi_pkg_conservative_pointwise_prediction_envelope"
         else:
             if self.scpi_e_method not in finite_sources:
                 available = ", ".join(sorted(finite_sources))
@@ -586,7 +597,7 @@ class SyntheticControlEstimator(BaseEstimator):
             counterfactual_lower = selected["lower"]
             counterfactual_upper = selected["upper"]
             source = self.scpi_e_method
-            interval_type = f"scpi_pkg_{self.scpi_e_method}_prediction_interval"
+            interval_type = f"scpi_pkg_{self.scpi_e_method}_pointwise_prediction_envelope"
 
         effect_interval = (
             float(np.sum(observed_post - counterfactual_upper)),
@@ -867,9 +878,7 @@ class SyntheticControlEstimator(BaseEstimator):
                     y_pre=y_pre,
                     x_all=x_all,
                 )
-                placebo_gaps.append(
-                    float((y_post - path["counterfactual_all"][post_mask]).sum())
-                )
+                placebo_gaps.append(float((y_post - path["counterfactual_all"][post_mask]).sum()))
         diagnostics: dict[str, Any] = {"placebo_gap_count": len(placebo_gaps)}
         if placebo_gaps:
             placebo_array = np.asarray(placebo_gaps, dtype=float)

@@ -316,6 +316,7 @@ monitoring:
         "jackknife",
         "few_cluster_wild_bootstrap",
         "planned_look_confidence_sequence",
+        "holm",
     }
     assert artifact["methodology_status"]["calibration"]["status"] in {"run", "warning", "fail"}
     assert artifact["methodology_status"]["calibration"]["run_methods"] == [

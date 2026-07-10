@@ -1,7 +1,7 @@
 {
-  "artifact": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/artifacts/completed_test_results.json",
-  "artifact_byte_count": 512788,
-  "artifact_sha256": "13b1a0475705485456fa24e965148967d2e017c3c27cf4d6af3b2103a96902f2",
+  "artifact": "examples/artifacts/completed_test_results_scpi.json",
+  "artifact_byte_count": 481122,
+  "artifact_sha256": "3c672bf2e9c2996b292f53c0d10cfd7c8982be99fec3cb8e17eab6b1f773fb00",
   "input_files": {
     "completed": {
       "byte_count": 1208,

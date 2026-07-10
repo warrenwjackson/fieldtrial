@@ -13,7 +13,7 @@ fieldtrial analyze examples/configs/completed_test.yaml --panel examples/data/sy
 ```
 
 For completed-test measurement, prefer the `analyze --json` stdout payload for decision making.
-It includes consensus, framework decisions, and one compact row per estimator without diagnostics,
+It includes the primary-estimator decision, modeling-family sensitivity, and one compact row per estimator without diagnostics,
 artifacts, or chart series. The detailed estimator artifact is still written to `--out` for audit
 or debugging.
 

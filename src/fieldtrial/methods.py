@@ -26,7 +26,7 @@ def _jsonable(value: Any) -> Any:
     if isinstance(value, np.integer):
         return int(value)
     if isinstance(value, np.floating):
-        return None if np.isnan(value) else float(value)
+        return None if not np.isfinite(value) else float(value)
     if isinstance(value, np.ndarray):
         return [_jsonable(v) for v in value.tolist()]
     if isinstance(value, (pd.Timestamp, datetime, date)):
@@ -37,7 +37,7 @@ def _jsonable(value: Any) -> Any:
         return {str(k): _jsonable(v) for k, v in value.items()}
     if isinstance(value, (list, tuple, set)):
         return [_jsonable(v) for v in value]
-    if isinstance(value, float) and math.isnan(value):
+    if isinstance(value, float) and not math.isfinite(value):
         return None
     return value
 
@@ -49,6 +49,7 @@ class EstimandSpec:
     outcome_scale: str
     target_population: str
     time_aggregation: str
+    population_aggregation: str = "per_treated_market_average"
     causal_quantity: str = "ATT"
     metric: str | None = None
     denominator_handling: str | None = None
@@ -128,6 +129,11 @@ class EstimandSpec:
             outcome_scale=outcome_scale,
             target_population=target_population,
             time_aggregation=time_aggregation,
+            population_aggregation=(
+                "treated_portfolio_total"
+                if "portfolio" in lowered or "aggregate_total" in lowered
+                else "per_treated_market_average"
+            ),
             denominator_handling=denominator_handling,
             effect_unit=effect_unit,
             notes="Converted from legacy string estimand.",
@@ -138,7 +144,15 @@ class EstimandSpec:
             self.outcome_scale == other.outcome_scale
             and self.target_population == other.target_population
             and self.time_aggregation == other.time_aggregation
+            and self.population_aggregation == other.population_aggregation
             and self.denominator_handling == other.denominator_handling
+            and self.causal_quantity == other.causal_quantity
+            and (self.metric is None or other.metric is None or self.metric == other.metric)
+            and (
+                self.effect_unit is None
+                or other.effect_unit is None
+                or self.effect_unit == other.effect_unit
+            )
         )
 
     def relative_lift_comparable_with(self, other: EstimandSpec) -> bool:
@@ -151,10 +165,14 @@ class EstimandSpec:
         ``denominator_handling`` (linearized vs ratio-of-sums vs unit-time
         model) are estimation mechanics for the same declared metric, so they
         are reported as heterogeneity rather than blocking the pooled headline.
-        Only the target population must match.
+        The declared metric and target population must match. Population totals
+        and per-treated-market averages remain comparable after each is divided
+        by its own counterfactual baseline.
         """
 
-        return self.target_population == other.target_population
+        return self.target_population == other.target_population and (
+            self.metric is None or other.metric is None or self.metric == other.metric
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return _jsonable(asdict(self))
@@ -219,6 +237,10 @@ class InferenceResult:
     method_family: str
     interval: tuple[float, float] | None = None
     interval_type: str | None = None
+    interval_kind: str | None = None
+    estimand_spec: EstimandSpec | dict[str, Any] | None = None
+    point_estimate: float | None = None
+    primary_eligible: bool | None = None
     p_value: float | None = None
     adjusted_p_value: float | None = None
     posterior_probability: float | None = None
@@ -230,6 +252,24 @@ class InferenceResult:
     diagnostics: dict[str, Any] = field(default_factory=dict)
     artifacts: dict[str, Any] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.estimand_spec is not None:
+            object.__setattr__(self, "estimand_spec", EstimandSpec.coerce(self.estimand_spec))
+        if self.interval is not None and self.interval_kind is None:
+            object.__setattr__(
+                self,
+                "interval_kind",
+                interval_kind_from_type(self.interval_type, self.method_family),
+            )
+        if self.point_estimate is None and isinstance(self.null_distribution, dict):
+            observed = self.null_distribution.get("observed_statistic")
+            try:
+                observed_value = float(observed)
+            except (TypeError, ValueError):
+                observed_value = float("nan")
+            if math.isfinite(observed_value):
+                object.__setattr__(self, "point_estimate", observed_value)
 
     @classmethod
     def coerce(cls, value: InferenceResult | dict[str, Any]) -> InferenceResult:
@@ -243,6 +283,36 @@ class InferenceResult:
 
     def to_dict(self) -> dict[str, Any]:
         return _jsonable(asdict(self))
+
+
+def interval_kind_from_type(interval_type: str | None, method_family: str | None = None) -> str:
+    """Return the statistical meaning of an interval from its implementation label."""
+
+    label = str(interval_type or "").lower()
+    family = str(method_family or "").lower()
+    if "randomization" in label or family == "design_based":
+        return "randomization_confidence_set"
+    if "confidence_sequence" in label or family == "sequential":
+        return "confidence_sequence"
+    if "fieller" in label:
+        return "fieller_confidence_set"
+    if "conformal" in label or "test_inversion" in label:
+        return "conformal_confidence_set"
+    if "posterior" in label:
+        return "posterior_interval"
+    if "envelope" in label or "union" in label:
+        return "uncertainty_envelope"
+    if (
+        "predictive" in label
+        or "prediction" in label
+        or family
+        in {
+            "forecast",
+            "state_space_forecast",
+        }
+    ):
+        return "prediction_interval"
+    return "confidence_interval"
 
 
 @dataclass(frozen=True)
@@ -566,8 +636,8 @@ DEFAULT_METHOD_REGISTRY = MethodRegistry(
             ),
         ),
         MethodMetadata(
-            name="bayesian_time_series",
-            display_name="Native Bayesian-style state-space forecast",
+            name="state_space_forecast",
+            display_name="Native state-space predictive forecast",
             family="state_space_forecast",
             independent_family="state_space_forecast",
             method_type="estimator",
@@ -575,14 +645,15 @@ DEFAULT_METHOD_REGISTRY = MethodRegistry(
             backend="statsmodels_unobserved_components",
             assumptions=[
                 "The treated aggregate follows a local-level or local-linear state-space model.",
-                "Optional control aggregate regressors are not affected by treatment.",
                 (
                     "Joint predictive simulation from the fitted state-space model "
-                    "represents counterfactual forecast uncertainty."
+                    "represents counterfactual forecast uncertainty conditional on fitted "
+                    "MLE parameters."
                 ),
             ],
             failure_modes=[
                 "Short or highly nonstationary pre-periods produce unstable state estimates.",
+                "Fixed-parameter predictive draws omit model-parameter uncertainty.",
                 "Common post-period shocks cannot be removed without control-series regressors.",
                 "Gaussian predictive simulation understates heavy-tailed shocks.",
             ],
@@ -799,7 +870,8 @@ def get_method_metadata(name: str) -> MethodMetadata:
     aliases = {
         "did": "difference_in_differences",
         "synthetic": "synthetic_control",
-        "bayesian": "bayesian_time_series",
+        "bayesian": "state_space_forecast",
+        "bayesian_time_series": "state_space_forecast",
         "iroas": "paired_iroas",
     }
     return DEFAULT_METHOD_REGISTRY.get(aliases.get(name, name))
@@ -825,6 +897,8 @@ def default_inference_from_estimate(
     p_value: float | None,
     standard_error: float | None,
     confidence: float | None,
+    estimand_spec: EstimandSpec | dict[str, Any] | None = None,
+    point_estimate: float | None = None,
     diagnostics: dict[str, Any] | None = None,
     warnings: list[str] | None = None,
 ) -> InferenceResult:
@@ -848,6 +922,9 @@ def default_inference_from_estimate(
         p_value=p_value,
         standard_error=standard_error,
         confidence=confidence,
+        estimand_spec=estimand_spec,
+        point_estimate=point_estimate,
+        primary_eligible=True,
         assumptions=metadata.assumptions,
         diagnostics=diagnostics or {},
         warnings=warnings or [],
@@ -869,11 +946,11 @@ def _finite_float(value: Any) -> float | None:
 
 
 def family_consensus(results: list[Any]) -> dict[str, Any]:
-    """Summarize relative lift by independent evidence family.
+    """Summarize relative-lift sensitivity by distinct modeling family.
 
-    The headline consensus uses one representative relative-lift value per
-    independent family. Raw estimator counts are still reported for backward
-    compatibility and auditability.
+    One representative value per legacy ``independent_family`` is retained for
+    backward compatibility and robustness summaries. It is not a decision vote
+    or a claim that the families are statistically independent.
     """
 
     rows: list[dict[str, Any]] = []
@@ -978,9 +1055,7 @@ def family_consensus(results: list[Any]) -> dict[str, Any]:
     lift_comparable = all(
         first_estimand.relative_lift_comparable_with(item) for item in estimands[1:]
     )
-    denominator_handling_mixed = (
-        len({str(item.denominator_handling) for item in estimands}) > 1
-    )
+    denominator_handling_mixed = len({str(item.denominator_handling) for item in estimands}) > 1
     duplicate_family_count = int(sum(max(len(items) - 1, 0) for items in grouped.values()))
     headline_values = representative_array if lift_comparable else np.asarray([], dtype=float)
     pooled_note = (

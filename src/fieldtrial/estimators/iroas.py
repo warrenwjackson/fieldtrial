@@ -186,6 +186,7 @@ class PairedIROASEstimator(BaseEstimator):
                 outcome_scale="spend_normalized_iroas",
                 target_population="pair_level_units",
                 time_aggregation="test_window_cumulative",
+                population_aggregation="pair_level_ratio",
                 causal_quantity="ATT",
                 denominator_handling="causal_spend_effect",
                 effect_unit="response_per_incremental_spend",
@@ -290,9 +291,7 @@ class PairedIROASEstimator(BaseEstimator):
                 # pre/post cells with NaN, and NaN <= 0 is False) skip the geo
                 # instead of poisoning every pair's influence score.
                 continue
-            if not np.all(
-                np.isfinite([response_pre, response_post, spend_pre, spend_post])
-            ):
+            if not np.all(np.isfinite([response_pre, response_post, spend_pre, spend_post])):
                 continue
             effects[str(geo)] = {
                 "response_delta": response_post - response_pre / n_pre * n_post,

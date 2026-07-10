@@ -633,9 +633,7 @@ class ExperimentRegistry:
                     f"({row['start_date']} to {row['end_date']})"
                 )
         if conflicts:
-            raise ValueError(
-                "registry active assignment conflict: " + "; ".join(sorted(conflicts))
-            )
+            raise ValueError("registry active assignment conflict: " + "; ".join(sorted(conflicts)))
 
     def _created_at(self, experiment_id: str) -> str:
         row = self.connection.execute(

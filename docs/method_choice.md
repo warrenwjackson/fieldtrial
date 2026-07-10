@@ -26,10 +26,18 @@ randomization inference, conformal
 inference, sequential inference, or portfolio decisioning when the design and
 data support their assumptions.
 
+Declare one primary estimator per decision metric before reading results and
+choose its exact-matching primary inference method. Treat all other estimators
+as sensitivity analyses. FieldTrial defaults to the first configured estimator,
+estimator-native uncertainty, and Holm adjustment across primary hypotheses so
+the report never uses an implicit "any significant method wins" rule.
+
 When optional methodology packages are installed, use explicit backend labels in
 decision artifacts. `SyntheticControlEstimator(backend="scpi_pkg")` is the
 production `scpi-pkg` adapter for synthetic-control point estimates and
-prediction intervals. FieldTrial's `synthetic_did` remains native and should
+period-wise prediction bounds. Those bounds are reported as a supplementary
+uncertainty envelope, not a nominal cumulative ATT confidence interval.
+FieldTrial's `synthetic_did` remains native and should
 not be described as the external `synthdid` package backend; external `synthdid`
 is only declared for Python `<3.12` because the published package is not
 compatible with the Python 3.12 environment used for current validation.

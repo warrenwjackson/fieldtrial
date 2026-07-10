@@ -1,9 +1,23 @@
 {
   "artifact": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/artifacts/completed_test_results.json",
+  "artifact_byte_count": 512788,
+  "artifact_sha256": "13b1a0475705485456fa24e965148967d2e017c3c27cf4d6af3b2103a96902f2",
+  "input_files": {
+    "completed": {
+      "byte_count": 1208,
+      "path": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/configs/completed_test.yaml",
+      "sha256": "cb7495433f5b2c7d65df8c495eb20f1c0fe4605796bd71aa1d038af00cd0498c"
+    },
+    "panel": {
+      "byte_count": 839991,
+      "path": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/data/synthetic_panel_completed.parquet",
+      "sha256": "db6f3a67752fd9944153a8343be62fd1fe5a973f9da13dd021f202cf8cbcffad"
+    }
+  },
   "inputs": {
     "completed": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/configs/completed_test.yaml",
     "panel": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/data/synthetic_panel_completed.parquet"
   },
   "kind": "analysis",
-  "version": "fieldtrial.manifest.v1"
+  "version": "fieldtrial.manifest.v2"
 }

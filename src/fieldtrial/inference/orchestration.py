@@ -36,7 +36,7 @@ from fieldtrial.inference.multiplicity import adjust_p_values, max_t_stepdown
 from fieldtrial.inference.randomization import randomization_test
 from fieldtrial.inference.resampling import bootstrap_inference, jackknife_inference
 from fieldtrial.inference.sequential import bounded_mean_confidence_sequence
-from fieldtrial.methods import CalibrationResult, InferenceResult
+from fieldtrial.methods import CalibrationResult, EstimandSpec, InferenceResult
 
 ESTIMATOR_DEFAULT = "estimator_default"
 SUPPORTED_INFERENCE_METHODS = {
@@ -71,6 +71,7 @@ def enrich_result_with_configured_methodology(
 
     _validate_inference_spec(spec.inference)
     inference_results = list(result.inference_results)
+    native_inference_count = len(inference_results)
     for method in spec.inference.methods:
         canonical = _canonical_inference_method(method)
         if canonical == ESTIMATOR_DEFAULT:
@@ -92,18 +93,55 @@ def enrich_result_with_configured_methodology(
         inference_results=inference_results,
         calibration_results=calibration_results,
     )
-    return _promote_primary_inference(enriched)
+    return _promote_primary_inference(
+        enriched,
+        preferred_method=_canonical_inference_method(spec.inference.primary_method),
+        native_inference_count=native_inference_count,
+    )
 
 
-def _promote_primary_inference(result: EstimatorResult) -> EstimatorResult:
+def _promote_primary_inference(
+    result: EstimatorResult,
+    *,
+    preferred_method: str | None = None,
+    native_inference_count: int | None = None,
+) -> EstimatorResult:
     selected_index: int | None = None
     selected_rank = -1
     for index, inference in enumerate(result.inference_results):
+        if preferred_method == ESTIMATOR_DEFAULT and native_inference_count is not None:
+            if index >= native_inference_count:
+                continue
+        elif preferred_method not in {None, ESTIMATOR_DEFAULT}:
+            configured_method = str(
+                inference.diagnostics.get("configured_inference_method") or inference.method
+            )
+            if configured_method != preferred_method:
+                continue
+        if not _inference_is_primary_compatible(result, inference):
+            continue
         rank = _primary_inference_rank(inference)
         if rank > selected_rank:
             selected_index = index
             selected_rank = rank
     if selected_index is None or selected_rank <= 0:
+        if preferred_method not in {None, ESTIMATOR_DEFAULT}:
+            return replace(
+                result,
+                diagnostics={
+                    **result.diagnostics,
+                    "requested_primary_inference": preferred_method,
+                    "primary_inference_status": "not_promoted_estimand_mismatch_or_unavailable",
+                },
+                warnings=[
+                    *result.warnings,
+                    (
+                        f"Configured primary inference {preferred_method!r} did not return an "
+                        "interval/statistic compatible with this estimator's exact estimand; "
+                        "the estimator-native uncertainty remains in the top-level fields."
+                    ),
+                ],
+            )
         return result
     selected = result.inference_results[selected_index]
     inference_results = []
@@ -129,14 +167,50 @@ def _promote_primary_inference(result: EstimatorResult) -> EstimatorResult:
         p_value=selected.p_value,
         primary_adjusted_p_value=selected.adjusted_p_value,
         decision_p_value=(
-            selected.adjusted_p_value
-            if selected.adjusted_p_value is not None
-            else selected.p_value
+            selected.adjusted_p_value if selected.adjusted_p_value is not None else selected.p_value
         ),
         standard_error=selected.standard_error,
+        relative_interval=None,
         diagnostics=diagnostics,
         inference_results=inference_results,
     )
+
+
+def _inference_is_primary_compatible(
+    result: EstimatorResult,
+    inference: InferenceResult,
+) -> bool:
+    """Whether an inference payload targets the result's exact estimand contract."""
+
+    if inference.primary_eligible is False:
+        return False
+    if inference.estimand_spec is not None:
+        inference_spec = EstimandSpec.coerce(inference.estimand_spec, metric=result.metric)
+        if not result.estimand_spec.compatible_with(inference_spec):
+            return False
+        if inference.point_estimate is None:
+            return False
+        return bool(
+            np.isclose(
+                float(inference.point_estimate),
+                float(result.estimate),
+                rtol=1e-7,
+                atol=max(1e-10, abs(float(result.estimate)) * 1e-9),
+            )
+        )
+
+    # Backward-compatible native inference: an unannotated payload is eligible
+    # only when it exactly reproduces fields already returned by the estimator.
+    interval_matches = inference.interval == result.interval
+    p_matches = inference.p_value == result.p_value
+    se_matches = inference.standard_error == result.standard_error
+    point_matches = inference.point_estimate is None or np.isclose(
+        float(inference.point_estimate),
+        float(result.estimate),
+        rtol=1e-7,
+        atol=max(1e-10, abs(float(result.estimate)) * 1e-9),
+    )
+    return bool(point_matches and interval_matches and (p_matches or se_matches))
 
 
 def _primary_inference_rank(inference: InferenceResult) -> int:
@@ -184,7 +258,14 @@ def apply_configured_multiplicity(
 
     p_values: dict[str, float] = {}
     result_indexes: dict[str, int] = {}
-    for index, result in enumerate(results):
+    primary_indexes = [
+        index
+        for index, result in enumerate(results)
+        if bool(result.diagnostics.get("is_primary_estimator"))
+    ]
+    included_indexes = primary_indexes or list(range(len(results)))
+    for index in included_indexes:
+        result = results[index]
         p_value = _primary_p_value(result)
         if p_value is None:
             continue
@@ -217,7 +298,15 @@ def _apply_westfall_young_multiplicity(
     results: Sequence[EstimatorResult],
     spec: Any,
 ) -> list[EstimatorResult]:
-    payloads = [_max_t_payload(result) for result in results]
+    selected_indexes = [
+        index
+        for index, result in enumerate(results)
+        if bool(result.diagnostics.get("is_primary_estimator"))
+    ]
+    if not selected_indexes:
+        selected_indexes = list(range(len(results)))
+    selected_results = [results[index] for index in selected_indexes]
+    payloads = [_max_t_payload(result) for result in selected_results]
     if any(payload is None for payload in payloads):
         raise ValueError(
             "inference.multiplicity='westfall_young' requires every result to carry aligned "
@@ -232,7 +321,7 @@ def _apply_westfall_young_multiplicity(
             "inference.multiplicity='westfall_young' requires all hypotheses to use the "
             "same aligned null-draw source and draw count."
         )
-    hypothesis_ids = [f"{result.metric}:{result.estimator_name}" for result in results]
+    hypothesis_ids = [f"{result.metric}:{result.estimator_name}" for result in selected_results]
     observed_statistics = {
         hypothesis_id: float(payload["observed_statistic"])
         for hypothesis_id, payload in zip(hypothesis_ids, typed_payloads, strict=True)
@@ -246,7 +335,8 @@ def _apply_westfall_young_multiplicity(
     )
     output = list(results)
     for index, inference in enumerate(adjusted):
-        existing = list(output[index].inference_results)
+        output_index = selected_indexes[index]
+        existing = list(output[output_index].inference_results)
         promoted_inference = replace(
             inference,
             diagnostics={
@@ -256,9 +346,9 @@ def _apply_westfall_young_multiplicity(
                 "studentized": True,
             },
         )
-        output[index] = _with_multiplicity_p_value(
+        output[output_index] = _with_multiplicity_p_value(
             replace(
-                output[index],
+                output[output_index],
                 inference_results=[*existing, promoted_inference],
             ),
             promoted_inference,
@@ -534,24 +624,35 @@ def _run_inference_method(
     method: str,
 ) -> InferenceResult:
     if method == "randomization_inference":
-        return _run_randomization_inference(panel, design, metric, spec)
-    if method == "market_bootstrap":
-        return _run_market_bootstrap(panel, design, metric, spec)
-    if method == "jackknife":
-        return _run_jackknife(panel, design, metric, spec)
-    if method == "conformal_inference":
-        return _run_conformal(result, spec)
-    if method == "few_cluster_robust":
-        return _run_few_cluster_wild_bootstrap(panel, design, metric, result, spec)
-    raise ValueError(f"Unsupported inference method {method!r}")
+        inference = _run_randomization_inference(panel, design, metric, result, spec)
+    elif method == "market_bootstrap":
+        inference = _run_market_bootstrap(panel, design, metric, result, spec)
+    elif method == "jackknife":
+        inference = _run_jackknife(panel, design, metric, result, spec)
+    elif method == "conformal_inference":
+        inference = _run_conformal(result, spec)
+    elif method == "few_cluster_robust":
+        inference = _run_few_cluster_wild_bootstrap(panel, design, metric, result, spec)
+    else:
+        raise ValueError(f"Unsupported inference method {method!r}")
+    return replace(
+        inference,
+        diagnostics={**inference.diagnostics, "configured_inference_method": method},
+    )
 
 
 def _run_randomization_inference(
     panel: Any,
     design: CompletedDesign,
     metric: Any,
-    spec: Any,
+    result: EstimatorResult | Any,
+    spec: Any | None = None,
 ) -> InferenceResult:
+    if spec is None:
+        spec = result
+        result = None
+    result_metric = getattr(result, "metric", getattr(metric, "name", str(metric)))
+    source_estimator = getattr(result, "estimator_name", "configured_inference")
     effects = _market_effect_frame(panel, design, metric)
     policy = _assignment_policy_from_completed_spec(spec, design)
     n_feasible = policy.n_feasible_assignments if policy is not None else None
@@ -560,7 +661,7 @@ def _run_randomization_inference(
         if n_feasible is not None and n_feasible > spec.assignment_policy.max_enumerated_assignments
         else None
     )
-    return randomization_test(
+    inference = randomization_test(
         dict(zip(effects["geo_id"], effects["effect"], strict=True)),
         treatment_units=design.treatment_geos,
         control_units=design.control_geos,
@@ -576,14 +677,31 @@ def _run_randomization_inference(
         max_exact_assignments=_max_exact_assignments(spec),
         confidence=float(spec.inference.confidence),
     )
+    return replace(
+        inference,
+        estimand_spec=_market_effect_estimand(metric, result_metric),
+        point_estimate=_effect_frame_statistic(effects),
+        primary_eligible=True,
+        diagnostics={
+            **inference.diagnostics,
+            "source_estimator": source_estimator,
+            "source_metric": result_metric,
+        },
+    )
 
 
 def _run_market_bootstrap(
     panel: Any,
     design: CompletedDesign,
     metric: Any,
-    spec: Any,
+    result: EstimatorResult | Any,
+    spec: Any | None = None,
 ) -> InferenceResult:
+    if spec is None:
+        spec = result
+        result = None
+    result_metric = getattr(result, "metric", getattr(metric, "name", str(metric)))
+    source_estimator = getattr(result, "estimator_name", "configured_inference")
     effects = _market_effect_frame(panel, design, metric)
     n_treatment = int(effects.loc[effects["treated"].astype(bool), "geo_id"].nunique())
     n_control = int(effects.loc[~effects["treated"].astype(bool), "geo_id"].nunique())
@@ -592,6 +710,8 @@ def _run_market_bootstrap(
             method="market_bootstrap",
             method_family="bootstrap",
             confidence=float(spec.inference.confidence),
+            estimand_spec=_market_effect_estimand(metric, result_metric),
+            primary_eligible=False,
             assumptions=[
                 "Resampling units are exchangeable within each treatment arm.",
                 "At least two markets per arm are needed for arm-level bootstrap variation.",
@@ -607,7 +727,7 @@ def _run_market_bootstrap(
                 "designs."
             ],
         )
-    return bootstrap_inference(
+    inference = bootstrap_inference(
         effects,
         statistic=_effect_frame_statistic,
         unit_col="geo_id",
@@ -623,16 +743,28 @@ def _run_market_bootstrap(
         ),
         method="market_bootstrap",
     )
+    return replace(
+        inference,
+        estimand_spec=_market_effect_estimand(metric, result_metric),
+        point_estimate=_effect_frame_statistic(effects),
+        primary_eligible=True,
+        diagnostics={
+            **inference.diagnostics,
+            "source_estimator": source_estimator,
+            "source_metric": result_metric,
+        },
+    )
 
 
 def _run_jackknife(
     panel: Any,
     design: CompletedDesign,
     metric: Any,
+    result: EstimatorResult,
     spec: Any,
 ) -> InferenceResult:
     effects = _market_effect_frame(panel, design, metric)
-    return jackknife_inference(
+    inference = jackknife_inference(
         effects,
         statistic=_effect_frame_statistic,
         unit_col="geo_id",
@@ -643,6 +775,17 @@ def _run_jackknife(
             metric,
             baseline=_effect_frame_baseline(effects),
         ),
+    )
+    return replace(
+        inference,
+        estimand_spec=_market_effect_estimand(metric, result.metric),
+        point_estimate=_effect_frame_statistic(effects),
+        primary_eligible=True,
+        diagnostics={
+            **inference.diagnostics,
+            "source_estimator": result.estimator_name,
+            "source_metric": result.metric,
+        },
     )
 
 
@@ -691,16 +834,56 @@ def _run_conformal(result: EstimatorResult, spec: Any) -> InferenceResult:
             null_value=null_value,
             alternative=_alternative_from_framework(spec),
         )
+    n_post = max(int(post_gaps.size), 1)
+    scale = 1.0 / n_post if result.estimand_spec.time_aggregation == "post_period_average" else 1.0
+    interval = (
+        None
+        if inference.interval is None
+        else (float(inference.interval[0] * scale), float(inference.interval[1] * scale))
+    )
+    point_estimate = float(np.sum(post_gaps) * scale)
+    exact_match = bool(
+        np.isclose(
+            point_estimate,
+            float(result.estimate),
+            rtol=1e-7,
+            atol=max(1e-10, abs(float(result.estimate)) * 1e-9),
+        )
+    )
+    scaled_null_distribution = dict(inference.null_distribution or {})
+    for key in ("observed_statistic", "null_value"):
+        value = _finite_number(scaled_null_distribution.get(key))
+        if value is not None:
+            scaled_null_distribution[key] = value * scale
     return replace(
         inference,
+        interval=interval,
+        estimand_spec=result.estimand_spec,
+        point_estimate=point_estimate,
+        primary_eligible=exact_match,
+        standard_error=(
+            None if inference.standard_error is None else float(inference.standard_error * scale)
+        ),
+        null_distribution=scaled_null_distribution,
         diagnostics={
             **inference.diagnostics,
             "source_estimator": result.estimator_name,
             "source_metric": result.metric,
+            "source_cumulative_interval": inference.interval,
+            "reported_scale_factor": scale,
+            "estimand_contract_match": exact_match,
         },
         warnings=[
             *inference.warnings,
             *([] if fallback_warning is None else [fallback_warning]),
+            *(
+                []
+                if exact_match
+                else [
+                    "Configured conformal inference was retained as supplementary because its "
+                    "counterfactual-path statistic did not match the estimator point estimate."
+                ]
+            ),
         ],
     )
 
@@ -722,6 +905,8 @@ def _run_few_cluster_wild_bootstrap(
             method="few_cluster_wild_bootstrap",
             method_family="small_sample",
             confidence=float(spec.inference.confidence),
+            estimand_spec=_market_effect_estimand(metric, result.metric),
+            primary_eligible=False,
             assumptions=[
                 "Market-level wild bootstrap requires arm-level market variation.",
                 "One-treated-market designs require assignment-aware randomization inference.",
@@ -820,6 +1005,9 @@ def _run_few_cluster_wild_bootstrap(
         p_value=p_value,
         confidence=float(spec.inference.confidence),
         standard_error=se_observed,
+        estimand_spec=_market_effect_estimand(metric, result.metric),
+        point_estimate=observed,
+        primary_eligible=True,
         assumptions=[
             "Market-level pre/post effects are exchangeable within treatment arms.",
             "Rademacher wild weights approximate the small-sample null distribution.",
@@ -865,6 +1053,7 @@ def _run_monitoring_if_requested(
         return InferenceResult(
             method="descriptive_planned_looks",
             method_family="monitoring",
+            primary_eligible=False,
             null_distribution={
                 "observed_statistic": float(np.mean(values)),
                 "n_looks": int(values.size),
@@ -907,6 +1096,7 @@ def _run_monitoring_if_requested(
         inference,
         method=method,
         method_family=method_family,
+        primary_eligible=False,
         interval_type=interval_type,
         p_value=(
             None
@@ -1030,6 +1220,28 @@ def _market_effect_frame(panel: Any, design: CompletedDesign, metric: Any) -> pd
             }
         )
     return pd.DataFrame(rows)
+
+
+def _market_effect_estimand(metric: Any, metric_name: str) -> EstimandSpec:
+    is_ratio = bool(
+        getattr(metric, "numerator", None) is not None
+        and getattr(metric, "denominator", None) is not None
+    )
+    return EstimandSpec(
+        label="market_level_pre_post_difference_in_means",
+        metric=metric_name,
+        outcome_scale="unit_time_ratio_effect" if is_ratio else "absolute_effect",
+        target_population="treated_markets",
+        time_aggregation="post_period_average",
+        population_aggregation="per_treated_market_average",
+        causal_quantity="ATT",
+        denominator_handling="mean_of_unit_time_ratios" if is_ratio else None,
+        effect_unit="ratio_points" if is_ratio else "outcome_units",
+        notes=(
+            "Configured generic inference operates on market-level pre/post means and is "
+            "primary only when that statistic exactly matches the estimator result."
+        ),
+    )
 
 
 def _effect_frame_statistic(frame: pd.DataFrame) -> float:

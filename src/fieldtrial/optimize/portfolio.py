@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -181,11 +182,26 @@ def write_manifest(
     artifact_path: str | Path, *, kind: str, inputs: dict[str, str] | None = None
 ) -> Path:
     path = Path(artifact_path)
+    artifact_bytes = path.read_bytes()
+    input_files: dict[str, dict[str, Any]] = {}
+    for name, value in (inputs or {}).items():
+        input_path = Path(value)
+        if not input_path.is_file():
+            continue
+        content = input_path.read_bytes()
+        input_files[name] = {
+            "path": str(input_path),
+            "byte_count": len(content),
+            "sha256": hashlib.sha256(content).hexdigest(),
+        }
     manifest = {
         "artifact": str(path),
+        "artifact_byte_count": len(artifact_bytes),
+        "artifact_sha256": hashlib.sha256(artifact_bytes).hexdigest(),
         "kind": kind,
-        "version": "fieldtrial.manifest.v1",
+        "version": "fieldtrial.manifest.v2",
         "inputs": inputs or {},
+        "input_files": input_files,
     }
     manifest_path = path.with_suffix(path.suffix + ".manifest.json")
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True))

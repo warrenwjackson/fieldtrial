@@ -13,7 +13,7 @@ import yaml
 
 from fieldtrial.data.panel import GeoPanel
 from fieldtrial.data.validation import require_columns
-from fieldtrial.metrics.base import MetricSpec
+from fieldtrial.metrics.base import MetricFormat, MetricSpec
 from fieldtrial.metrics.composite import CompositeMetric
 from fieldtrial.metrics.count import ContinuousMetric, CountMetric
 from fieldtrial.metrics.ratio import RatioMetric
@@ -141,6 +141,8 @@ def metric_from_dict(payload: dict[str, Any]) -> MetricSpec:
         "domain_tags": payload.get("domain_tags", []),
         "display_name": payload.get("display_name"),
         "description": payload.get("description"),
+        "unit": payload.get("unit"),
+        "display_format": MetricFormat(**(payload.get("format") or {})),
     }
     if metric_type == "count":
         return CountMetric(
@@ -189,38 +191,36 @@ def metric_from_config(name: str, config: MetricConfig) -> MetricSpec:
         RatioMetricConfig,
     )
 
+    common = {
+        "name": name,
+        "direction": config.direction,
+        "role": config.role.value,
+        "domain_tags": config.domain_tags,
+        "display_name": config.display_name,
+        "description": config.description,
+        "unit": config.unit,
+        "display_format": MetricFormat(**config.format.model_dump()),
+    }
     if isinstance(config, CountMetricConfig):
         return CountMetric(
-            name=name,
             column=config.column,
-            direction=config.direction,
-            role=config.role.value,
-            domain_tags=config.domain_tags,
+            **common,
         )
     if isinstance(config, ContinuousMetricConfig):
         return ContinuousMetric(
-            name=name,
             column=config.column,
-            direction=config.direction,
-            role=config.role.value,
-            domain_tags=config.domain_tags,
+            **common,
         )
     if isinstance(config, RatioMetricConfig):
         return RatioMetric(
-            name=name,
             numerator=config.numerator,
             denominator=config.denominator,
-            direction=config.direction,
-            role=config.role.value,
-            domain_tags=config.domain_tags,
             denominator_min=config.denominator_min,
+            **common,
         )
     if isinstance(config, CompositeMetricConfig):
         return CompositeMetric(
-            name=name,
             components=config.components,
-            direction=config.direction,
-            role=config.role.value,
-            domain_tags=config.domain_tags,
+            **common,
         )
     raise TypeError(f"unsupported metric config: {type(config)!r}")

@@ -276,34 +276,49 @@ def _method_lift_row(result: dict[str, Any], domain: tuple[float, float]) -> dic
             "interval_type": _first_interval_type(result),
             "uncertainty_label": _uncertainty_label(result),
             "basis": "relative_lift",
+            "is_primary_estimator": bool(
+                (result.get("diagnostics") or {}).get("is_primary_estimator")
+            ),
         }
     )
     return row
 
 
 def _first_interval_type(result: dict[str, Any]) -> str | None:
-    for item in result.get("inference_results") or []:
+    items = [item for item in result.get("inference_results") or [] if isinstance(item, dict)]
+    selected = [
+        item for item in items if (item.get("diagnostics") or {}).get("selected_as_primary")
+    ]
+    for item in [*selected, *items]:
         if isinstance(item, dict) and item.get("interval_type"):
             return str(item["interval_type"])
     return None
 
 
 def _uncertainty_label(result: dict[str, Any]) -> str | None:
-    interval_type = _first_interval_type(result)
-    metadata = _metadata_payload(result)
-    family = str(metadata.get("family") or result.get("method_family") or "")
-    if (
-        family in {"bsts", "state_space_forecast"}
-        or result.get("estimator_name") == "bayesian_time_series"
-        or "predictive" in str(interval_type or "")
-    ):
-        return "state-space predictive interval"
-    if interval_type:
-        return interval_type.replace("_", " ")
+    items = [item for item in result.get("inference_results") or [] if isinstance(item, dict)]
+    selected = [
+        item for item in items if (item.get("diagnostics") or {}).get("selected_as_primary")
+    ]
+    item = (selected or items or [None])[0]
+    if isinstance(item, dict):
+        interval_type = item.get("interval_type")
+        interval_kind = str(item.get("interval_kind") or "interval").replace("_", " ")
+        confidence = _finite_float(item.get("confidence"))
+        level = f"{confidence * 100:.0f}% " if confidence is not None else ""
+        implementation = str(interval_type).replace("_", " ") if interval_type else interval_kind
+        return f"{level}{interval_kind} · {implementation}"
     return None
 
 
 def _group_relative_lift_summary_values(group: dict[str, Any]) -> tuple[list[float], str | None]:
+    primary_lift = _finite_float(group.get("primary_relative_lift"))
+    if primary_lift is not None:
+        interval = _finite_interval_pair(group.get("primary_relative_interval"))
+        return (
+            [primary_lift] if interval is None else [interval[0], primary_lift, interval[1]],
+            "primary_estimator",
+        )
     consensus_values = _finite(
         [
             group.get("min_relative_lift"),
@@ -405,6 +420,105 @@ def _attach_display_fields(results: list[dict[str, Any]]) -> None:
         row["implementation_status"] = metadata.get("implementation_status")
 
 
+def _metric_config(design: Any, metric: str) -> dict[str, Any]:
+    if not isinstance(design, dict):
+        return {}
+    metrics = design.get("metrics")
+    if not isinstance(metrics, dict):
+        return {}
+    config = metrics.get(metric)
+    return config if isinstance(config, dict) else {}
+
+
+def _metric_label(metric: str, design: Any) -> str:
+    config = _metric_config(design, metric)
+    return str(config.get("display_name") or _display_metric(metric))
+
+
+def _metric_format(design: Any, metric: str) -> dict[str, Any]:
+    config = _metric_config(design, metric)
+    payload = dict(config.get("format") or {})
+    style = str(payload.get("style") or "auto")
+    if style == "auto":
+        style = "percent" if config.get("type") == "ratio" else "number"
+    payload["style"] = style
+    payload.setdefault("scale", 1.0)
+    payload.setdefault("prefix", "")
+    payload.setdefault("suffix", "")
+    if payload.get("decimals") is None:
+        payload["decimals"] = 2 if style in {"percent", "currency"} else None
+    if style == "currency" and not payload.get("prefix"):
+        payload["prefix"] = {"USD": "$", "EUR": "€", "GBP": "£"}.get(
+            str(payload.get("currency") or "USD").upper(),
+            "",
+        )
+    unit = config.get("unit")
+    if unit and not payload.get("suffix"):
+        payload["suffix"] = f" {unit}"
+    return payload
+
+
+def _format_metric_value(
+    value: Any,
+    *,
+    design: Any,
+    metric: str,
+    signed: bool = False,
+) -> str | None:
+    number = _finite_float(value)
+    if number is None:
+        return None
+    spec = _metric_format(design, metric)
+    style = spec["style"]
+    scaled = number * float(spec.get("scale") or 1.0)
+    if style == "percent":
+        scaled *= 100.0
+    compact_suffix = ""
+    if bool(spec.get("compact")) and abs(scaled) >= 1000:
+        if abs(scaled) >= 1_000_000_000:
+            scaled /= 1_000_000_000
+            compact_suffix = "B"
+        elif abs(scaled) >= 1_000_000:
+            scaled /= 1_000_000
+            compact_suffix = "M"
+        else:
+            scaled /= 1_000
+            compact_suffix = "K"
+    decimals = spec.get("decimals")
+    if decimals is None:
+        if abs(scaled) >= 100:
+            decimals = 0
+        elif abs(scaled) >= 1:
+            decimals = 1
+        else:
+            decimals = 3
+    sign = "+" if signed else ""
+    rendered = f"{scaled:{sign},.{int(decimals)}f}"
+    percent_suffix = "%" if style == "percent" else ""
+    return (
+        f"{spec.get('prefix') or ''}{rendered}{compact_suffix}{percent_suffix}"
+        f"{spec.get('suffix') or ''}"
+    )
+
+
+def _attach_metric_display_fields(results: list[dict[str, Any]], design: Any) -> None:
+    for row in results:
+        metric = str(row.get("metric") or "metric")
+        row["metric_label"] = _metric_label(metric, design)
+        row["estimate_label"] = _format_metric_value(
+            row.get("estimate"), design=design, metric=metric, signed=True
+        )
+        interval = _finite_interval_pair(row.get("interval"))
+        row["interval_label"] = (
+            None
+            if interval is None
+            else (
+                f"{_format_metric_value(interval[0], design=design, metric=metric, signed=True)} "
+                f"to {_format_metric_value(interval[1], design=design, metric=metric, signed=True)}"
+            )
+        )
+
+
 def _metric_groups(
     results: list[dict[str, Any]],
     *,
@@ -421,6 +535,10 @@ def _metric_groups(
         consensus = family_consensus(rows)
         max_abs_lift = max((abs(value) for value in lifts), default=0.0)
         _attach_display_fields(rows)
+        declared_primary = [
+            row for row in rows if bool((row.get("diagnostics") or {}).get("is_primary_estimator"))
+        ]
+        primary_result = declared_primary[0] if declared_primary else (rows[0] if rows else None)
         for row in rows:
             lift = _finite_float(row.get("relative_lift"))
             if lift is None or max_abs_lift <= 0:
@@ -430,7 +548,22 @@ def _metric_groups(
         groups.append(
             {
                 "metric": metric,
+                "metric_label": (rows[0].get("metric_label") if rows else _display_metric(metric)),
                 "results": rows,
+                "primary_result": primary_result,
+                "primary_estimator_name": (
+                    None if primary_result is None else primary_result.get("estimator_name")
+                ),
+                "primary_estimator_declared": bool(declared_primary),
+                "primary_relative_lift": (
+                    None if primary_result is None else primary_result.get("relative_lift")
+                ),
+                "primary_relative_interval": (
+                    None if primary_result is None else _relative_interval(primary_result)
+                ),
+                "primary_estimate": (
+                    None if primary_result is None else primary_result.get("estimate")
+                ),
                 "estimator_count": len(rows),
                 "independent_family_count": consensus.get("n_independent_families", 0),
                 "duplicate_family_count": consensus.get("duplicate_family_count", 0),
@@ -487,6 +620,11 @@ def _consensus_by_metric(groups: list[dict[str, Any]]) -> dict[str, dict[str, An
             "n_independent_families": group.get("independent_family_count", 0),
             "duplicate_family_count": group.get("duplicate_family_count", 0),
             "median_relative_lift": group["median_relative_lift"],
+            "primary_relative_lift": group.get("primary_relative_lift"),
+            "primary_relative_interval": group.get("primary_relative_interval"),
+            "primary_estimate": group.get("primary_estimate"),
+            "primary_estimator_name": group.get("primary_estimator_name"),
+            "primary_estimator_declared": group.get("primary_estimator_declared"),
             "median_estimate": group.get("median_estimate"),
             "min_relative_lift": group["min_relative_lift"],
             "max_relative_lift": group["max_relative_lift"],
@@ -495,8 +633,8 @@ def _consensus_by_metric(groups: list[dict[str, Any]]) -> dict[str, dict[str, An
             "estimands_compatible": group.get("estimands_compatible"),
             "relative_lifts_comparable": group.get("relative_lifts_comparable"),
             "note": (
-                "Consensus is family-aware and based on relative_lift. Raw estimates are "
-                "displayed separately because estimands can have different units."
+                "The declared primary estimator supplies the decision estimate and uncertainty. "
+                "Distinct modeling-family summaries are retained as sensitivity evidence."
             ),
         }
         for group in groups
@@ -826,7 +964,8 @@ def _metric_lift_comparison_chart(groups: list[dict[str, Any]]) -> dict[str, Any
     interval_values: list[Any] = []
     for group in groups:
         summary = group["summary_lift_interval"]
-        values.extend([summary["low"], summary["mid"], summary["high"]])
+        values.append(summary["mid"])
+        interval_values.extend([summary["low"], summary["high"]])
         for result in group.get("results") or []:
             lift = _finite_float(result.get("relative_lift"))
             if lift is not None:
@@ -849,6 +988,11 @@ def _metric_lift_comparison_chart(groups: list[dict[str, Any]]) -> dict[str, Any
         marker.update(
             {
                 "metric": group.get("metric"),
+                "metric_label": group.get("metric_label"),
+                "primary_estimator_name": group.get("primary_estimator_name"),
+                "primary_estimator_declared": group.get("primary_estimator_declared"),
+                "sensitivity_min_relative_lift": group.get("min_relative_lift"),
+                "sensitivity_max_relative_lift": group.get("max_relative_lift"),
                 "estimator_count": group.get("estimator_count"),
                 "independent_family_count": group.get("independent_family_count"),
                 "direction_agreement": (
@@ -877,7 +1021,8 @@ def _combined_lift_interval_chart(groups: list[dict[str, Any]]) -> dict[str, Any
     for group in groups:
         summary = group.get("summary_lift_interval")
         if summary is not None:
-            values.extend([summary["low"], summary["mid"], summary["high"]])
+            values.append(summary["mid"])
+            interval_values.extend([summary["low"], summary["high"]])
         for result in group.get("results") or []:
             lift = _finite_float(result.get("relative_lift"))
             if lift is None:
@@ -1171,7 +1316,10 @@ def _bayesian_summaries(
         test_framework.get("margins") if isinstance(test_framework.get("margins"), dict) else {}
     )
     for result in results:
-        if result.get("estimator_name") != "bayesian_time_series":
+        if result.get("estimator_name") not in {
+            "bayesian_time_series",
+            "state_space_forecast",
+        }:
             continue
         artifacts = result.get("artifacts") or {}
         relative_summary = artifacts.get("predictive_relative_lift_summary")
@@ -1239,22 +1387,22 @@ _DECISION_STATUS_META = {
         "tone": "good",
         "label": "Statistically supported",
         "explain": (
-            "The estimate clears the decision margin and at least one method's "
-            "uncertainty evidence (interval and p-value) confirms it at the configured alpha."
+            "The primary estimate clears the decision margin and its uncertainty evidence "
+            "(interval and p-value) confirms it at the configured alpha."
         ),
     },
     "inconclusive_uncertainty": {
         "tone": "warn",
         "label": "Directional, not conclusive",
         "explain": (
-            "The estimate clears the decision margin, but no method's uncertainty "
-            "evidence confirms it at the configured alpha. Treat as a directional signal."
+            "The primary estimate clears the decision margin, but its uncertainty "
+            "evidence does not confirm it at the configured alpha. Treat as a directional signal."
         ),
     },
     "does_not_clear_margin": {
         "tone": "bad",
         "label": "Does not clear margin",
-        "explain": "The consensus estimate does not clear the configured decision margin.",
+        "explain": "The primary estimate does not clear the configured decision margin.",
     },
     "descriptive_margin_only": {
         "tone": "warn",
@@ -1275,7 +1423,7 @@ _DECISION_STATUS_META = {
     "not_evaluable": {
         "tone": "neutral",
         "label": "Not evaluable",
-        "explain": "No consensus estimate was available on the decision scale.",
+        "explain": "No primary estimate was available on the decision scale.",
     },
     "descriptive_two_sided": {
         "tone": "neutral",
@@ -1290,6 +1438,7 @@ _PREFERRED_COUNTERFACTUAL_ORDER = [
     "synthetic_did",
     "matrix_completion",
     "bayesian_time_series",
+    "state_space_forecast",
     "forecast_only",
 ]
 
@@ -1373,9 +1522,10 @@ def _impact_summary(
 ) -> dict[str, Any] | None:
     observed = _observed_block(results)
     metric_kind = str(observed.get("metric_kind") or "")
-    lift = _finite_float(group.get("median_relative_lift"))
-    lift_low = _finite_float(group.get("min_relative_lift"))
-    lift_high = _finite_float(group.get("max_relative_lift"))
+    lift = _finite_float(group.get("primary_relative_lift"))
+    primary_interval = _finite_interval_pair(group.get("primary_relative_interval"))
+    lift_low = None if primary_interval is None else primary_interval[0]
+    lift_high = None if primary_interval is None else primary_interval[1]
     n_markets = _n_treatment_markets(design, results)
     n_periods = _n_post_periods(results)
     family_rows: list[dict[str, Any]] = []
@@ -1400,10 +1550,14 @@ def _impact_summary(
         units_high = _units_from_lift(lift_high, observed_total)
         if observed_total is None:
             return None
-        return {
+        payload = {
             "metric": group.get("metric"),
+            "metric_label": group.get("metric_label"),
             "metric_kind": "count",
             "observed_total": observed_total,
+            "observed_total_label": _format_metric_value(
+                observed_total, design=design, metric=str(group.get("metric"))
+            ),
             "counterfactual_total": (
                 observed_total / (1.0 + lift) if lift is not None and lift > -1.0 else None
             ),
@@ -1417,6 +1571,26 @@ def _impact_summary(
             "n_periods": n_periods,
             "family_rows": family_rows,
         }
+        payload["counterfactual_total_label"] = _format_metric_value(
+            payload["counterfactual_total"], design=design, metric=str(group.get("metric"))
+        )
+        payload["units_label"] = _format_metric_value(
+            units, design=design, metric=str(group.get("metric")), signed=True
+        )
+        payload["units_low_label"] = _format_metric_value(
+            units_low, design=design, metric=str(group.get("metric")), signed=True
+        )
+        payload["units_high_label"] = _format_metric_value(
+            units_high, design=design, metric=str(group.get("metric")), signed=True
+        )
+        for family_row in family_rows:
+            family_row["units_label"] = _format_metric_value(
+                family_row.get("units"),
+                design=design,
+                metric=str(group.get("metric")),
+                signed=True,
+            )
+        return payload
     if metric_kind == "ratio":
         observed_rate = _finite_float(observed.get("treatment_post"))
         implied = (
@@ -1427,9 +1601,16 @@ def _impact_summary(
         numerator_total = _finite_float(observed.get("treatment_post_numerator"))
         return {
             "metric": group.get("metric"),
+            "metric_label": group.get("metric_label"),
             "metric_kind": "ratio",
             "observed_rate": observed_rate,
+            "observed_rate_label": _format_metric_value(
+                observed_rate, design=design, metric=str(group.get("metric"))
+            ),
             "counterfactual_rate": implied,
+            "counterfactual_rate_label": _format_metric_value(
+                implied, design=design, metric=str(group.get("metric"))
+            ),
             "numerator_units": (
                 _units_from_lift(lift, numerator_total) if numerator_total is not None else None
             ),
@@ -1473,21 +1654,14 @@ def _verdict_sentences(
     else:
         direction = "rose" if lift > 0 else ("fell" if lift < 0 else "was flat")
         headline = f"{metric_label} {direction} an estimated {_signed_pct(lift)}"
-        if (
-            lift_low is not None
-            and lift_high is not None
-            and (lift_high - lift_low) > 1e-9
-            and family_count > 1
-        ):
-            headline += (
-                f" (evidence families range {_signed_pct(lift_low)} to {_signed_pct(lift_high)})"
-            )
+        if lift_low is not None and lift_high is not None and (lift_high - lift_low) > 1e-9:
+            headline += f" (primary interval {_signed_pct(lift_low)} to {_signed_pct(lift_high)})"
         headline_parts.append(headline + " versus the no-treatment counterfactual.")
 
     evidence_bits: list[str] = []
     if family_count:
         evidence_bits.append(
-            f"{family_count} independent evidence famil{'y' if family_count == 1 else 'ies'}"
+            f"{family_count} distinct modeling famil{'y' if family_count == 1 else 'ies'}"
             f" ({method_count} method result{'s' if method_count != 1 else ''})"
         )
     if direction_agreement is not None:
@@ -1502,16 +1676,15 @@ def _verdict_sentences(
         best_p = _finite_float(decision.get("decision_p_value"))
         alpha_text = f"α={alpha:g}" if alpha is not None else "the configured alpha"
         if supporting:
+            evidence += f". The primary estimator clears the uncertainty bar at {alpha_text}"
+            if best_p is not None:
+                evidence += f" (primary p = {best_p:.3f})"
+        elif evaluable:
             evidence += (
-                f". {supporting} of {evaluable} evaluable methods clear the "
-                f"significance bar at {alpha_text}"
+                f". The primary estimator does not clear the uncertainty bar at {alpha_text}"
             )
             if best_p is not None:
-                evidence += f" (best p = {best_p:.3f})"
-        elif evaluable:
-            evidence += f". No method clears the significance bar at {alpha_text}"
-            if best_p is not None:
-                evidence += f" (best p = {best_p:.3f})"
+                evidence += f" (primary p = {best_p:.3f})"
         evidence += "."
     elif evidence:
         evidence += "."
@@ -1527,20 +1700,18 @@ def _verdict_sentences(
         low = impact.get("units_low")
         high = impact.get("units_high")
         if low is not None and high is not None and abs(high - low) > 1e-9:
-            impact_text += (
-                f" (evidence-family range {_fmt_units(low)} to {_fmt_units(high)})"
-            )
+            impact_text += f" (primary interval {_fmt_units(low)} to {_fmt_units(high)})"
         impact_text += "."
     elif (
-        impact
-        and impact.get("metric_kind") == "ratio"
-        and impact.get("observed_rate") is not None
+        impact and impact.get("metric_kind") == "ratio" and impact.get("observed_rate") is not None
     ):
         observed_rate = impact["observed_rate"]
         implied = impact.get("counterfactual_rate")
         if implied is not None:
             impact_text = (
-                f"Observed rate {observed_rate:.4g} vs an estimated {implied:.4g} "
+                f"Observed rate {impact.get('observed_rate_label') or f'{observed_rate:.4g}'} "
+                "vs an estimated "
+                f"{impact.get('counterfactual_rate_label') or f'{implied:.4g}'} "
                 "without treatment."
             )
 
@@ -1559,15 +1730,12 @@ def _verdict_cards(
 ) -> list[dict[str, Any]]:
     metric_results = (
         decision_summary.get("metric_results")
-        if isinstance(decision_summary, dict) and isinstance(
-            decision_summary.get("metric_results"), dict
-        )
+        if isinstance(decision_summary, dict)
+        and isinstance(decision_summary.get("metric_results"), dict)
         else {}
     )
     alpha = (
-        _finite_float(decision_summary.get("alpha"))
-        if isinstance(decision_summary, dict)
-        else None
+        _finite_float(decision_summary.get("alpha")) if isinstance(decision_summary, dict) else None
     )
     cards: list[dict[str, Any]] = []
     for group in groups:
@@ -1575,7 +1743,7 @@ def _verdict_cards(
         decision = metric_results.get(metric) if isinstance(metric_results, dict) else None
         status = decision.get("status") if isinstance(decision, dict) else None
         meta = _decision_meta(status) if status else None
-        lift = _finite_float(group.get("median_relative_lift"))
+        lift = _finite_float(group.get("primary_relative_lift"))
         suppressed = group.get("relative_lifts_comparable") is False
         if meta is None:
             if suppressed or lift is None:
@@ -1592,10 +1760,18 @@ def _verdict_cards(
                 }
         impact = impacts.get(metric)
         sentences = _verdict_sentences(
-            metric_label=_display_metric(metric),
+            metric_label=str(group.get("metric_label") or _display_metric(metric)),
             lift=lift,
-            lift_low=_finite_float(group.get("min_relative_lift")),
-            lift_high=_finite_float(group.get("max_relative_lift")),
+            lift_low=(
+                None
+                if _finite_interval_pair(group.get("primary_relative_interval")) is None
+                else _finite_interval_pair(group.get("primary_relative_interval"))[0]
+            ),
+            lift_high=(
+                None
+                if _finite_interval_pair(group.get("primary_relative_interval")) is None
+                else _finite_interval_pair(group.get("primary_relative_interval"))[1]
+            ),
             family_count=int(group.get("independent_family_count") or 0),
             method_count=int(group.get("estimator_count") or 0),
             direction_agreement=_finite_float(group.get("direction_agreement")),
@@ -1607,10 +1783,22 @@ def _verdict_cards(
         cards.append(
             {
                 "metric": metric,
-                "metric_label": _display_metric(metric),
+                "metric_label": str(group.get("metric_label") or _display_metric(metric)),
                 "lift": lift,
-                "lift_low": _finite_float(group.get("min_relative_lift")),
-                "lift_high": _finite_float(group.get("max_relative_lift")),
+                "lift_low": (
+                    None
+                    if _finite_interval_pair(group.get("primary_relative_interval")) is None
+                    else _finite_interval_pair(group.get("primary_relative_interval"))[0]
+                ),
+                "lift_high": (
+                    None
+                    if _finite_interval_pair(group.get("primary_relative_interval")) is None
+                    else _finite_interval_pair(group.get("primary_relative_interval"))[1]
+                ),
+                "primary_estimator_name": group.get("primary_estimator_name"),
+                "primary_estimator_declared": group.get("primary_estimator_declared"),
+                "sensitivity_low": _finite_float(group.get("min_relative_lift")),
+                "sensitivity_high": _finite_float(group.get("max_relative_lift")),
                 "suppressed": suppressed,
                 "status": status,
                 "tone": meta["tone"],
@@ -1662,9 +1850,7 @@ def _series_path(
         )
         for index, value in values
     ]
-    return " ".join(
-        f"{'M' if i == 0 else 'L'} {x:.2f} {y:.2f}" for i, (x, y) in enumerate(coords)
-    )
+    return " ".join(f"{'M' if i == 0 else 'L'} {x:.2f} {y:.2f}" for i, (x, y) in enumerate(coords))
 
 
 def _adaptive_number(value: float) -> str:
@@ -1684,9 +1870,14 @@ def _adaptive_signed(value: float) -> str:
 
 
 def _counterfactual_chart(result: dict[str, Any], design: Any) -> dict[str, Any] | None:
+    metric_name = str(result.get("metric") or "metric")
     raw_path = (result.get("artifacts") or {}).get("counterfactual")
     if not isinstance(raw_path, list) or not raw_path:
         return None
+    population_aggregation = str(
+        (result.get("estimand_spec") or {}).get("population_aggregation")
+        or "per_treated_market_average"
+    )
     points = [
         point
         for point in raw_path
@@ -1694,6 +1885,27 @@ def _counterfactual_chart(result: dict[str, Any], design: Any) -> dict[str, Any]
         and _finite_float(point.get("observed")) is not None
         and _finite_float(point.get("counterfactual")) is not None
     ]
+    dates = [str(point.get("date")) for point in points]
+    if len(set(dates)) < len(dates):
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for point in points:
+            grouped.setdefault(str(point.get("date")), []).append(point)
+        aggregated: list[dict[str, Any]] = []
+        for date_value in sorted(grouped):
+            rows = grouped[date_value]
+            divisor = len(rows) if population_aggregation == "per_treated_market_average" else 1
+            observed_value = sum(float(row["observed"]) for row in rows) / divisor
+            counterfactual_value = sum(float(row["counterfactual"]) for row in rows) / divisor
+            aggregated.append(
+                {
+                    "date": date_value,
+                    "period": "post" if any(row.get("period") == "post" for row in rows) else "pre",
+                    "observed": observed_value,
+                    "counterfactual": counterfactual_value,
+                    "gap": observed_value - counterfactual_value,
+                }
+            )
+        points = aggregated
     if len(points) < 4:
         return None
     count = len(points)
@@ -1743,42 +1955,77 @@ def _counterfactual_chart(result: dict[str, Any], design: Any) -> dict[str, Any]
         cumulative_height = 200.0
         endpoint_index, endpoint_value = cumulative[-1]
         endpoint_x, endpoint_y = _xy_scale(
-            endpoint_index, count, endpoint_value, cumulative_low, cumulative_high,
-            height=cumulative_height, width=cumulative_width,
+            endpoint_index,
+            count,
+            endpoint_value,
+            cumulative_low,
+            cumulative_high,
+            height=cumulative_height,
+            width=cumulative_width,
         )
         endpoint_interval = None
         if interval_is_cumulative and interval is not None:
             endpoint_interval = {
                 "low": interval[0],
                 "high": interval[1],
-                "low_label": _adaptive_signed(interval[0]),
-                "high_label": _adaptive_signed(interval[1]),
+                "low_label": _format_metric_value(
+                    interval[0], design=design, metric=metric_name, signed=True
+                )
+                or _adaptive_signed(interval[0]),
+                "high_label": _format_metric_value(
+                    interval[1], design=design, metric=metric_name, signed=True
+                )
+                or _adaptive_signed(interval[1]),
                 "y_low": _xy_scale(
-                    endpoint_index, count, interval[0], cumulative_low, cumulative_high,
-                    height=cumulative_height, width=cumulative_width,
+                    endpoint_index,
+                    count,
+                    interval[0],
+                    cumulative_low,
+                    cumulative_high,
+                    height=cumulative_height,
+                    width=cumulative_width,
                 )[1],
                 "y_high": _xy_scale(
-                    endpoint_index, count, interval[1], cumulative_low, cumulative_high,
-                    height=cumulative_height, width=cumulative_width,
+                    endpoint_index,
+                    count,
+                    interval[1],
+                    cumulative_low,
+                    cumulative_high,
+                    height=cumulative_height,
+                    width=cumulative_width,
                 )[1],
             }
         cumulative_post_x = None
         if post_index is not None:
             cumulative_post_x = _xy_scale(
-                post_index, count, cumulative_low, cumulative_low, cumulative_high,
-                height=cumulative_height, width=cumulative_width,
+                post_index,
+                count,
+                cumulative_low,
+                cumulative_low,
+                cumulative_high,
+                height=cumulative_height,
+                width=cumulative_width,
             )[0]
         cumulative_chart = {
             "height": cumulative_height,
             "width": cumulative_width,
             "plot_right": cumulative_width - _CHART_RIGHT,
             "path": _series_path(
-                cumulative, count, cumulative_low, cumulative_high,
-                height=cumulative_height, width=cumulative_width,
+                cumulative,
+                count,
+                cumulative_low,
+                cumulative_high,
+                height=cumulative_height,
+                width=cumulative_width,
             ),
             "zero_y": _xy_scale(
-                0, count, 0.0, cumulative_low, cumulative_high,
-                height=cumulative_height, width=cumulative_width,
+                0,
+                count,
+                0.0,
+                cumulative_low,
+                cumulative_high,
+                height=cumulative_height,
+                width=cumulative_width,
             )[1],
             "post_x": cumulative_post_x,
             "endpoint": {
@@ -1789,8 +2036,10 @@ def _counterfactual_chart(result: dict[str, Any], design: Any) -> dict[str, Any]
             },
             "y_min": cumulative_low,
             "y_max": cumulative_high,
-            "y_min_label": _adaptive_number(cumulative_low),
-            "y_max_label": _adaptive_number(cumulative_high),
+            "y_min_label": _format_metric_value(cumulative_low, design=design, metric=metric_name)
+            or _adaptive_number(cumulative_low),
+            "y_max_label": _format_metric_value(cumulative_high, design=design, metric=metric_name)
+            or _adaptive_number(cumulative_high),
         }
 
     pre_points = [point for point in points if point.get("period") != "post"]
@@ -1821,15 +2070,20 @@ def _counterfactual_chart(result: dict[str, Any], design: Any) -> dict[str, Any]
     cumulative_effect = cumulative[-1][1] if cumulative else None
     total_units = None
     if cumulative_effect is not None and n_markets and metric_kind == "count":
-        # The counterfactual path is a treated-market mean, so the market count
-        # converts a per-market cumulative gap into a portfolio total. Rates do
-        # not sum across markets, so ratio metrics get no total.
-        total_units = cumulative_effect * n_markets
+        if population_aggregation == "per_treated_market_average":
+            total_units = cumulative_effect * n_markets
 
     return {
         "metric": result.get("metric"),
         "estimator_name": result.get("estimator_name"),
         "display_name": result.get("display_name") or result.get("estimator_name"),
+        "is_primary_estimator": bool((result.get("diagnostics") or {}).get("is_primary_estimator")),
+        "population_aggregation": population_aggregation,
+        "effect_basis_label": (
+            "per treated market"
+            if population_aggregation == "per_treated_market_average"
+            else "treated portfolio total"
+        ),
         "metric_kind": metric_kind,
         "height": height,
         "observed_path": _series_path(observed, count, low, high, height=height),
@@ -1838,21 +2092,38 @@ def _counterfactual_chart(result: dict[str, Any], design: Any) -> dict[str, Any]
         "plot_right": _CHART_WIDTH - _CHART_RIGHT,
         "y_min": low,
         "y_max": high,
-        "y_min_label": _adaptive_number(low),
-        "y_max_label": _adaptive_number(high),
+        "y_min_label": _format_metric_value(low, design=design, metric=metric_name)
+        or _adaptive_number(low),
+        "y_max_label": _format_metric_value(high, design=design, metric=metric_name)
+        or _adaptive_number(high),
         "first_date": points[0].get("date"),
         "last_date": points[-1].get("date"),
         "post_start_date": points[post_index].get("date") if post_index is not None else None,
         "cumulative_chart": cumulative_chart,
         "cumulative_effect": cumulative_effect,
         "cumulative_effect_label": (
-            _adaptive_signed(cumulative_effect) if cumulative_effect is not None else None
+            _format_metric_value(
+                cumulative_effect,
+                design=design,
+                metric=metric_name,
+                signed=True,
+            )
+            if cumulative_effect is not None
+            else None
         ),
         "total_units": total_units,
-        "total_units_label": _adaptive_signed(total_units) if total_units is not None else None,
+        "total_units_label": (
+            _format_metric_value(total_units, design=design, metric=metric_name, signed=True)
+            if total_units is not None
+            else None
+        ),
         "n_markets": n_markets,
         "pre_fit_rmse": pre_fit_rmse,
-        "pre_fit_rmse_label": _adaptive_number(pre_fit_rmse) if pre_fit_rmse is not None else None,
+        "pre_fit_rmse_label": (
+            _format_metric_value(pre_fit_rmse, design=design, metric=metric_name)
+            if pre_fit_rmse is not None
+            else None
+        ),
         "pre_fit_ratio": pre_fit_ratio,
         "relative_lift": _finite_float(result.get("relative_lift")),
     }
@@ -1873,11 +2144,16 @@ def _counterfactual_charts(
     panels: list[dict[str, Any]] = []
     rank = {name: index for index, name in enumerate(_PREFERRED_COUNTERFACTUAL_ORDER)}
     for metric, charts in by_metric.items():
-        charts.sort(key=lambda item: rank.get(str(item.get("estimator_name")), len(rank)))
+        charts.sort(
+            key=lambda item: (
+                0 if item.get("is_primary_estimator") else 1,
+                rank.get(str(item.get("estimator_name")), len(rank)),
+            )
+        )
         panels.append(
             {
                 "metric": metric,
-                "metric_label": _display_metric(metric),
+                "metric_label": _metric_label(metric, design),
                 "primary": charts[0],
                 "others": charts[1:],
             }
@@ -1912,9 +2188,7 @@ def _validity_checks(result: dict[str, Any]) -> list[dict[str, str]]:
                 _check("Parallel trends", "warn", str(parallel.get("reason") or "Borderline."))
             )
         elif status:
-            checks.append(
-                _check("Parallel trends", "fail", str(parallel.get("reason") or status))
-            )
+            checks.append(_check("Parallel trends", "fail", str(parallel.get("reason") or status)))
 
     ratio = _finite_float(diagnostics.get("pre_period_rmse_ratio"))
     if ratio is not None:
@@ -1982,10 +2256,7 @@ def _validity_checks(result: dict[str, Any]) -> list[dict[str, str]]:
         else:
             continue
         name = _humanize_token(calibration.get("method")) or "calibration"
-        detail = str(
-            calibration.get("status_reason")
-            or f"{name} calibration {status}."
-        )
+        detail = str(calibration.get("status_reason") or f"{name} calibration {status}.")
         checks.append(_check(name.capitalize(), mapped, detail))
 
     return checks
@@ -2030,6 +2301,7 @@ def _decision_summary(
     consensus: dict[str, dict[str, Any]],
     results: list[dict[str, Any]],
     calibration_rows: list[dict[str, Any]],
+    design: Any = None,
 ) -> dict[str, Any]:
     if not test_framework:
         return {}
@@ -2047,19 +2319,25 @@ def _decision_summary(
     metrics: dict[str, Any] = {}
     for metric, item in consensus.items():
         margin = _framework_margin(test_framework, metric)
+        metric_results = results_by_metric.get(str(metric), [])
+        primary_result, primary_declared = _primary_result(metric_results)
         if scale == "relative_lift":
-            value = _finite_float(item.get("median_relative_lift"))
+            value = (
+                None
+                if primary_result is None
+                else _finite_float(primary_result.get("relative_lift"))
+            )
         elif scale == "estimate":
             value = (
-                _finite_float(item.get("median_estimate"))
-                if item.get("estimands_compatible") is not False
-                else None
+                None if primary_result is None else _finite_float(primary_result.get("estimate"))
             )
         else:
             value = None
-        lift = _finite_float(item.get("median_relative_lift"))
+        lift = (
+            None if primary_result is None else _finite_float(primary_result.get("relative_lift"))
+        )
         evidence = _metric_decision_evidence(
-            results_by_metric.get(str(metric), []),
+            metric_results,
             kind=kind,
             scale=scale,
             margin=margin,
@@ -2081,14 +2359,27 @@ def _decision_summary(
         else:
             status = "descriptive_margin_only"
         metrics[metric] = {
+            "metric_label": _metric_label(str(metric), design),
             "median_relative_lift": lift,
+            "sensitivity_median_relative_lift": _finite_float(item.get("median_relative_lift")),
+            "sensitivity_min_relative_lift": _finite_float(item.get("min_relative_lift")),
+            "sensitivity_max_relative_lift": _finite_float(item.get("max_relative_lift")),
+            "primary_estimator": (
+                None if primary_result is None else primary_result.get("estimator_name")
+            ),
+            "primary_estimator_declared": primary_declared,
             "effect_value": value,
+            "effect_value_label": (
+                _format_metric_value(value, design=design, metric=str(metric), signed=True)
+                if scale == "estimate"
+                else None
+            ),
             "margin": margin,
             "status": status,
             "alpha": alpha,
-            "decision_p_value": evidence["best_decision_p_value"],
-            "raw_p_value": evidence["best_raw_p_value"],
-            "adjusted_p_value": evidence["best_adjusted_p_value"],
+            "decision_p_value": evidence["decision_p_value"],
+            "raw_p_value": evidence["raw_p_value"],
+            "adjusted_p_value": evidence["adjusted_p_value"],
             "supporting_result_count": evidence["supporting_result_count"],
             "evaluable_result_count": evidence["evaluable_result_count"],
             "uncertainty_status": evidence["uncertainty_status"],
@@ -2103,7 +2394,7 @@ def _decision_summary(
         "bayesian_note": (
             "This summary is uncertainty-aware: point estimates that clear a margin are "
             "reported as supported only when estimator uncertainty, adjusted p-values when "
-            "available, and calibration status support that readout. Bayesian-style effect "
+            "available, and calibration status support that readout. Predictive effect "
             "probabilities are shown only when an estimator returns predictive relative-lift "
             "summaries."
         ),
@@ -2118,6 +2409,8 @@ def _metric_decision_evidence(
     margin: float,
     alpha: float,
 ) -> dict[str, Any]:
+    primary, _ = _primary_result(results)
+    results = [] if primary is None else [primary]
     evaluable = 0
     supporting: list[str] = []
     interval_statuses: list[str] = []
@@ -2179,12 +2472,25 @@ def _metric_decision_evidence(
         "evaluable_result_count": evaluable,
         "supporting_result_count": len(supporting),
         "supporting_estimators": supporting,
-        "best_decision_p_value": min(p_values) if p_values else None,
-        "best_raw_p_value": min(raw_p_values) if raw_p_values else None,
-        "best_adjusted_p_value": min(adjusted_p_values) if adjusted_p_values else None,
+        "decision_p_value": p_values[0] if p_values else None,
+        "raw_p_value": raw_p_values[0] if raw_p_values else None,
+        "adjusted_p_value": adjusted_p_values[0] if adjusted_p_values else None,
         "uncertainty_status": uncertainty_status,
         "interval_status": interval_status,
     }
+
+
+def _primary_result(
+    results: list[dict[str, Any]],
+) -> tuple[dict[str, Any] | None, bool]:
+    declared = [
+        result
+        for result in results
+        if bool((result.get("diagnostics") or {}).get("is_primary_estimator"))
+    ]
+    if declared:
+        return declared[0], True
+    return (results[0], False) if results else (None, False)
 
 
 def _decision_interval(result: dict[str, Any], scale: str) -> tuple[float, float] | None:
@@ -2264,6 +2570,11 @@ def _compact_inference(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "method_family": item.get("method_family"),
                 "interval": item.get("interval"),
                 "interval_type": item.get("interval_type"),
+                "interval_kind": item.get("interval_kind"),
+                "confidence": item.get("confidence"),
+                "estimand_spec": item.get("estimand_spec"),
+                "point_estimate": item.get("point_estimate"),
+                "primary_eligible": item.get("primary_eligible"),
                 "p_value": item.get("p_value"),
                 "adjusted_p_value": item.get("adjusted_p_value"),
                 "posterior_probability": item.get("posterior_probability"),
@@ -2334,19 +2645,23 @@ def _fit_diagnostic_rows(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "top_donor_weights": _top_weights(weights),
             "warnings": result.get("warnings") or [],
         }
-        if any(
-            row.get(key) is not None
-            for key in [
-                "pre_period_rmse",
-                "pre_period_rmse_ratio",
-                "donor_weight_concentration",
-                "donor_weight_max",
-                "time_weight_concentration",
-                "time_weight_max",
-                "effective_pre_periods",
-                "fit_intercept",
-            ]
-        ) or row["top_donor_weights"] or row["dropped_control_geos"]:
+        if (
+            any(
+                row.get(key) is not None
+                for key in [
+                    "pre_period_rmse",
+                    "pre_period_rmse_ratio",
+                    "donor_weight_concentration",
+                    "donor_weight_max",
+                    "time_weight_concentration",
+                    "time_weight_max",
+                    "effective_pre_periods",
+                    "fit_intercept",
+                ]
+            )
+            or row["top_donor_weights"]
+            or row["dropped_control_geos"]
+        ):
             rows.append(row)
     return rows
 
@@ -2390,6 +2705,10 @@ def _calibration_rows(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "warning_rate": calibration.get("warning_rate"),
                     "evaluated_windows": diagnostics.get("evaluated_windows"),
                     "evaluated_markets": diagnostics.get("evaluated_markets"),
+                    "placebo_false_positive_interval": diagnostics.get(
+                        "false_positive_rate_interval"
+                    ),
+                    "coverage_interval": diagnostics.get("coverage_interval"),
                     "warnings": warnings,
                 }
             )
@@ -2402,6 +2721,36 @@ def _calibration_rows(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
             str(row.get("method") or ""),
         ),
     )
+
+
+def _calibration_reporting_status(
+    design: Any,
+    rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    configured: dict[str, Any] = {}
+    if isinstance(design, dict) and isinstance(design.get("calibration"), dict):
+        configured = dict(design["calibration"])
+    requested = bool(configured.get("placebo_windows") or configured.get("injected_lifts"))
+    if rows:
+        return {
+            "status": "evidence_available",
+            "tone": "good",
+            "label": "Calibration evidence available",
+            "configured": configured,
+        }
+    if requested:
+        return {
+            "status": "configured_not_run",
+            "tone": "warn",
+            "label": "Calibration configured but no evidence was produced",
+            "configured": configured,
+        }
+    return {
+        "status": "not_configured",
+        "tone": "warn",
+        "label": "No calibration backtest was configured",
+        "configured": configured,
+    }
 
 
 def _calibration_status_label(status: str) -> str:
@@ -2497,6 +2846,7 @@ def normalize_analysis_payload(analysis: Any, *, title: str | None = None) -> di
     normalized_results = [_normalize_result_payload(result) for result in _as_list(results)]
     _attach_display_fields(normalized_results)
     design = data.get("design") or data.get("experiment") or data.get("completed_design") or {}
+    _attach_metric_display_fields(normalized_results, design)
     metric = data.get("metric") or (
         normalized_results[0].get("metric") if normalized_results else None
     )
@@ -2537,10 +2887,12 @@ def normalize_analysis_payload(analysis: Any, *, title: str | None = None) -> di
     if isinstance(design, dict):
         test_framework = design.get("test_framework") or design.get("decision") or {}
     calibration_rows = _calibration_rows(normalized_results)
-    decision_summary = (
-        data.get("decision_summary")
-        or data.get("decision")
-        or _decision_summary(test_framework, consensus, normalized_results, calibration_rows)
+    decision_summary = _decision_summary(
+        test_framework,
+        consensus,
+        normalized_results,
+        calibration_rows,
+        design,
     )
     ordered_names = _ordered_metric_names(design, metric_groups)
     metric_groups = _order_by_metric(metric_groups, ordered_names)
@@ -2591,6 +2943,7 @@ def normalize_analysis_payload(analysis: Any, *, title: str | None = None) -> di
             "bayesian_summaries": _bayesian_summaries(normalized_results, test_framework or {}),
             "fit_diagnostic_rows": _fit_diagnostic_rows(normalized_results),
             "calibration_rows": calibration_rows,
+            "calibration_reporting_status": _calibration_reporting_status(design, calibration_rows),
             "calibration_failures": [
                 row for row in calibration_rows if row.get("status") == "fail"
             ],

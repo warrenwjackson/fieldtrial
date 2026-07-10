@@ -51,6 +51,21 @@ class MetricDecisionRole(StrEnum):
     COST = "cost"
 
 
+class MetricFormatSpec(BaseModel):
+    """Human-facing number format shared by reports and serialized artifacts."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    style: Literal["auto", "number", "percent", "currency", "duration"] = "auto"
+    decimals: int | None = Field(default=None, ge=0, le=8)
+    scale: float = 1.0
+    prefix: str = ""
+    suffix: str = ""
+    compact: bool = False
+    axis_label: str | None = None
+    currency: str | None = None
+
+
 class AssignmentPolicySpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -93,6 +108,8 @@ class EstimatorSuiteSpec(BaseModel):
             "synthetic_control",
         ]
     )
+    primary_estimator: str | None = None
+    primary_estimators: dict[str, str] = Field(default_factory=dict)
     optional_backend_policy: Literal["fail", "warn_and_fallback", "skip"] = "warn_and_fallback"
     include_experimental: bool = False
     backend_overrides: dict[str, str] = Field(default_factory=dict)
@@ -105,18 +122,58 @@ class EstimatorSuiteSpec(BaseModel):
             raise ValueError("estimator suite must include at least one estimator")
         return value
 
+    @model_validator(mode="after")
+    def validate_primary_estimators(self) -> EstimatorSuiteSpec:
+        primary = self.primary_estimator or self.estimators[0]
+        if primary not in self.estimators:
+            raise ValueError("primary_estimator must be included in estimator_suite.estimators")
+        unknown = sorted(set(self.primary_estimators.values()).difference(self.estimators))
+        if unknown:
+            raise ValueError(
+                "primary_estimators values must be included in estimator_suite.estimators: "
+                f"{unknown}"
+            )
+        self.primary_estimator = primary
+        return self
+
+    def primary_for(self, metric: str) -> str:
+        return self.primary_estimators.get(
+            metric, str(self.primary_estimator or self.estimators[0])
+        )
+
 
 class InferenceEngineSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     methods: list[str] = Field(default_factory=lambda: ["estimator_default"])
+    primary_method: str = "estimator_default"
     confidence: float = Field(default=0.95, gt=0, lt=1)
     randomization_samples: int = Field(default=5000, ge=1)
     bootstrap_samples: int = Field(default=1000, ge=10)
     multiplicity: Literal["none", "bonferroni", "holm", "benjamini_hochberg", "westfall_young"] = (
-        "none"
+        "holm"
     )
     family_id: str | None = None
+
+    @model_validator(mode="after")
+    def validate_primary_method(self) -> InferenceEngineSpec:
+        normalized = {str(method).lower().replace("-", "_") for method in self.methods}
+        primary = str(self.primary_method).lower().replace("-", "_")
+        aliases = {
+            "randomization": "randomization_inference",
+            "permutation": "randomization_inference",
+            "bootstrap": "market_bootstrap",
+            "block_bootstrap": "market_bootstrap",
+            "split_conformal": "conformal_inference",
+            "conformal": "conformal_inference",
+            "few_cluster": "few_cluster_robust",
+        }
+        normalized = {aliases.get(method, method) for method in normalized}
+        primary = aliases.get(primary, primary)
+        if primary != "estimator_default" and primary not in normalized:
+            raise ValueError("inference.primary_method must also be listed in inference.methods")
+        self.primary_method = primary
+        return self
 
 
 class CalibrationSpec(BaseModel):
@@ -233,6 +290,10 @@ class CountMetricConfig(BaseModel):
     direction: Literal["increase", "decrease"] = "increase"
     role: MetricRole = MetricRole.PRIMARY
     domain_tags: list[str] = Field(default_factory=list)
+    display_name: str | None = None
+    description: str | None = None
+    unit: str | None = None
+    format: MetricFormatSpec = Field(default_factory=MetricFormatSpec)
 
 
 class ContinuousMetricConfig(BaseModel):
@@ -243,6 +304,10 @@ class ContinuousMetricConfig(BaseModel):
     direction: Literal["increase", "decrease"] = "increase"
     role: MetricRole = MetricRole.PRIMARY
     domain_tags: list[str] = Field(default_factory=list)
+    display_name: str | None = None
+    description: str | None = None
+    unit: str | None = None
+    format: MetricFormatSpec = Field(default_factory=MetricFormatSpec)
 
 
 class RatioMetricConfig(BaseModel):
@@ -255,6 +320,10 @@ class RatioMetricConfig(BaseModel):
     role: MetricRole = MetricRole.PRIMARY
     domain_tags: list[str] = Field(default_factory=list)
     denominator_min: float = 1e-12
+    display_name: str | None = None
+    description: str | None = None
+    unit: str | None = None
+    format: MetricFormatSpec = Field(default_factory=MetricFormatSpec)
 
 
 class CompositeMetricConfig(BaseModel):
@@ -265,6 +334,10 @@ class CompositeMetricConfig(BaseModel):
     direction: Literal["increase", "decrease"] = "increase"
     role: MetricRole = MetricRole.PRIMARY
     domain_tags: list[str] = Field(default_factory=list)
+    display_name: str | None = None
+    description: str | None = None
+    unit: str | None = None
+    format: MetricFormatSpec = Field(default_factory=MetricFormatSpec)
 
     @field_validator("components")
     @classmethod

@@ -281,6 +281,7 @@ class MatrixCompletionEstimator(BaseEstimator):
                 outcome_scale="absolute_ratio_effect" if info.is_ratio else "cumulative_effect",
                 target_population="treated_markets",
                 time_aggregation="test_window_cumulative",
+                population_aggregation="treated_portfolio_total",
                 causal_quantity="ATT",
                 denominator_handling="unit_time_ratio_model" if info.is_ratio else None,
                 effect_unit="ratio_points" if info.is_ratio else "outcome_units",
@@ -391,11 +392,15 @@ class MatrixCompletionEstimator(BaseEstimator):
         max_rank = min(self.max_rank, min(values.shape))
         rank_cap = min(self.rank, max_rank) if isinstance(self.rank, int) else None
         if isinstance(self.ridge_alpha, (int, float)) and float(self.ridge_alpha) > 0:
-            return rank_cap, float(self.ridge_alpha), {
-                "strategy": "fixed_nuclear_norm_penalty",
-                "rank_cap": rank_cap,
-                "candidate_rmses": {},
-            }
+            return (
+                rank_cap,
+                float(self.ridge_alpha),
+                {
+                    "strategy": "fixed_nuclear_norm_penalty",
+                    "rank_cap": rank_cap,
+                    "candidate_rmses": {},
+                },
+            )
         if isinstance(self.ridge_alpha, (int, float)) and float(self.ridge_alpha) == 0:
             selected_rank, diagnostics = self._select_hard_rank(values, training_mask, data)
             return selected_rank, 0.0, diagnostics
@@ -415,10 +420,13 @@ class MatrixCompletionEstimator(BaseEstimator):
                 "candidate_rmses": {},
             }
 
-        pre_training_mask = training_mask & np.isin(
-            np.arange(values.shape[1]),
-            data.pre_columns,
-        )[None, :]
+        pre_training_mask = (
+            training_mask
+            & np.isin(
+                np.arange(values.shape[1]),
+                data.pre_columns,
+            )[None, :]
+        )
         candidate_cells = np.argwhere(pre_training_mask)
         n_validation_cells = max(1, int(np.ceil(len(candidate_cells) * self.validation_fraction)))
         if len(candidate_cells) > 0:
@@ -475,10 +483,13 @@ class MatrixCompletionEstimator(BaseEstimator):
         *,
         rank_cap: int | None,
     ) -> tuple[int | None, float, dict[str, Any]]:
-        pre_training_mask = training_mask & np.isin(
-            np.arange(values.shape[1]),
-            data.pre_columns,
-        )[None, :]
+        pre_training_mask = (
+            training_mask
+            & np.isin(
+                np.arange(values.shape[1]),
+                data.pre_columns,
+            )[None, :]
+        )
         candidate_cells = np.argwhere(pre_training_mask)
         n_validation_cells = max(1, int(np.ceil(len(candidate_cells) * self.validation_fraction)))
         if len(candidate_cells) > 0:
@@ -493,13 +504,17 @@ class MatrixCompletionEstimator(BaseEstimator):
         lambdas = self._candidate_shrinkages(values, training_mask)
         fallback = float(lambdas[min(3, len(lambdas) - 1)]) if len(lambdas) else 1.0
         if validation_mask.sum() < max(values.shape[0], 4):
-            return rank_cap, fallback, {
-                "strategy": "fallback_nuclear_norm_penalty",
-                "reason": "insufficient_pre_period_validation_cells",
-                "rank_cap": rank_cap,
-                "candidate_rmses": {},
-                "selected_shrinkage": fallback,
-            }
+            return (
+                rank_cap,
+                fallback,
+                {
+                    "strategy": "fallback_nuclear_norm_penalty",
+                    "reason": "insufficient_pre_period_validation_cells",
+                    "rank_cap": rank_cap,
+                    "candidate_rmses": {},
+                    "selected_shrinkage": fallback,
+                },
+            )
 
         fit_mask = training_mask & ~validation_mask
         candidate_rmses: dict[str, float] = {}
@@ -522,21 +537,25 @@ class MatrixCompletionEstimator(BaseEstimator):
             if rmse < best_rmse - 1e-12:
                 best_shrinkage = float(candidate)
                 best_rmse = rmse
-        return rank_cap, best_shrinkage, {
-            "strategy": "random_pre_period_cell_holdout_nuclear_norm",
-            "validation_cell_count": int(validation_mask.sum()),
-            "validation_columns": sorted(
-                {
-                    data.dates[int(index)].date().isoformat()
-                    for index in np.argwhere(validation_mask)[:, 1]
-                }
-            ),
-            "rank_cap": rank_cap,
-            "candidate_rmses": candidate_rmses,
-            "candidate_effective_ranks": candidate_ranks,
-            "selected_rmse": best_rmse if np.isfinite(best_rmse) else None,
-            "selected_shrinkage": best_shrinkage,
-        }
+        return (
+            rank_cap,
+            best_shrinkage,
+            {
+                "strategy": "random_pre_period_cell_holdout_nuclear_norm",
+                "validation_cell_count": int(validation_mask.sum()),
+                "validation_columns": sorted(
+                    {
+                        data.dates[int(index)].date().isoformat()
+                        for index in np.argwhere(validation_mask)[:, 1]
+                    }
+                ),
+                "rank_cap": rank_cap,
+                "candidate_rmses": candidate_rmses,
+                "candidate_effective_ranks": candidate_ranks,
+                "selected_rmse": best_rmse if np.isfinite(best_rmse) else None,
+                "selected_shrinkage": best_shrinkage,
+            },
+        )
 
     def _candidate_shrinkages(
         self,
@@ -822,6 +841,7 @@ class GeneralizedSyntheticControlEstimator(MatrixCompletionEstimator):
             outcome_scale=spec.outcome_scale,
             target_population=spec.target_population,
             time_aggregation=spec.time_aggregation,
+            population_aggregation=spec.population_aggregation,
             causal_quantity=spec.causal_quantity,
             denominator_handling=spec.denominator_handling,
             effect_unit=spec.effect_unit,

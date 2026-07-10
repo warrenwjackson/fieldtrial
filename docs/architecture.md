@@ -6,7 +6,7 @@ FieldTrial separates geo experimentation into five layers.
 2. Metrics, specs, and methodology contracts: typed metric definitions, Pydantic specs, `EstimandSpec`, `MethodMetadata`, `InferenceResult`, and `CalibrationResult` make methods explicit.
 3. Design: `AssignmentPolicy` defines feasible assignment spaces; `AssignmentMatrix` is the single source of truth for treatment/control market-time usage.
 4. Planning and measurement: candidates are generated per test, then CP-SAT chooses a portfolio. Completed tests are analyzed through a common estimator interface.
-5. Reports and artifacts: planning and analysis reports expose assumptions, diagnostics, inference, calibration, family-aware consensus, and replay metadata.
+5. Reports and artifacts: planning and analysis reports expose primary decisions, modeling-family sensitivity, assumptions, diagnostics, inference, calibration, and replay metadata.
 
 ## Data Flow
 
@@ -46,11 +46,12 @@ Every method-facing artifact should carry method metadata rather than relying on
 name recognition. Estimators, inference engines, design policies, calibration
 helpers, and portfolio methods declare:
 
-- estimand metadata;
-- method family and independent evidence family;
+- estimand metadata, including time and population aggregation;
+- method family and distinct modeling family;
 - implementation status and optional backend availability;
 - assumptions, failure modes, contraindications, and expected artifacts.
 
-Reports use independent evidence family for headline consensus. Duplicate
-estimators inside the same family remain visible but do not multiply the
-headline strength of evidence.
+Reports use the declared primary estimator and exact-matching inference for the
+headline decision. Duplicate estimators and other modeling families remain
+visible as sensitivity evidence but do not vote, get averaged, or multiply the
+strength of evidence.

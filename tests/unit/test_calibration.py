@@ -11,6 +11,7 @@ from fieldtrial.calibration import (
 )
 from fieldtrial.calibration.placebo import (
     PLACEBO_IN_SPACE,
+    _placebo_status,
     not_applicable_placebo_result,
     placebo_applicability,
 )
@@ -66,6 +67,8 @@ def test_placebo_backtest_returns_calibration_result():
     assert result.diagnostics["evaluated_windows"] >= 1
     assert result.coverage is not None
     assert result.diagnostics["interval_count"] >= 1
+    assert result.diagnostics["coverage_interval"] is not None
+    assert result.diagnostics["false_positive_rate_interval"] is not None
     assert abs(result.bias or 0.0) < 1e-9
     assert result.status in {"pass", "warning"}
 
@@ -126,6 +129,26 @@ def test_placebo_backtest_marks_false_positive_failures():
     assert result.coverage == 0.0
     assert "false-positive rate" in (result.status_reason or "")
     assert "coverage" in (result.status_reason or "")
+
+
+def test_placebo_status_treats_small_binomial_samples_as_inconclusive():
+    status, reason, warnings = _placebo_status(
+        false_positive_rate=1 / 3,
+        coverage=2 / 3,
+        alpha=0.05,
+        target_coverage=0.95,
+        errors=[],
+        warning_count=0,
+        estimates_count=3,
+        p_value_count=3,
+        interval_count=3,
+        false_positive_count=1,
+        coverage_success_count=2,
+    )
+
+    assert status == "warning"
+    assert "inconclusive" in reason
+    assert any("Fewer than 20" in warning for warning in warnings)
 
 
 def test_placebo_applicability_excludes_inappropriate_space_placebos():

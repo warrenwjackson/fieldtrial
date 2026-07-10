@@ -18,6 +18,7 @@ from fieldtrial.estimators.base import (
     BaseEstimator,
     CompletedDesign,
     EstimatorResult,
+    counterfactual_relative_interval,
     counterfactual_relative_lift,
     linearized_ratio_effect,
     observed_effect_summary,
@@ -145,10 +146,19 @@ class DifferenceInDifferencesEstimator(BaseEstimator):
             # The fitted interval is on the linearized count scale. The generic
             # relative-interval derivation divides by the ratio baseline only,
             # which would inflate the lift interval by the denominator mean.
-            scale = 1.0 / (float(denominator_mean) * float(relative_baseline))
-            diagnostics["relative_lift_interval"] = tuple(
-                sorted((float(interval[0]) * scale, float(interval[1]) * scale))
+            absolute_ratio_interval = tuple(
+                sorted(
+                    (
+                        float(interval[0]) / float(denominator_mean),
+                        float(interval[1]) / float(denominator_mean),
+                    )
+                )
             )
+            diagnostics["relative_lift_interval"] = counterfactual_relative_interval(
+                absolute_ratio_interval,
+                observed_total=observed.get("treatment_post"),
+            )
+            diagnostics["relative_interval_method"] = "nonlinear_counterfactual_transform"
 
         return EstimatorResult(
             estimator_name=self.name,
@@ -159,6 +169,7 @@ class DifferenceInDifferencesEstimator(BaseEstimator):
                 outcome_scale="linearized_ratio_effect" if info.is_ratio else "absolute_effect",
                 target_population="treated_markets",
                 time_aggregation="post_period_average",
+                population_aggregation="per_treated_market_average",
                 causal_quantity="ATT",
                 denominator_handling="linearized_ratio" if info.is_ratio else None,
                 effect_unit="linearized_outcome_units" if info.is_ratio else "outcome_units",

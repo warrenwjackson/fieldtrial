@@ -12,7 +12,32 @@ metrics:
   orders:
     type: "count"
     column: "orders"
+    display_name: "Orders"
+    unit: "orders"
+    format:
+      style: "number"
+      decimals: 0
+      compact: true
   conversion_rate:
     type: "ratio"
     numerator: "orders"
     denominator: "sessions"
+    display_name: "Conversion rate"
+    format:
+      style: "percent"
+      decimals: 2
+estimator_suite:
+  estimators: ["did", "ratio_delta", "synthetic_did", "block_bootstrap", "synthetic_control"]
+  primary_estimator: "did"
+  primary_estimators:
+    conversion_rate: "ratio_delta"
+inference:
+  methods: ["estimator_default"]
+  primary_method: "estimator_default"
+  confidence: 0.95
+  multiplicity: "holm"
+test_framework:
+  kind: "superiority"
+  effect_scale: "relative_lift"
+  default_margin: 0.0
+  alpha: 0.05

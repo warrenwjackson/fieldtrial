@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from fieldtrial.estimators.advanced import SyntheticDIDEstimator
 from fieldtrial.estimators.ascm import AugmentedSyntheticControlEstimator
 from fieldtrial.estimators.base import CompletedDesign, Estimator, EstimatorResult, _jsonable
-from fieldtrial.estimators.bayesian import BayesianTimeSeriesEstimator
+from fieldtrial.estimators.bayesian import BayesianTimeSeriesEstimator, StateSpaceForecastEstimator
 from fieldtrial.estimators.bootstrap import BlockBootstrapEstimator
 from fieldtrial.estimators.cuped import CUPEDAdjustedEstimator
 from fieldtrial.estimators.did import DifferenceInDifferencesEstimator
@@ -45,6 +45,7 @@ ESTIMATOR_FACTORIES = {
     "synthetic_did": SyntheticDIDEstimator,
     "bayesian_time_series": BayesianTimeSeriesEstimator,
     "bayesian": BayesianTimeSeriesEstimator,
+    "state_space_forecast": StateSpaceForecastEstimator,
     "ascm": AugmentedSyntheticControlEstimator,
     "augmented_synthetic_control": AugmentedSyntheticControlEstimator,
     "matrix_completion": MatrixCompletionEstimator,
@@ -94,7 +95,7 @@ def default_estimators(*, include_bayesian: bool = False) -> list[Estimator]:
         BlockBootstrapEstimator(n_bootstrap=200, seed=0),
     ]
     if include_bayesian:
-        estimators.append(BayesianTimeSeriesEstimator(draws=1000, seed=0))
+        estimators.append(StateSpaceForecastEstimator(draws=1000, seed=0))
     return estimators
 
 
@@ -275,6 +276,14 @@ def analyze_completed_experiment(
     errors: list[dict[str, str]] = []
     for metric_name in metric_names:
         metric = catalog.get(metric_name)
+        configured_primary = (
+            suite.primary_for(metric_name)
+            if suite is not None and hasattr(suite, "primary_for")
+            else estimator_names[0]
+        )
+        primary_estimator_name = (
+            configured_primary if configured_primary in estimator_names else estimator_names[0]
+        )
         for estimator_name in estimator_names:
             try:
                 estimator = instantiate_estimator(
@@ -283,6 +292,15 @@ def analyze_completed_experiment(
                     params=_estimator_params_for(estimator_name, estimator_params),
                 )
                 result = estimator.fit(panel, design, metric)
+                result = replace(
+                    result,
+                    diagnostics={
+                        **result.diagnostics,
+                        "configured_estimator_name": estimator_name,
+                        "configured_primary_estimator": primary_estimator_name,
+                        "is_primary_estimator": estimator_name == primary_estimator_name,
+                    },
+                )
                 results.append(
                     enrich_result_with_configured_methodology(
                         panel,

@@ -12,6 +12,13 @@ Roughly 57 methodology issues and ~30 add/drop portfolio recommendations on top.
 
 **Status legend:** ✅ fixed in the 2026-07-04 session · ⬜ open.
 
+> Update, 2026-07-09 (GPT-5.6 review): this is a historical audit, not the
+> current behavior contract. The primary-estimator decision rule, exact
+> inference/estimand matching, modeling-family language, studentized
+> dependence-aware forecast intervals, binomial calibration gates, and honestly
+> named state-space forecast API described below have since been implemented.
+> See `docs/methodology.md` for current behavior.
+
 ---
 
 ## 1. Overall assessment
@@ -114,8 +121,8 @@ All ✅ fixed this session — see §5. Notables: exec readout fabricated a head
 
 1. **Planning power is disconnected from analysis** (design/power): the MDE's variance model (iid daily noise, known baseline) matches no estimator actually run; there is no estimator-in-the-loop simulated power even though all the pieces (placebo windows, injection) exist. This is the trust anchor of GeoLift/Trimmed-Match tooling. → Replay the actual estimator over historical AA windows of the planned duration with injected lifts.
 2. **Rerandomization is not reflected in inference** (Morgan & Rubin 2012): balance-filtered candidate generation restricts the assignment space, but randomization inference runs on the unrestricted space; the acceptance rule should be part of `AssignmentPolicy`.
-3. **"Independent evidence families" overstate independence**: SDID is by construction an SCM/DiD interpolation; ASCM nests SCM; CUPED ≈ pre-adjusted DiD; forecast and state-space are the same univariate family. Rename to "method families," collapse nested pairs, and if corroboration is claimed, estimate the empirical correlation of estimators over placebo windows.
-4. **The decision layer cherry-picks**: min-p across 5–7 correlated estimators with an any-method-supports OR-rule inflates false-support well above α. Adopt the industry pattern: a pre-registered primary estimator's p/CI is the decision readout; other methods are robustness. (Also: the headline median across methods carries no uncertainty — attach the primary estimator's CI.)
+3. ✅ **"Independent evidence families" overstate independence**: reports now say distinct modeling families and explicitly avoid treating them as independent replications; the legacy serialized field remains for compatibility.
+4. ✅ **The decision layer cherry-picks**: decisions now use one declared primary estimator and exact-matching primary inference, while other methods are sensitivity evidence. Holm correction is the default across primary hypotheses.
 5. **Small-sample inference calibration**: TBR cumulative intervals undercover under AR(1) residuals (82.7% vs 95% at φ=0.6); market bootstrap at 4/arm gives 88% coverage; CRV1+t(G−1) is anti-conservative at geo-typical G. Adopt CR2/Bell-McCaffrey df, wild-cluster-t with Webb weights and null imposition (MacKinnon-Nielsen-Webb), and gate the bootstrap below ~8–10 markets/arm.
 6. **Placebo-in-time windows overlap ~93%** and the pass/fail rule ignores Monte-Carlo error (a perfectly calibrated estimator fails ~26% of the time with 20 windows). Use non-overlapping windows spread across history and exact binomial gates.
 7. **Injected-lift calibration on completed tests confounds the true effect** with injection recovery (bias ≈ τ for a perfect estimator). Inject into placebo windows/pseudo-treatments instead.
@@ -154,7 +161,7 @@ Test suite: 189 → 194 passing; ruff clean.
 
 ### Drop / demote (complexity without value)
 - **`GeneralizedSyntheticControlEstimator`** — a relabel of MC-NNM (same class, `super().fit()`), not Xu's IFE; same evidence family, doubles the name count. Drop.
-- **`BayesianTimeSeriesEstimator`** — no priors, no parameter uncertainty; a second forecast-only counterfactual in the same family as `forecast_only`. Merge into one state-space forecaster (keep the joint-simulation machinery, which is correct) and rename honestly.
+- ✅ **`BayesianTimeSeriesEstimator`** — `StateSpaceForecastEstimator` is now the canonical name; the old class remains as a compatibility API. Reports label fixed-MLE predictive simulation honestly and warn that parameter-posterior uncertainty is absent.
 - **`deterministic_placebo_detection_curve` / `placebo_replay_power`** — already deprecation-warned; 20× ratio-metric signal inflation; replace with real replay power, don't keep alongside.
 - **Market block bootstrap in the default suite** — dominated by assignment-aware randomization inference and wild-cluster-t at geo-typical market counts; for ratio metrics it duplicates `ratio_delta` exactly. Demote to diagnostics.
 - **Interference `spillover_sensitivity` "adjusted_effect"** — uncalibrated unitless adjustment; keep contamination flags and buffer exclusion, drop the pseudo-corrected estimate.

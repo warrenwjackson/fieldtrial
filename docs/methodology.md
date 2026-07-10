@@ -10,20 +10,21 @@ plans and analyses can be replayed and reviewed.
 Every estimator result now carries:
 
 - `estimand`: the legacy string label for backward compatibility;
-- `estimand_spec`: structured scale, target population, time aggregation, and
-  denominator handling;
+- `estimand_spec`: structured scale, target population, time aggregation,
+  population aggregation, causal quantity, effect unit, and denominator handling;
 - `method_metadata`: method family, implementation status, assumptions, failure
   modes, use cases, contraindications, dependencies, and artifacts;
 - `inference_results`: one or more uncertainty payloads with interval type,
-  p-values, adjusted p-values, posterior probabilities, diagnostics, and
-  warnings;
+  statistical interval kind, confidence level, exact estimand, point estimate,
+  primary eligibility, p-values, adjusted p-values, diagnostics, and warnings;
 - `calibration_results`: placebo or injected-effect evidence when calibration is
   run.
 
 The method registry groups estimators, inference engines, design methods, power
-methods, calibration, and portfolio methods by independent evidence family. This
-keeps reports from treating several DiD-like outputs as several independent
-signals.
+methods, calibration, and portfolio methods by distinct modeling family. The
+legacy serialized field remains `independent_family` for compatibility, but
+reports do not claim those families are statistically independent. This keeps
+several DiD-like outputs from appearing to be several replications.
 
 ## Design
 
@@ -69,9 +70,11 @@ assumptions:
 
 These methods are intentionally explicit opt-ins for analysis configs and CLI
 estimator lists because they have stronger shape and pairing requirements than
-the default suite. The Bayesian time-series estimator is a native statsmodels
-state-space counterfactual with joint predictive simulation and is not part
-of the default suite. Explicit requests for unavailable or unmapped production
+the default suite. `StateSpaceForecastEstimator` is the honestly named canonical
+API for the native statsmodels state-space counterfactual with joint predictive
+simulation from fixed maximum-likelihood parameters; it does not return a
+posterior and is not part of the default suite. `BayesianTimeSeriesEstimator`
+remains as a compatibility name. Explicit requests for unavailable or unmapped production
 optional backends, such as external `synthdid` or CausalPy/BSTS adapters, do not
 silently return native fallback results under the backend name.
 
@@ -89,18 +92,22 @@ calendar terms, or latent factors as their predictive adjustment surface. The
 `covariate_selection` diagnostics record candidate features, selected features,
 rejections, score strategy, and selection thresholds for auditability.
 
-## Consensus
+## Primary Decisions And Sensitivity Evidence
 
-Reports compute headline consensus from one representative relative-lift value
-per independent evidence family. All estimator outputs remain visible, but a
-duplicate family contributes one family representative to the headline median,
-range, and direction agreement. Reports also display assumptions and failure
-modes for each evidence family.
+`EstimatorSuiteSpec.primary_estimator` (or its per-metric
+`primary_estimators` mapping) chooses the estimator that supplies the decision
+point estimate. `InferenceEngineSpec.primary_method` chooses its uncertainty
+readout. Both default explicitly to the first configured estimator and the
+estimator-native inference. A configured inference result can replace top-level
+decision fields only when its structured estimand and point estimate match the
+estimator exactly.
 
-Raw estimates are never averaged across methods. Relative lift is the common
-readout scale used for consensus, and `estimand_spec` remains attached so
-downstream users can detect incompatible scales, target populations, or time
-aggregations.
+Other estimators are grouped by distinct modeling family and shown as
+sensitivity evidence, including their range and direction agreement. They do
+not vote on the decision and are not described as independent replications.
+Raw estimates are never averaged across methods. Holm adjustment is the default
+across primary hypotheses; users may opt into a different declared family or
+explicitly choose `none`.
 
 ## Calibration
 
@@ -118,7 +125,10 @@ Calibration helpers run the actual estimator API:
 
 Calibration is not run automatically for every plan because it can be expensive.
 When run, results are stored as compact `CalibrationResult` summaries rather
-than large raw arrays. Placebo results carry a `status` of `pass`, `warning`,
+than large raw arrays. Placebo false-positive rates and empirical coverage carry
+exact 95% binomial intervals, so a small replay count is reported as
+inconclusive rather than automatically failing on a noisy point rate. Placebo
+results carry a `status` of `pass`, `warning`,
 `fail`, `not_evaluable`, or `not_applicable`; analysis reports show failed
 placebo validations in a dedicated Calibration Evidence section.
 
@@ -140,6 +150,20 @@ forecast-style estimators expose counterfactual residual paths for conformal or
 block-placebo calibration; iROAS reports when Fieller's set is bounded,
 unbounded, disjoint, or all-real instead of forcing every ratio uncertainty
 problem into a finite tuple.
+
+Forecast-only cumulative effects use a studentized moving-block predictive
+bootstrap that preserves short-run residual dependence, adds HAC sandwich
+parameter uncertainty, and applies a fixed-b small-sample correction. The
+method-validation suite includes deterministic repeated-sampling coverage
+guards under independent and persistent AR(1) errors. These checks are
+regression tests over named DGPs, not a universal guarantee of coverage.
+
+State-space counterfactual output is labeled as a predictive forecast from
+fixed maximum-likelihood parameters, not a Bayesian posterior. Optimizer
+convergence and omitted parameter uncertainty are surfaced as warnings. SCPI's
+simultaneous period-wise prediction bounds are retained as a cumulative
+uncertainty envelope and cannot silently become a nominal cumulative ATT
+confidence interval.
 
 ## Portfolio Optimization And Replanning
 
@@ -216,7 +240,8 @@ external SDID package yet.
 
 ## Reports
 
-Analysis reports include family-aware consensus, method metadata, inference
+Analysis reports include a primary-estimator decision, modeling-family
+sensitivity, method metadata, inference
 details, visible warnings, estimator details, fit diagnostics, and raw
 diagnostics. The fit-diagnostics section surfaces pre-period RMSE, donor-weight
 concentration, SDID time-weight concentration, dropped ratio donors, and related
@@ -231,7 +256,8 @@ for replay and audit workflows.
 
 ## Method Validation
 
-The test suite includes deterministic method-validation DGP fixtures for
+The test suite includes deterministic method-validation DGP fixtures and
+repeated-sampling interval-coverage guards for
 forecast-only counterfactuals, CUPED variance reduction, latent-factor
 SDID/GSC-style panels, spillover contamination, denominator instability, and
 portfolio covariance. These fixtures provide known ground truth for estimator

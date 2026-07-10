@@ -36,6 +36,13 @@ _CALENDAR_STATE_PRIORITY = {
     "control": 3,
     "treatment": 4,
 }
+_CALENDAR_STATE_COLORS = {
+    "unused": "#ffffff",
+    "pre_period": "#f2cc66",
+    "treatment": "#0072b2",
+    "post_period": "#e5e9f0",
+    "control": "#b3d4e8",
+}
 _MARKET_KEY_COLUMNS = ("geo_id", "market", "market_id", "id")
 _MARKET_VOLUME_COLUMNS = (
     "volume",
@@ -125,9 +132,15 @@ def analysis_visual_payload(
 def planning_calendar_payload(
     plan: Any,
     *,
-    market_volume: Mapping[str, float] | pd.Series | pd.DataFrame | Iterable[Mapping[str, Any]]
+    market_volume: Mapping[str, float]
+    | pd.Series
+    | pd.DataFrame
+    | Iterable[Mapping[str, Any]]
     | None = None,
-    market_names: Mapping[str, str] | pd.Series | pd.DataFrame | Iterable[Mapping[str, Any]]
+    market_names: Mapping[str, str]
+    | pd.Series
+    | pd.DataFrame
+    | Iterable[Mapping[str, Any]]
     | None = None,
     volume_column: str | None = None,
     market_name_column: str | None = None,
@@ -378,10 +391,17 @@ def _planning_calendar_events(
         )
         market = row.get("geo_id") or row.get("market") or row.get("market_id")
         role = _calendar_role(row.get("role"))
-        if start is None or end is None or end < start or not market or role not in {
-            "treatment",
-            "control",
-        }:
+        if (
+            start is None
+            or end is None
+            or end < start
+            or not market
+            or role
+            not in {
+                "treatment",
+                "control",
+            }
+        ):
             continue
         test = str(
             row.get("test_name")
@@ -615,10 +635,27 @@ def _calendar_cell(
             key=lambda item: (-_CALENDAR_STATE_PRIORITY.get(item[0], 0), item[0]),
         )
     ]
+    active_state_names = [item["state"] for item in states]
+    state_classes = [f"state-{name.replace('_', '-')}" for name in active_state_names]
+    background_style = None
+    if len(active_state_names) > 1:
+        colors = [_CALENDAR_STATE_COLORS[name] for name in active_state_names[:3]]
+        if len(colors) == 2:
+            background_style = (
+                f"background: linear-gradient(135deg, {colors[0]} 0 48%, {colors[1]} 52% 100%);"
+            )
+        else:
+            background_style = (
+                f"background: conic-gradient(from 45deg, {colors[0]} 0 33%, "
+                f"{colors[1]} 33% 66%, {colors[2]} 66% 100%);"
+            )
     return {
         "state": state,
         "state_label": _CALENDAR_STATE_LABELS[state],
         "state_class": f"state-{state.replace('_', '-')}",
+        "state_classes": state_classes,
+        "multi_state": len(active_state_names) > 1,
+        "background_style": background_style,
         "tests": tests,
         "states": states,
         "tooltip": _calendar_tooltip(market, week, state, tests, states),
@@ -967,13 +1004,9 @@ def _metric_time_series(
     else:
         work["value"] = metric.compute_series(work)
         by_geo = (
-            work.groupby(["ft_bin", "ft_role", geo_col], observed=True)["value"]
-            .sum()
-            .reset_index()
+            work.groupby(["ft_bin", "ft_role", geo_col], observed=True)["value"].sum().reset_index()
         )
-        grouped = (
-            by_geo.groupby(["ft_bin", "ft_role"], observed=True)["value"].mean().reset_index()
-        )
+        grouped = by_geo.groupby(["ft_bin", "ft_role"], observed=True)["value"].mean().reset_index()
         # Normalize partial bins (panel edges) to a per-day rate so a short
         # first or last week does not render as a fabricated level collapse.
         grouped["value"] = grouped["value"] / grouped["ft_bin"].map(days_per_bin).astype(float)

@@ -279,7 +279,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -288,7 +290,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -629,7 +632,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -638,7 +643,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -980,7 +986,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -989,7 +997,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -1329,7 +1338,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -1338,7 +1349,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -1679,7 +1691,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -1688,7 +1702,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -2031,7 +2046,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -2040,7 +2057,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -2381,7 +2399,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -2390,7 +2410,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -2731,7 +2752,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -2740,7 +2763,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -3081,7 +3105,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -3090,7 +3116,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -3431,7 +3458,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -3440,7 +3469,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -3783,7 +3813,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -3792,7 +3824,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -4135,7 +4168,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -4144,7 +4179,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -4487,7 +4523,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -4496,7 +4534,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -4839,7 +4878,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -4848,7 +4889,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -5191,7 +5233,9 @@
               "synthetic_control"
             ],
             "include_experimental": false,
-            "optional_backend_policy": "warn_and_fallback"
+            "optional_backend_policy": "warn_and_fallback",
+            "primary_estimator": "did",
+            "primary_estimators": {}
           },
           "inference": {
             "bootstrap_samples": 1000,
@@ -5200,7 +5244,8 @@
             "methods": [
               "estimator_default"
             ],
-            "multiplicity": "none",
+            "multiplicity": "holm",
+            "primary_method": "estimator_default",
             "randomization_samples": 5000
           },
           "interference": {
@@ -5592,7 +5637,9 @@
             "synthetic_control"
           ],
           "include_experimental": false,
-          "optional_backend_policy": "warn_and_fallback"
+          "optional_backend_policy": "warn_and_fallback",
+          "primary_estimator": "did",
+          "primary_estimators": {}
         },
         "inference": {
           "bootstrap_samples": 1000,
@@ -5601,7 +5648,8 @@
           "methods": [
             "estimator_default"
           ],
-          "multiplicity": "none",
+          "multiplicity": "holm",
+          "primary_method": "estimator_default",
           "randomization_samples": 5000
         },
         "interference": {
@@ -5942,7 +5990,9 @@
             "synthetic_control"
           ],
           "include_experimental": false,
-          "optional_backend_policy": "warn_and_fallback"
+          "optional_backend_policy": "warn_and_fallback",
+          "primary_estimator": "did",
+          "primary_estimators": {}
         },
         "inference": {
           "bootstrap_samples": 1000,
@@ -5951,7 +6001,8 @@
           "methods": [
             "estimator_default"
           ],
-          "multiplicity": "none",
+          "multiplicity": "holm",
+          "primary_method": "estimator_default",
           "randomization_samples": 5000
         },
         "interference": {
@@ -6293,7 +6344,9 @@
             "synthetic_control"
           ],
           "include_experimental": false,
-          "optional_backend_policy": "warn_and_fallback"
+          "optional_backend_policy": "warn_and_fallback",
+          "primary_estimator": "did",
+          "primary_estimators": {}
         },
         "inference": {
           "bootstrap_samples": 1000,
@@ -6302,7 +6355,8 @@
           "methods": [
             "estimator_default"
           ],
-          "multiplicity": "none",
+          "multiplicity": "holm",
+          "primary_method": "estimator_default",
           "randomization_samples": 5000
         },
         "interference": {

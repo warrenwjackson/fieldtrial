@@ -46,9 +46,17 @@ def main() -> None:
     )
     parser.add_argument("--lift", type=float, default=0.08)
     parser.add_argument("--seed", type=int, default=321)
+    parser.add_argument(
+        "--synthetic-control-backend",
+        choices=["native", "scpi_pkg"],
+        default="native",
+        help="Optional explicit synthetic-control backend for reference artifacts.",
+    )
     args = parser.parse_args()
 
     spec = CompletedExperimentSpec.from_yaml(args.config)
+    if args.synthetic_control_backend != "native":
+        spec.estimator_suite.backend_overrides["synthetic_control"] = args.synthetic_control_backend
     treatment = TreatmentInjection(
         geos=spec.treatment_geos,
         start=str(spec.start_date),
@@ -71,6 +79,7 @@ def main() -> None:
     payload = {
         "artifact_type": "fieldtrial.analysis",
         "artifact_version": "fieldtrial.analysis.v2",
+        "metadata": {"synthetic_control_backend": args.synthetic_control_backend},
         "design": {
             "experiment_id": spec.experiment_id,
             "name": spec.name,
@@ -81,6 +90,12 @@ def main() -> None:
             "treatment_geos": spec.treatment_geos,
             "control_geos": spec.control_geos,
             "primary_metrics": spec.primary_metrics,
+            "metrics": {
+                name: config.model_dump(mode="json") for name, config in spec.metrics.items()
+            },
+            "estimator_suite": spec.estimator_suite.model_dump(mode="json"),
+            "inference": spec.inference.model_dump(mode="json"),
+            "calibration": spec.calibration.model_dump(mode="json"),
             "test_framework": spec.test_framework.model_dump(mode="json"),
         },
         "results": [result.to_dict() for result in results],

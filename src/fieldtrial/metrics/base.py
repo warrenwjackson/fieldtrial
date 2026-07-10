@@ -15,6 +15,18 @@ Direction = Literal["increase", "decrease", "neutral"]
 
 
 @dataclass(frozen=True)
+class MetricFormat:
+    style: str = "auto"
+    decimals: int | None = None
+    scale: float = 1.0
+    prefix: str = ""
+    suffix: str = ""
+    compact: bool = False
+    axis_label: str | None = None
+    currency: str | None = None
+
+
+@dataclass(frozen=True)
 class MetricSpec:
     name: str
     direction: Direction = "increase"
@@ -23,6 +35,8 @@ class MetricSpec:
     domain_tags: list[str] = field(default_factory=list)
     display_name: str | None = None
     description: str | None = None
+    unit: str | None = None
+    display_format: MetricFormat = field(default_factory=MetricFormat)
 
     metric_type: str = "base"
 
@@ -70,6 +84,17 @@ class MetricSpec:
             "domain_tags": list(self.domain_tags),
             "display_name": self.display_name,
             "description": self.description,
+            "unit": self.unit,
+            "format": {
+                "style": self.display_format.style,
+                "decimals": self.display_format.decimals,
+                "scale": self.display_format.scale,
+                "prefix": self.display_format.prefix,
+                "suffix": self.display_format.suffix,
+                "compact": self.display_format.compact,
+                "axis_label": self.display_format.axis_label,
+                "currency": self.display_format.currency,
+            },
         }
 
     def to_json(self, **kwargs: object) -> str:

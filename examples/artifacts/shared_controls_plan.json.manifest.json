@@ -1,10 +1,29 @@
 {
-  "artifact": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/artifacts/shared_controls_plan.json",
+  "artifact": "examples/artifacts/shared_controls_plan.json",
+  "artifact_byte_count": 179756,
+  "artifact_sha256": "a69f53f4b550daf8469fb2dc2db66b2cd946d25efecbd868f706cb1d6666aece",
+  "input_files": {
+    "panel": {
+      "byte_count": 1649375,
+      "path": "examples/data/synthetic_panel.parquet",
+      "sha256": "8e7ddbad0ade0b68a8a996de9b6cc091cc0605a3f3ecf276257a8ded6a0daf96"
+    },
+    "registry": {
+      "byte_count": 432,
+      "path": "examples/configs/registry_active_tests.csv",
+      "sha256": "244f61924db2337dc7a3f11ba4634ade36c8b1532d933cc19363895420336846"
+    },
+    "roadmap": {
+      "byte_count": 1238,
+      "path": "examples/configs/shared_controls_roadmap.yaml",
+      "sha256": "f8b8bdef43019c7a3833a56d1f519e47264ae13518b65ccd0aae5270b4ccda53"
+    }
+  },
   "inputs": {
-    "panel": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/data/synthetic_panel.parquet",
-    "registry": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/configs/registry_active_tests.csv",
-    "roadmap": "/Users/wj/fieldtrial-proposal/fieldtrial/examples/configs/shared_controls_roadmap.yaml"
+    "panel": "examples/data/synthetic_panel.parquet",
+    "registry": "examples/configs/registry_active_tests.csv",
+    "roadmap": "examples/configs/shared_controls_roadmap.yaml"
   },
   "kind": "plan",
-  "version": "fieldtrial.manifest.v1"
+  "version": "fieldtrial.manifest.v2"
 }

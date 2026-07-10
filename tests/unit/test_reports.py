@@ -110,7 +110,7 @@ def test_analysis_report_renders_visual_sections(tmp_path):
     assert "Observed Trends" in html
     assert "Daily Treatment-Control Delta" in html
     assert "Metric Lift Comparison" in html
-    assert "headline median of independent evidence-family representatives" in html
+    assert "declared primary estimator" in html
     assert "non inferiority" in html
 
     embedded = _embedded_json(html)
@@ -169,7 +169,7 @@ def test_analysis_report_executive_readout_uses_interval_tracks():
     )
 
     assert "Metric Lift Comparison" in html
-    assert "headline median of independent evidence-family representatives" in html
+    assert "Primary decision evidence" in html
     assert "direction agreement" in html
     assert "Evidence by Method" in html
     assert "interval-band" in html
@@ -255,7 +255,7 @@ def test_analysis_report_plots_metrics_together_on_shared_lift_basis():
 
     assert "Metric Lift Comparison" in html
     assert "Shared percent-lift basis" in html
-    assert "headline median of independent evidence-family representatives" in html
+    assert "declared primary estimator" in html
 
 
 def test_analysis_report_plots_shared_relative_lifts_when_estimands_differ():
@@ -315,7 +315,7 @@ def test_analysis_report_plots_shared_relative_lifts_when_estimands_differ():
     )
 
     assert "Metric Lift Comparison" in html
-    assert "headline median of independent evidence-family representatives" in html
+    assert "declared primary estimator" in html
     assert "100%" in html
 
 
@@ -448,12 +448,13 @@ def test_analysis_report_gives_bayesian_outputs_visual_treatment():
     assert item["cumulative_effect_chart"]["band_path"]
 
     html = render_analysis_report(payload)
-    assert "Bayesian Evidence" in html
+    assert "State-space Forecast Evidence" in html
+    assert "not posterior draws" in html
     assert "Predictive Relative Lift" in html
     assert "P(lift &gt; 0)" in html
     assert "Predictive Counterfactual" in html
     assert "Cumulative Predictive Effect" in html
-    assert "state-space predictive interval" in html
+    assert "state space predictive interval" in html
 
 
 def test_analysis_report_derives_relative_interval_from_lift_baseline():
@@ -475,8 +476,8 @@ def test_analysis_report_derives_relative_interval_from_lift_baseline():
 
     row = payload["metric_groups"][0]["method_lift_rows"][0]
     assert row["has_interval"] is True
-    assert row["low"] == 0.1
-    assert row["high"] == 0.3
+    assert row["low"] == pytest.approx(5.0 / 55.0)
+    assert row["high"] == pytest.approx(15.0 / 45.0)
 
 
 def test_compact_metric_groups_reference_result_indices():
@@ -634,12 +635,22 @@ def test_analysis_report_renders_verdict_cards_and_impact():
 
 def test_analysis_report_renders_counterfactual_panels():
     counterfactual = [
-        {"date": f"2027-04-{day:02d}", "period": "pre", "observed": 10.0 + day * 0.01,
-         "counterfactual": 10.0, "gap": day * 0.01}
+        {
+            "date": f"2027-04-{day:02d}",
+            "period": "pre",
+            "observed": 10.0 + day * 0.01,
+            "counterfactual": 10.0,
+            "gap": day * 0.01,
+        }
         for day in range(1, 15)
     ] + [
-        {"date": f"2027-05-{day:02d}", "period": "post", "observed": 11.0,
-         "counterfactual": 10.0, "gap": 1.0}
+        {
+            "date": f"2027-05-{day:02d}",
+            "period": "post",
+            "observed": 11.0,
+            "counterfactual": 10.0,
+            "gap": 1.0,
+        }
         for day in range(1, 15)
     ]
     payload = normalize_analysis_payload(
@@ -671,6 +682,113 @@ def test_analysis_report_renders_counterfactual_panels():
     html = render_analysis_report(payload)
     assert "Effect vs Counterfactual" in html
     assert "Cumulative incremental effect" in html
+
+
+def test_counterfactual_report_does_not_multiply_portfolio_total_again():
+    counterfactual = [
+        {
+            "date": "2027-04-01",
+            "period": "pre",
+            "observed": 20.0,
+            "counterfactual": 20.0,
+            "gap": 0.0,
+        },
+        {
+            "date": "2027-04-02",
+            "period": "pre",
+            "observed": 20.0,
+            "counterfactual": 20.0,
+            "gap": 0.0,
+        },
+        {
+            "date": "2027-05-01",
+            "period": "post",
+            "observed": 24.0,
+            "counterfactual": 20.0,
+            "gap": 4.0,
+        },
+        {
+            "date": "2027-05-02",
+            "period": "post",
+            "observed": 20.0,
+            "counterfactual": 20.0,
+            "gap": 0.0,
+        },
+    ]
+    payload = normalize_analysis_payload(
+        {
+            "design": {"treatment_geos": ["m1", "m2"]},
+            "results": [
+                EstimatorResult(
+                    "tbr",
+                    "tbr_cumulative_att",
+                    "orders",
+                    4.0,
+                    relative_lift=0.2,
+                    estimand_spec={
+                        "label": "tbr_cumulative_att",
+                        "metric": "orders",
+                        "outcome_scale": "cumulative_effect",
+                        "target_population": "treated_markets",
+                        "time_aggregation": "test_window_cumulative",
+                        "population_aggregation": "treated_portfolio_total",
+                    },
+                    diagnostics={"observed": {"metric_kind": "count"}},
+                    artifacts={"counterfactual": counterfactual},
+                ).to_dict()
+            ],
+        }
+    )
+
+    chart = payload["counterfactual_panels"][0]["primary"]
+    assert chart["cumulative_effect"] == pytest.approx(4.0)
+    assert chart["total_units"] is None
+    assert chart["effect_basis_label"] == "treated portfolio total"
+
+
+def test_counterfactual_report_aggregates_multi_geo_paths_on_population_scale():
+    records = []
+    for geo in ("m1", "m2"):
+        for date_value, period, gap in (
+            ("2027-04-01", "pre", 0.0),
+            ("2027-04-02", "pre", 0.0),
+            ("2027-05-01", "post", 2.0),
+            ("2027-05-02", "post", 2.0),
+        ):
+            records.append(
+                {
+                    "geo_id": geo,
+                    "date": date_value,
+                    "period": period,
+                    "observed": 10.0 + gap,
+                    "counterfactual": 10.0,
+                    "gap": gap,
+                }
+            )
+    result = EstimatorResult(
+        "matrix_completion",
+        "matrix_completion_cumulative_att",
+        "orders",
+        8.0,
+        estimand_spec={
+            "label": "matrix_completion_cumulative_att",
+            "metric": "orders",
+            "outcome_scale": "cumulative_effect",
+            "target_population": "treated_markets",
+            "time_aggregation": "test_window_cumulative",
+            "population_aggregation": "treated_portfolio_total",
+        },
+        diagnostics={"observed": {"metric_kind": "count"}},
+        artifacts={"counterfactual": records},
+    )
+
+    payload = normalize_analysis_payload(
+        {"design": {"treatment_geos": ["m1", "m2"]}, "results": [result.to_dict()]}
+    )
+    chart = payload["counterfactual_panels"][0]["primary"]
+
+    assert chart["cumulative_effect"] == pytest.approx(8.0)
+    assert chart["total_units"] is None
 
 
 def test_analysis_report_renders_validity_scorecard():
@@ -734,6 +852,100 @@ def test_decision_summary_uses_adjusted_decision_p_value_and_uncertainty():
     assert decision["adjusted_p_value"] == pytest.approx(0.20)
     assert decision["status"] == "inconclusive_uncertainty"
     assert decision["uncertainty_status"] == "not_supported"
+
+
+def test_decision_summary_uses_only_the_declared_primary_estimator():
+    payload = normalize_analysis_payload(
+        {
+            "design": {
+                "test_framework": {
+                    "kind": "superiority",
+                    "effect_scale": "relative_lift",
+                    "default_margin": 0.05,
+                    "alpha": 0.05,
+                }
+            },
+            "results": [
+                EstimatorResult(
+                    "did",
+                    "att",
+                    "orders",
+                    1.0,
+                    relative_lift=0.02,
+                    interval=(-2.0, 4.0),
+                    p_value=0.5,
+                    diagnostics={
+                        "relative_lift_interval": [-0.04, 0.08],
+                        "is_primary_estimator": True,
+                    },
+                ).to_dict(),
+                EstimatorResult(
+                    "synthetic_control",
+                    "att",
+                    "orders",
+                    10.0,
+                    relative_lift=0.20,
+                    interval=(7.0, 13.0),
+                    p_value=0.001,
+                    diagnostics={
+                        "relative_lift_interval": [0.14, 0.26],
+                        "is_primary_estimator": False,
+                    },
+                ).to_dict(),
+            ],
+        }
+    )
+
+    decision = payload["decision_summary"]["metric_results"]["orders"]
+    assert decision["primary_estimator"] == "did"
+    assert decision["effect_value"] == pytest.approx(0.02)
+    assert decision["status"] == "does_not_clear_margin"
+
+
+def test_analysis_report_applies_metric_display_contract_and_aligns_interval_axis():
+    payload = {
+        "design": {
+            "metrics": {
+                "conversion_rate": {
+                    "type": "ratio",
+                    "numerator": "orders",
+                    "denominator": "sessions",
+                    "display_name": "Checkout conversion",
+                    "format": {"style": "percent", "decimals": 1},
+                }
+            }
+        },
+        "results": [
+            EstimatorResult(
+                "ratio_delta",
+                "ratio_att",
+                "conversion_rate",
+                0.0123,
+                relative_lift=0.1,
+                interval=(0.005, 0.02),
+                diagnostics={"relative_lift_interval": [0.04, 0.16]},
+            ).to_dict()
+        ],
+    }
+
+    normalized = normalize_analysis_payload(payload)
+    result = normalized["results"][0]
+    html = render_analysis_report(payload)
+
+    assert result["metric_label"] == "Checkout conversion"
+    assert result["estimate_label"] == "+1.2%"
+    assert result["interval_label"] == "+0.5% to +2.0%"
+    assert "interval-axis-row" in html
+    assert "grid-template-columns: minmax(190px, 300px) minmax(220px, 1fr) 120px" in html
+
+
+def test_analysis_report_makes_missing_calibration_explicit():
+    html = render_analysis_report(
+        [EstimatorResult("did", "att", "orders", 1.0, relative_lift=0.01)]
+    )
+
+    assert "No calibration backtest was configured" in html
+    assert "calibration has not independently validated" in html
 
 
 def test_planning_report_embedded_data_is_scrubbed_and_size_summary_tolerates_missing_bounds():

@@ -6,7 +6,12 @@ from types import SimpleNamespace
 import pytest
 
 from fieldtrial.design.policies import AssignmentPolicy
-from fieldtrial.design.specs import CalibrationSpec, InferenceEngineSpec, MonitoringPlanSpec
+from fieldtrial.design.specs import (
+    CalibrationSpec,
+    EstimatorSuiteSpec,
+    InferenceEngineSpec,
+    MonitoringPlanSpec,
+)
 from fieldtrial.estimators.base import CompletedDesign, EstimatorResult
 from fieldtrial.estimators.ensemble import AnalysisResult
 from fieldtrial.inference import randomization_test
@@ -47,7 +52,12 @@ def test_estimator_result_keeps_legacy_fields_and_adds_contracts():
     assert payload["method_metadata"]["assumptions"]
     assert payload["inference_results"][0]["interval_type"] == "reported_interval"
     assert payload["inference_results"][0]["p_value"] == 0.04
-    assert payload["relative_interval"] == pytest.approx([2.0 / 150.0, 22.0 / 150.0])
+    assert payload["inference_results"][0]["estimand_spec"] == payload["estimand_spec"]
+    assert payload["inference_results"][0]["point_estimate"] == 12.0
+    assert payload["inference_results"][0]["interval_kind"] == "confidence_interval"
+    # Relative lift is effect / counterfactual, so each endpoint must use its
+    # corresponding counterfactual rather than a frozen point-estimate baseline.
+    assert payload["relative_interval"] == pytest.approx([2.0 / 160.0, 22.0 / 140.0])
 
 
 def test_methodology_status_rolls_up_placebo_exclusions():
@@ -199,3 +209,73 @@ def test_assignment_policy_drives_randomization_inference():
     assert result.null_distribution["n_evaluated_assignments"] == 6
     assert result.artifacts["assignment_policy"]["kind"] == "fixed_treatment_count"
     assert result.p_value == 2 / 6
+
+
+def test_primary_method_contracts_are_explicit_and_multiplicity_safe_by_default():
+    suite = EstimatorSuiteSpec(estimators=["did", "synthetic_control"])
+    inference = InferenceEngineSpec()
+
+    assert suite.primary_estimator == "did"
+    assert suite.primary_for("orders") == "did"
+    assert inference.primary_method == "estimator_default"
+    assert inference.multiplicity == "holm"
+
+
+def test_randomization_rejects_an_observed_assignment_outside_the_policy():
+    policy = AssignmentPolicy(
+        markets=("a", "b", "c", "d"),
+        treatment_count=2,
+        required_treatment_markets=("a",),
+    )
+
+    with pytest.raises(ValueError, match="observed treatment assignment is not feasible"):
+        randomization_test(
+            {"a": 4.0, "b": 3.0, "c": 1.0, "d": 0.0},
+            treatment_units=["b", "c"],
+            control_units=["a", "d"],
+            policy=policy,
+        )
+
+
+def test_assignment_feasibility_checks_pair_and_stratum_mechanisms():
+    paired = AssignmentPolicy(
+        markets=("a1", "a2", "b1", "b2"),
+        treatment_count=2,
+        kind="matched_pairs",
+        pairs=(("a1", "a2"), ("b1", "b2")),
+    )
+    assert paired.is_feasible_assignment(("a1", "b2")) is True
+    assert paired.is_feasible_assignment(("a1", "a2")) is False
+
+    stratified = AssignmentPolicy(
+        markets=("a1", "a2", "a3", "b1", "b2", "b3"),
+        treatment_count=2,
+        kind="stratified",
+        strata={
+            "a1": "a",
+            "a2": "a",
+            "a3": "a",
+            "b1": "b",
+            "b2": "b",
+            "b3": "b",
+        },
+    )
+    assert stratified.is_feasible_assignment(("a1", "b1")) is True
+    assert stratified.is_feasible_assignment(("a1", "a2")) is False
+
+
+def test_one_sided_randomization_confidence_sets_report_unbounded_sides():
+    policy = AssignmentPolicy(markets=("a", "b", "c", "d"), treatment_count=2)
+
+    result = randomization_test(
+        {"a": 4.0, "b": 3.0, "c": 1.0, "d": 0.0},
+        treatment_units=["a", "b"],
+        control_units=["c", "d"],
+        policy=policy,
+        alternative="greater",
+        confidence=0.8,
+    )
+
+    assert result.interval is not None
+    assert result.interval[1] == float("inf")
+    assert result.artifacts["confidence_set_inversion"]["upper_unbounded"] is True

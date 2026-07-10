@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import math
 from collections.abc import Callable, Iterable
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import asdict, dataclass, field, fields, replace
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
@@ -95,16 +95,19 @@ def _derive_relative_interval(
     absolute_interval = _finite_interval(interval)
     if absolute_interval is None:
         return None
-    baseline = _finite_float(diagnostics.get("relative_lift_baseline"))
-    if baseline is not None and abs(baseline) >= 1e-12:
-        scale = 1.0 / abs(baseline)
-    else:
-        lift = _finite_float(relative_lift)
-        point = _finite_float(estimate)
-        if lift is None or point is None or abs(point) < 1e-12:
-            return None
-        scale = lift / point
-    return tuple(sorted((absolute_interval[0] * scale, absolute_interval[1] * scale)))
+    baseline = _finite_float(
+        diagnostics.get("relative_lift_baseline", diagnostics.get("counterfactual_baseline"))
+    )
+    point = _finite_float(estimate)
+    if baseline is None or point is None:
+        return None
+    transformed = counterfactual_relative_interval(
+        absolute_interval, observed_total=baseline + point
+    )
+    if transformed is None:
+        return None
+    diagnostics.setdefault("relative_interval_method", "nonlinear_counterfactual_transform")
+    return transformed
 
 
 @dataclass(frozen=True)
@@ -234,6 +237,45 @@ class EstimatorResult:
         object.__setattr__(self, "relative_interval", relative_interval)
 
         inference_results = [InferenceResult.coerce(item) for item in self.inference_results]
+        annotated_inference: list[InferenceResult] = []
+        for inference in inference_results:
+            same_interval = (
+                inference.interval is not None
+                and self.interval is not None
+                and tuple(inference.interval) == tuple(self.interval)
+            )
+            same_p_value = (
+                inference.p_value is not None
+                and self.p_value is not None
+                and math.isclose(inference.p_value, self.p_value, rel_tol=1e-12, abs_tol=1e-12)
+            )
+            same_standard_error = (
+                inference.standard_error is not None
+                and self.standard_error is not None
+                and math.isclose(
+                    inference.standard_error,
+                    self.standard_error,
+                    rel_tol=1e-12,
+                    abs_tol=1e-12,
+                )
+            )
+            if (
+                inference.estimand_spec is None
+                and inference.primary_eligible is not False
+                and (same_interval or same_p_value or same_standard_error)
+            ):
+                inference = replace(
+                    inference,
+                    estimand_spec=spec,
+                    point_estimate=(
+                        self.estimate
+                        if inference.point_estimate is None
+                        else inference.point_estimate
+                    ),
+                    primary_eligible=True,
+                )
+            annotated_inference.append(inference)
+        inference_results = annotated_inference
         if not inference_results and (
             self.interval is not None or self.p_value is not None or self.standard_error is not None
         ):
@@ -244,6 +286,8 @@ class EstimatorResult:
                     p_value=self.p_value,
                     standard_error=self.standard_error,
                     confidence=None,
+                    estimand_spec=spec,
+                    point_estimate=self.estimate,
                     diagnostics={
                         "source": "estimator_top_level_fields",
                         "estimator_name": self.estimator_name,
@@ -546,6 +590,31 @@ def counterfactual_relative_lift(
         baseline = observed.get("treatment_pre")
         baseline = float(baseline) if baseline is not None and np.isfinite(baseline) else None
     return safe_relative(float(effect), baseline), baseline
+
+
+def counterfactual_relative_interval(
+    interval: tuple[float, float] | None,
+    *,
+    observed_total: float | None,
+) -> tuple[float, float] | None:
+    """Transform an effect interval through ``effect / (observed - effect)``.
+
+    Unlike dividing every endpoint by the point-estimate counterfactual, this
+    preserves the nonlinear relationship between an effect hypothesis and its
+    implied no-treatment baseline.
+    """
+
+    absolute_interval = _finite_interval(interval)
+    observed = _finite_float(observed_total)
+    if absolute_interval is None or observed is None:
+        return None
+    transformed: list[float] = []
+    for effect in absolute_interval:
+        implied_baseline = observed - effect
+        if not np.isfinite(implied_baseline) or abs(implied_baseline) < 1e-12:
+            return None
+        transformed.append(float(effect / abs(implied_baseline)))
+    return tuple(sorted(transformed))
 
 
 def linearized_ratio_effect(
